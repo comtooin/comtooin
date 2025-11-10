@@ -53,6 +53,44 @@ export const sendSubmissionConfirmation = async (recipientEmail: string, details
   }
 };
 
+// Function to send a notification email to the admin
+export const sendSubmissionNotificationToAdmin = async (details: RequestDetails) => {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) {
+    console.error("ADMIN_EMAIL is not set. Cannot send notification to admin.");
+    return;
+  }
+
+  const subject = `[컴투인] 신규 AS가 접수되었습니다. (고객사: ${details.customer_name}, 접수번호: ${details.id})`;
+  const html = `
+    <h2>신규 AS 접수 알림</h2>
+    <p>새로운 AS 요청이 접수되었습니다. 관리자 페이지에서 확인해주세요.</p>
+    <hr>
+    <h3>접수 정보</h3>
+    <ul>
+      <li><strong>접수번호:</strong> ${details.id}</li>
+      <li><strong>고객사명:</strong> ${details.customer_name}</li>
+      <li><strong>사용자명:</strong> ${details.user_name}</li>
+      <li><strong>접수내용:</strong></li>
+      <p>${details.content}</p>
+    </ul>
+    <hr>
+    <p>이 메일은 시스템에서 자동으로 발송되었습니다.</p>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: `"컴투인 시스템" <${process.env.EMAIL_USER}>`,
+      to: adminEmail,
+      subject: subject,
+      html: html,
+    });
+    console.log(`Admin notification email sent to ${adminEmail}`);
+  } catch (error) {
+    console.error("Error sending admin notification email:", error);
+  }
+};
+
 // Function to send a status update email
 export const sendStatusUpdate = async (recipientEmail: string, details: RequestDetails, newStatus: string) => {
   if (!recipientEmail) return;

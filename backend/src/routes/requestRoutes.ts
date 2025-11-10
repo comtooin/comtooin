@@ -6,7 +6,7 @@ import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 import multer from 'multer';
-import { sendSubmissionConfirmation } from '../emailService';
+import { sendSubmissionConfirmation, sendSubmissionNotificationToAdmin } from '../emailService';
 import { Storage } from '@google-cloud/storage';
 
 const router = Router();
@@ -78,6 +78,9 @@ router.post('/', upload.array('images', 5), async (req: Request, res: Response) 
     if (email) {
       sendSubmissionConfirmation(email, newRequest.rows[0]);
     }
+    
+    // Send notification to admin
+    sendSubmissionNotificationToAdmin(newRequest.rows[0]);
 
     res.status(201).json(newRequest.rows[0]);
   } catch (err: any) {
