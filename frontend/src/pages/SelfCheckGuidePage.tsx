@@ -17,6 +17,11 @@ const SelfCheckGuidePage: React.FC = () => {
   const [guides, setGuides] = useState<IGuide[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState<number | false>(false); // State for controlled accordion
+
+  const handleChange = (panelId: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(isExpanded ? panelId : false);
+  };
 
   useEffect(() => {
     const fetchGuides = async () => {
@@ -59,7 +64,8 @@ const SelfCheckGuidePage: React.FC = () => {
               <Accordion 
                 key={guide.id}
                 disableGutters
-                defaultExpanded={index === 0} // Expand the first item by default
+                expanded={expanded === guide.id} // Controlled expansion
+                onChange={handleChange(guide.id)} // Handle change
                 sx={{
                   border: (theme) => `1px solid ${theme.palette.divider}`,
                   '&:not(:last-child)': {

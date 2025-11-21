@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, Button, Box, Paper, List, ListItem, ListItemText, ListItemSecondaryAction, IconButton, CircularProgress, Alert, Divider 
+  Typography, Button, Box, Paper, IconButton, CircularProgress, Alert, Divider 
 } from '@mui/material';
 import { Edit, Delete, ListAlt as ListAltIcon } from '@mui/icons-material';
 import axios from 'axios';
 import { Helmet } from 'react-helmet-async';
+import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const API_URL = process.env.NODE_ENV === 'production' ? '' : process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
@@ -19,7 +21,12 @@ const AdminGuideListPage: React.FC = () => {
   const [guides, setGuides] = useState<IGuide[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expanded, setExpanded] = useState<number | false>(false); // State for controlled accordion
   const navigate = useNavigate();
+
+  const handleChange = (panelId: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
+    setExpanded(isExpanded ? panelId : false);
+  };
 
   const fetchGuides = async () => {
     setLoading(true);
@@ -78,21 +85,51 @@ const AdminGuideListPage: React.FC = () => {
       </Box>
       <Divider sx={{ mb: 3 }} />
       <Paper>
-        <List>
-          {guides.map(guide => (
-            <ListItem key={guide.id} divider>
-              <ListItemText primary={guide.title} secondary={`ID: ${guide.id}`} />
-              <ListItemSecondaryAction>
-                <IconButton edge="end" aria-label="edit" onClick={() => navigate(`/admin/guide/edit/${guide.id}`)}>
-                  <Edit />
-                </IconButton>
-                <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(guide.id)}>
-                  <Delete />
-                </IconButton>
-              </ListItemSecondaryAction>
-            </ListItem>
-          ))}
-        </List>
+        {guides.length > 0 ? (
+          guides.map((guide) => (
+            <Accordion
+              key={guide.id}
+              disableGutters
+              expanded={expanded === guide.id}
+              onChange={handleChange(guide.id)}
+              sx={{
+                border: (theme) => `1px solid ${theme.palette.divider}`,
+                '&:not(:last-child)': {
+                  borderBottom: 0,
+                },
+                '&:before': {
+                  display: 'none',
+                },
+                '&.Mui-expanded': {
+                  backgroundColor: (theme) => theme.palette.action.hover,
+                }
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls={`panel${guide.id}-content`}
+                id={`panel${guide.id}-header`}
+              >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 2 }}>
+                  <Typography variant="h6">{guide.title}</Typography>
+                  <Box onClick={(event) => event.stopPropagation()}> {/* Prevent accordion collapse when clicking buttons */}
+                    <IconButton edge="end" aria-label="edit" onClick={() => navigate(`/admin/guide/edit/${guide.id}`)}>
+                      <Edit />
+                    </IconButton>
+                    <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(guide.id)}>
+                      <Delete />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div dangerouslySetInnerHTML={{ __html: guide.content }} />
+              </AccordionDetails>
+            </Accordion>
+          ))
+        ) : (
+          <Typography sx={{ p: 2 }}>표시할 가이드가 없습니다.</Typography>
+        )}
       </Paper>
     </>
   );

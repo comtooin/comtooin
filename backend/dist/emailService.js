@@ -1,0 +1,121 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.sendStatusUpdate = exports.sendSubmissionNotificationToAdmin = exports.sendSubmissionConfirmation = void 0;
+const nodemailer_1 = __importDefault(require("nodemailer"));
+// Create a transporter object using the default SMTP transport
+const transporter = nodemailer_1.default.createTransport({
+    host: 'smtp.naver.com',
+    port: 587,
+    secure: false, // true for 465, false for other ports
+    requireTLS: true, // Enforce TLS for port 587
+    auth: {
+        user: process.env.EMAIL_USER, // Naver email address
+        pass: process.env.EMAIL_PASS, // Naver email password
+    },
+});
+// Function to send a submission confirmation email
+const sendSubmissionConfirmation = async (recipientEmail, details) => {
+    if (!recipientEmail)
+        return;
+    const subject = `[컴투인] AS 접수가 정상적으로 완료되었습니다. (접수번호: ${details.id})`;
+    const html = `
+    <h2>안녕하세요, ${details.user_name}님. AS 접수가 정상적으로 완료되었습니다.</h2>
+    <p>최대한 빠른 시일 내에 확인 후 처리해 드리겠습니다.</p>
+    <hr>
+    <h3>접수 정보</h3>
+    <ul>
+      <li><strong>접수번호:</strong> ${details.id}</li>
+      <li><strong>고객사명:</strong> ${details.customer_name}</li>
+      <li><strong>사용자명:</strong> ${details.user_name}</li>
+      <li><strong>접수내용:</strong></li>
+      <p>${details.content}</p>
+    </ul>
+    <hr>
+    <p>감사합니다.<br>컴투인</p>
+  `;
+    try {
+        await transporter.sendMail({
+            from: `"컴투인" <${process.env.EMAIL_USER}>`,
+            to: recipientEmail,
+            subject: subject,
+            html: html,
+        });
+        console.log(`Submission confirmation email sent to ${recipientEmail}`);
+    }
+    catch (error) {
+        console.error("Error sending submission confirmation email:", error);
+    }
+};
+exports.sendSubmissionConfirmation = sendSubmissionConfirmation;
+// Function to send a notification email to the admin
+const sendSubmissionNotificationToAdmin = async (details) => {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    if (!adminEmail) {
+        console.error("ADMIN_EMAIL is not set. Cannot send notification to admin.");
+        return;
+    }
+    const subject = `[컴투인] 신규 AS가 접수되었습니다. (고객사: ${details.customer_name}, 접수번호: ${details.id})`;
+    const html = `
+    <h2>신규 AS 접수 알림</h2>
+    <p>새로운 AS 요청이 접수되었습니다. 관리자 페이지에서 확인해주세요.</p>
+    <hr>
+    <h3>접수 정보</h3>
+    <ul>
+      <li><strong>접수번호:</strong> ${details.id}</li>
+      <li><strong>고객사명:</strong> ${details.customer_name}</li>
+      <li><strong>사용자명:</strong> ${details.user_name}</li>
+      <li><strong>접수내용:</strong></li>
+      <p>${details.content}</p>
+    </ul>
+    <hr>
+    <p>이 메일은 시스템에서 자동으로 발송되었습니다.</p>
+  `;
+    try {
+        await transporter.sendMail({
+            from: `"컴투인 시스템" <${process.env.EMAIL_USER}>`,
+            to: adminEmail,
+            subject: subject,
+            html: html,
+        });
+        console.log(`Admin notification email sent to ${adminEmail}`);
+    }
+    catch (error) {
+        console.error("Error sending admin notification email:", error);
+    }
+};
+exports.sendSubmissionNotificationToAdmin = sendSubmissionNotificationToAdmin;
+// Function to send a status update email
+const sendStatusUpdate = async (recipientEmail, details, newStatus) => {
+    if (!recipientEmail)
+        return;
+    const subject = `[컴투인] AS 처리 상태가 '${newStatus}'(으)로 변경되었습니다. (접수번호: ${details.id})`;
+    const html = `
+    <h2>안녕하세요, ${details.user_name}님. 접수하신 AS 건의 처리 상태가 변경되었습니다.</h2>
+    <hr>
+    <h3>접수 정보</h3>
+    <ul>
+      <li><strong>접수번호:</strong> ${details.id}</li>
+      <li><strong>고객사명:</strong> ${details.customer_name}</li>
+      <li><strong>현재 상태:</strong> <strong>${newStatus}</strong></li>
+    </ul>
+    <p>내 접수내역 확인 페이지에서 자세한 내용을 확인하실 수 있습니다.</p>
+    <hr>
+    <p>감사합니다.<br>컴투인</p>
+  `;
+    try {
+        await transporter.sendMail({
+            from: `"컴투인" <${process.env.EMAIL_USER}>`,
+            to: recipientEmail,
+            subject: subject,
+            html: html,
+        });
+        console.log(`Status update email sent to ${recipientEmail}`);
+    }
+    catch (error) {
+        console.error("Error sending status update email:", error);
+    }
+};
+exports.sendStatusUpdate = sendStatusUpdate;

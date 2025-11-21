@@ -20,6 +20,15 @@ CREATE TABLE comments (
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
+-- guides table
+CREATE TABLE guides (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Function to update updated_at timestamp on row update
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -32,5 +41,11 @@ $$ language 'plpgsql';
 -- Trigger to automatically update updated_at on requests table update
 CREATE TRIGGER update_requests_updated_at
 BEFORE UPDATE ON requests
+FOR EACH ROW
+EXECUTE FUNCTION update_updated_at_column();
+
+-- Trigger to automatically update updated_at on guides table update
+CREATE TRIGGER update_guides_updated_at
+BEFORE UPDATE ON guides
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();

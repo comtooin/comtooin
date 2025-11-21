@@ -1,35 +1,15 @@
 import { Router, Request, Response } from 'express';
-import fs from 'fs/promises';
-import path from 'path';
+import pool from '../db'; // Import the database connection pool
 import adminAuth from '../middleware/adminAuth';
 
 const router = Router();
 export const guideRouter = router;
-const guideFilePath = path.join(__dirname, '../../db/guide.json');
-
-// Helper function to read guides
-const readGuides = async (): Promise<any[]> => {
-  try {
-    const data = await fs.readFile(guideFilePath, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return []; // File not found, return empty array
-    }
-    throw error;
-  }
-};
-
-// Helper function to write guides
-const writeGuides = async (guides: any[]): Promise<void> => {
-  await fs.writeFile(guideFilePath, JSON.stringify(guides, null, 2), 'utf8');
-};
 
 // GET all guides (public)
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const guides = await readGuides();
-    res.json(guides);
+    const result = await pool.query('SELECT * FROM guides ORDER BY id DESC');
+    res.json(result.rows);
   } catch (error) {
     console.error('Error fetching guides:', error);
     res.status(500).json({ error: '가이드를 불러오는 중 오류가 발생했습니다.' });
@@ -39,10 +19,11 @@ router.get('/', async (req: Request, res: Response) => {
 // GET single guide by ID (public)
 router.get('/:id', async (req: Request, res: Response) => {
   try {
-    const guides = await readGuides();
-    const guide = guides.find(g => g.id === parseInt(req.params.id));
-    if (guide) {
-      res.json(guide);
+    const { id } = req.params;
+    const result = await pool.query('SELECT * FROM guides WHERE id = $1', [id]);
+    
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
     } else {
       res.status(404).json({ error: '가이드를 찾을 수 없습니다.' });
     }
@@ -59,12 +40,13 @@ router.post('/', adminAuth, async (req: Request, res: Response) => {
     if (!title || !content) {
       return res.status(400).json({ error: '제목과 내용은 필수입니다.' });
     }
-    const guides = await readGuides();
-    const newId = guides.length > 0 ? Math.max(...guides.map(g => g.id)) + 1 : 1;
-    const newGuide = { id: newId, title, content };
-    guides.push(newGuide);
-    await writeGuides(guides);
-    res.status(201).json(newGuide);
+    
+    const result = await pool.query(
+      'INSERT INTO guides (title, content) VALUES ($1, $2) RETURNING *',
+      [title, content]
+    );
+    
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creating guide:', error);
     res.status(500).json({ error: '가이드를 생성하는 중 오류가 발생했습니다.' });
@@ -74,16 +56,19 @@ router.post('/', adminAuth, async (req: Request, res: Response) => {
 // PUT update guide (admin only)
 router.put('/:id', adminAuth, async (req: Request, res: Response) => {
   try {
+    const { id } = req.params;
     const { title, content } = req.body;
     if (!title || !content) {
       return res.status(400).json({ error: '제목과 내용은 필수입니다.' });
     }
-    let guides = await readGuides();
-    const index = guides.findIndex(g => g.id === parseInt(req.params.id));
-    if (index !== -1) {
-      guides[index] = { ...guides[index], title, content };
-      await writeGuides(guides);
-      res.json(guides[index]);
+    
+    const result = await pool.query(
+      'UPDATE guides SET title = $1, content = $2, updated_at = NOW() WHERE id = $3 RETURNING *',
+      [title, content, id]
+    );
+    
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
     } else {
       res.status(404).json({ error: '가이드를 찾을 수 없습니다.' });
     }
@@ -96,11 +81,10 @@ router.put('/:id', adminAuth, async (req: Request, res: Response) => {
 // DELETE guide (admin only)
 router.delete('/:id', adminAuth, async (req: Request, res: Response) => {
   try {
-    let guides = await readGuides();
-    const initialLength = guides.length;
-    guides = guides.filter(g => g.id !== parseInt(req.params.id));
-    if (guides.length < initialLength) {
-      await writeGuides(guides);
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM guides WHERE id = $1', [id]);
+    
+    if (result.rowCount && result.rowCount > 0) { // Added null check for result.rowCount
       res.status(204).send(); // No Content
     } else {
       res.status(404).json({ error: '가이드를 찾을 수 없습니다.' });
