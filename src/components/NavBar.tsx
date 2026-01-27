@@ -24,7 +24,7 @@ import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import SettingsIcon from '@mui/icons-material/Settings';
+
 import LogoutIcon from '@mui/icons-material/Logout';
 
 
