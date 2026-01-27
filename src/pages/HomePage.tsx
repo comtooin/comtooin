@@ -4,7 +4,7 @@ import {
   Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack
 } from '@mui/material';
 import { PhotoCamera, Delete, SupportAgent as SupportAgentIcon } from '@mui/icons-material';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import supabase from '../api';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Helmet } from 'react-helmet-async'; // Import Helmet
@@ -64,18 +64,76 @@ const HomePage: React.FC = () => {
     });
 
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.post('/api/requests', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
+      const requestPayload = {
+        customer_name: customerName,
+        user_name: userName,
+        password: password, // Note: storing plaintext passwords is not recommended. Consider hashing.
+        email: email,
+        content: content,
+        status: 'pending', // Default status for new requests
+        // Other fields if any, ensure they match your Supabase 'requests' table schema
+      };
+
+      const { data: requestData, error: insertError } = await supabase
+        .from('requests')
+        .insert([requestPayload])
+        .select(); // Select the inserted data to get the ID
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      const requestId = requestData?.[0]?.id; // Assuming ID is in the first item of returned array
+
+      if (!requestId) {
+        throw new Error('요청 ID를 가져올 수 없습니다.');
+      }
+
+      // Handle image uploads
+      const uploadedImageUrls: string[] = [];
+      for (const image of images) {
+        const fileExtension = image.name.split('.').pop();
+        const filePath = `${requestId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`; // Unique path for each image
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('uploads')
+          .upload(filePath, image, {
+            cacheControl: '3600',
+            upsert: false, // Do not overwrite existing files
+          });
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        // Get public URL for the uploaded image
+        const { data: publicUrlData } = supabase.storage
+          .from('uploads')
+          .getPublicUrl(filePath);
+        
+        if (publicUrlData?.publicUrl) {
+          uploadedImageUrls.push(publicUrlData.publicUrl);
+        }
+      }
+
+      // Update the request record with image URLs
+      if (uploadedImageUrls.length > 0) {
+        const { error: updateError } = await supabase
+          .from('requests')
+          .update({ images: uploadedImageUrls })
+          .eq('id', requestId);
+
+        if (updateError) {
+          throw updateError;
+        }
+      }
+
       // Redirect to the detail page
-      navigate(`/submission-detail/${response.data.id}`);
+      navigate(`/submission-detail/${requestId}`);
 
     } catch (err: any) {
-      setError(err.response?.data?.error || '접수 중 오류가 발생했습니다.');
+      console.error('Supabase API error:', err);
+      setError(err.message || '접수 중 오류가 발생했습니다.');
     }
   };
 

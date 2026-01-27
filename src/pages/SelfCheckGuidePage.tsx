@@ -26,11 +26,14 @@ const SelfCheckGuidePage: React.FC = () => {
   useEffect(() => {
     const fetchGuides = async () => {
       try {
-        // 수정됨: api 모듈 사용
-        const response = await api.get('/api/guide');
-        setGuides(response.data);
-      } catch (err) {
-        setError('가이드 목록을 불러오는 중 오류가 발생했습니다.');
+        const { data, error: fetchError } = await supabase.from('guide').select('*');
+        if (fetchError) {
+          throw fetchError;
+        }
+        setGuides(data || []);
+      } catch (err: any) {
+        console.error('Supabase fetch guides error:', err);
+        setError(err.message || '가이드 목록을 불러오는 중 오류가 발생했습니다.');
       } finally {
         setLoading(false);
       }

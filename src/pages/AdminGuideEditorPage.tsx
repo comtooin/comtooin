@@ -28,9 +28,17 @@ const AdminGuideEditorPage: React.FC = () => {
         setLoading(true);
         try {
           // 수정됨: api 모듈 사용
-          const response = await api.get(`/api/guide/${id}`);
-          setTitle(response.data.title);
-          setContent(response.data.content);
+          const { data, error: fetchError } = await supabase
+            .from('guide')
+            .select('*')
+            .eq('id', id)
+            .single(); // Assuming 'id' is unique
+
+          if (fetchError) {
+            throw fetchError;
+          }
+          setTitle(data.title);
+          setContent(data.content);
         } catch (err) {
           setError('가이드 내용을 불러오는 중 오류가 발생했습니다.');
         }
@@ -47,31 +55,33 @@ const AdminGuideEditorPage: React.FC = () => {
     setError('');
     setSuccess('');
 
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-
     const guideData = { title, content };
 
     try {
       if (isEditMode) {
-        // 수정됨: api 모듈 사용
-        await api.put(`/api/guide/${id}`, guideData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { error: updateError } = await supabase
+          .from('guide')
+          .update(guideData)
+          .eq('id', id);
+
+        if (updateError) {
+          throw updateError;
+        }
         setSuccess('가이드가 성공적으로 수정되었습니다.');
       } else {
-        // 수정됨: api 모듈 사용
-        await api.post('/api/guide', guideData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const { error: insertError } = await supabase
+          .from('guide')
+          .insert(guideData);
+
+        if (insertError) {
+          throw insertError;
+        }
         setSuccess('가이드가 성공적으로 생성되었습니다.');
         navigate('/admin/guides'); // Redirect after creation
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || '가이드 저장 중 오류가 발생했습니다.');
+      console.error('Supabase save error:', err);
+      setError(err.message || '가이드 저장 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
     }

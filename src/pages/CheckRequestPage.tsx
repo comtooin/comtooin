@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText
 } from '@mui/material';
 import { ReceiptLong as ReceiptLongIcon } from '@mui/icons-material';
-import api, { assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import supabase, { assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 import { useNavigate } from 'react-router-dom';
@@ -61,21 +61,31 @@ const CheckRequestPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.post('/api/requests/auth', {
-        user_name: name,
-        password: pw,
+      // Assuming a Supabase RPC function `authenticate_and_get_requests` exists
+      // that takes username and password, authenticates, and returns associated requests.
+      const { data, error: rpcError } = await supabase.rpc('authenticate_and_get_requests', {
+        user_name_param: name, // Parameters must match RPC function's argument names
+        password_param: pw,
       });
-      const parsedRequests = response.data.map((req: any) => ({
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      // Supabase RPC typically returns an array directly
+      const parsedRequests = data.map((req: any) => ({
         ...req,
+        // Assuming images are stored as a JSON string or array directly in Supabase table
         images: Array.isArray(req.images) ? req.images : (req.images && typeof req.images === 'string' && req.images.trim() !== '') ? JSON.parse(req.images) : [],
+        comments: Array.isArray(req.comments) ? req.comments : [], // Ensure comments is array
       }));
       setRequests(parsedRequests);
       setIsLoggedIn(true);
       // Save user info to session storage on successful login
       sessionStorage.setItem('comtooin_user', JSON.stringify({ name, pw }));
     } catch (err: any) {
-      setError(err.response?.data?.error || '조회 중 오류가 발생했습니다.');
+      console.error('Supabase RPC error:', err);
+      setError(err.message || '조회 중 오류가 발생했습니다. 사용자명 또는 비밀번호를 확인해주세요.');
       // Clear session storage on failure
       sessionStorage.removeItem('comtooin_user');
     } finally {
@@ -109,14 +119,21 @@ const CheckRequestPage: React.FC = () => {
     if (!selectedRequest?.id) return;
     setDeleteError('');
     try {
-      // 수정됨: api 모듈 사용
-      await api.delete(`/api/requests/${selectedRequest.id}`, {
-        data: { password: deletePassword },
+      // Assuming a Supabase RPC function `delete_request_with_password` exists
+      // that takes request_id and password, authenticates, and deletes the request.
+      const { error: rpcError } = await supabase.rpc('delete_request_with_password', {
+        request_id: selectedRequest.id,
+        password_param: deletePassword, // Parameter name must match RPC function
       });
+
+      if (rpcError) {
+        throw rpcError;
+      }
       alert('접수 건이 성공적으로 삭제되었습니다.');
       navigate('/');
     } catch (err: any) {
-      setDeleteError(err.response?.data?.error || '삭제 중 오류가 발생했습니다.');
+      console.error('Supabase RPC error:', err);
+      setDeleteError(err.message || '삭제 중 오류가 발생했습니다. 비밀번호를 확인해주세요.');
     }
   };
 

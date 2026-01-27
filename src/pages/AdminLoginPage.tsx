@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert } from '@mui/material';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import supabase from '../api';
 import { Helmet } from 'react-helmet-async';
 
 // 삭제됨: const API_URL = ...
@@ -18,12 +18,27 @@ const AdminLoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.post('/api/admin/login', { id, password });
-      localStorage.setItem('adminToken', response.data.token);
-      navigate('/admin/dashboard');
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: id, // Assuming 'id' is used as email for Supabase Auth
+        password: password,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
+      if (data?.session) {
+        // Store the access token (JWT) from Supabase session
+        localStorage.setItem('adminToken', data.session.access_token);
+        // You might also want to store user ID or role for admin check
+        // For example, you can fetch user roles from a separate table using RLS after login
+        navigate('/admin/dashboard');
+      } else {
+        throw new Error('로그인 정보가 올바르지 않습니다.');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || '로그인 중 오류가 발생했습니다.');
+      console.error('Supabase Auth error:', err);
+      setError(err.message || '로그인 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }

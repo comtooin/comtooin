@@ -31,9 +31,11 @@ const AdminGuideListPage: React.FC = () => {
   const fetchGuides = async () => {
     setLoading(true);
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.get('/api/guide');
-      setGuides(response.data);
+      const { data, error: fetchError } = await supabase.from('guide').select('*');
+      if (fetchError) {
+        throw fetchError;
+      }
+      setGuides(data || []);
     } catch (err) {
       setError('가이드 목록을 불러오는 중 오류가 발생했습니다.');
     } finally {
@@ -48,21 +50,20 @@ const AdminGuideListPage: React.FC = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm(`${id}번 가이드를 정말로 삭제하시겠습니까?`)) return;
 
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-
     try {
-      // 수정됨: api 모듈 사용
-      await api.delete(`/api/guide/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { error: deleteError } = await supabase
+        .from('guide')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
       setGuides(guides.filter(g => g.id !== id));
       alert('가이드가 삭제되었습니다.');
-    } catch (err) {
-      alert('가이드 삭제 중 오류가 발생했습니다.');
+    } catch (err: any) {
+      console.error('Supabase delete error:', err);
+      alert(err.message || '가이드 삭제 중 오류가 발생했습니다.');
     }
   };
 

@@ -66,26 +66,35 @@ const AdminReportPage: React.FC = () => {
   };
 
   // Fetch data for filters (runs once)
-  const fetchInitialData = useCallback(async () => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-    try {
-        const [customersRes, summaryRes] = await Promise.all([
-            // 수정됨: api 모듈 사용
-            api.get('/api/admin/customers', { headers: { Authorization: `Bearer ${token}` } }),
-            // 수정됨: api 모듈 사용
-            api.get('/api/admin/reports/summary', { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-        setCustomers(customersRes.data || []);
-        setAllMonths((summaryRes.data.monthly || []).map((m: MonthlySummary) => m.month));
-    } catch (err) {
-        console.error("Failed to fetch initial data", err);
-        setError('필터 옵션을 불러오는 중 오류가 발생했습니다.');
-    }
-  }, [navigate]);
+    const fetchInitialData = useCallback(async () => {
+        try {
+            // Fetch distinct customer names
+            const { data: customersData, error: customersError } = await supabase
+                .from('requests')
+                .select('customer_name')
+                .neq('customer_name', null) // Filter out null customer names
+                .distinct();
+
+            if (customersError) {
+                throw customersError;
+            }
+            setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
+
+            // Fetch monthly summary using a Supabase RPC (assumed to exist)
+            const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary');
+
+            if (summaryError) {
+                throw summaryError;
+            }
+            setAllMonths((summaryData || []).map((m: MonthlySummary) => m.month));
+
+        } catch (err: any) {
+            console.error("Failed to fetch initial data", err);
+            setError(err.message || '필터 옵션을 불러오는 중 오류가 발생했습니다.');
+        } finally {
+            setLoading(false); // Set loading to false only after initial data is fetched
+        }
+    }, []);
 
   useEffect(() => {
     fetchInitialData();
@@ -94,37 +103,60 @@ const AdminReportPage: React.FC = () => {
   const applyFilters = useCallback(async () => {
     setLoading(true);
     setError('');
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-
-    const params = {
-      customerName: selectedCustomer === 'all' ? null : selectedCustomer,
-      month: selectedMonth === 'all' ? null : selectedMonth,
-      status: status === 'all' ? null : status,
-    };
 
     try {
-      const [requestsRes, summaryRes] = await Promise.all([
-        // 수정됨: api 모듈 사용
-        api.get('/api/admin/requests', { headers: { Authorization: `Bearer ${token}` }, params }),
-        // 수정됨: api 모듈 사용
-        api.get('/api/admin/reports/summary', { headers: { Authorization: `Bearer ${token}` }, params })
-      ]);
-      
-      setFilteredRequests(requestsRes.data || []);
-      setStatusData(summaryRes.data.status || []);
-      setMonthlyData(summaryRes.data.monthly || []);
+      let requestsQuery = supabase.from('requests').select('*, comments(*)');
+
+      if (selectedCustomer !== 'all') {
+        requestsQuery = requestsQuery.eq('customer_name', selectedCustomer);
+      }
+      if (status !== 'all') {
+        requestsQuery = requestsQuery.eq('status', status);
+      }
+      if (selectedMonth !== 'all') {
+        // Assuming selectedMonth is in 'YYYY-MM' format
+        const year = selectedMonth.split('-')[0];
+        const month = selectedMonth.split('-')[1];
+        const startDate = `${year}-${month}-01T00:00:00.000Z`;
+        const endDate = `${year}-${month}-${new Date(Number(year), Number(month), 0).getDate()}T23:59:59.999Z`;
+        requestsQuery = requestsQuery.gte('created_at', startDate).lte('created_at', endDate);
+      }
+      requestsQuery = requestsQuery.order('created_at', { ascending: false });
+
+      const { data: requestsData, error: requestsError } = await requestsQuery;
+      if (requestsError) {
+        throw requestsError;
+      }
+      setFilteredRequests(requestsData || []);
+
+      // Fetch summary data using Supabase RPCs (assumed to exist)
+      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary', {
+          _customer_name: selectedCustomer === 'all' ? null : selectedCustomer,
+          _month: selectedMonth === 'all' ? null : selectedMonth,
+          _status: status === 'all' ? null : status
+      });
+      if (statusSummaryError) {
+          throw statusSummaryError;
+      }
+      setStatusData(statusSummaryData || []);
+
+      const { data: monthlySummaryData, error: monthlySummaryError } = await supabase.rpc('get_monthly_summary', {
+          _customer_name: selectedCustomer === 'all' ? null : selectedCustomer,
+          _month: selectedMonth === 'all' ? null : selectedMonth,
+          _status: status === 'all' ? null : status
+      });
+      if (monthlySummaryError) {
+          throw monthlySummaryError;
+      }
+      setMonthlyData(monthlySummaryData || []);
 
     } catch (err: any) {
-      console.error("Failed to apply filters", err);
-      setError(err.response?.data?.error || '리포트 데이터를 불러오는 중 오류가 발생했습니다.');
+      console.error("Supabase apply filters error", err);
+      setError(err.message || '리포트 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [navigate, selectedCustomer, selectedMonth, status]);
+  }, [selectedCustomer, selectedMonth, status]);
 
   // Initial data fetch on component mount
   useEffect(() => {
@@ -132,36 +164,13 @@ const AdminReportPage: React.FC = () => {
   }, [applyFilters]);
 
   const handleExportExcel = async () => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
-
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.get('/api/admin/reports/excel', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: {
-          customerName: selectedCustomer === 'all' ? '' : selectedCustomer,
-          month: selectedMonth === 'all' ? '' : selectedMonth,
-          status: status === 'all' ? '' : status,
-        },
-        responseType: 'blob',
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      const fileName = `Comtooin_Report.xlsx`;
-      link.setAttribute('download', fileName);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+        // Excel export requires a server-side function (e.g., Supabase Edge Function or RPC)
+        // that can generate and return a file. This cannot be done directly via Supabase client.
+        throw new Error('Excel 내보내기 기능은 Supabase Edge Function 또는 RPC를 통해 서버 측에서 구현되어야 합니다.');
     } catch (err: any) {
-      console.error("Failed to export Excel", err);
-      setError(err.response?.data?.error || 'Excel 다운로드 중 오류가 발생했습니다.');
+        console.error("Failed to export Excel", err);
+        setError(err.message || 'Excel 다운로드 중 오류가 발생했습니다.');
     }
   };
 

@@ -4,7 +4,7 @@ import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
   Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField
 } from '@mui/material';
-import api, { assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import supabase, { assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 // Define types for our data (can be moved to a shared types file later)
@@ -47,8 +47,16 @@ const SubmissionDetailPage: React.FC = () => {
       setLoading(true);
       try {
         // 수정됨: api 모듈 사용
-        const response = await api.get(`/api/requests/${id}`);
-        setRequest(response.data);
+        const { data, error: fetchError } = await supabase
+          .from('requests')
+          .select('*, comments(*)') // Assuming 'comments' is a related table and can be fetched with the request
+          .eq('id', id)
+          .single(); // Assuming 'id' is unique
+
+        if (fetchError) {
+          throw fetchError;
+        }
+        setRequest(data);
       } catch (err: any) {
         setError(err.response?.data?.error || '접수 내역을 불러오는 중 오류가 발생했습니다.');
       } finally {
@@ -62,14 +70,21 @@ const SubmissionDetailPage: React.FC = () => {
     if (!id) return;
     setDeleteError('');
     try {
-      // 수정됨: api 모듈 사용
-      await api.delete(`/api/requests/${id}`, {
-        data: { password: deletePassword },
+      // Assuming a Supabase RPC function `delete_request_with_password` exists
+      // that takes request_id and password, authenticates, and deletes the request.
+      const { error: rpcError } = await supabase.rpc('delete_request_with_password', {
+        request_id: id,
+        password_param: deletePassword, // Parameter name must match RPC function
       });
+
+      if (rpcError) {
+        throw rpcError;
+      }
       alert('접수 건이 성공적으로 삭제되었습니다.');
       navigate('/');
     } catch (err: any) {
-      setDeleteError(err.response?.data?.error || '삭제 중 오류가 발생했습니다.');
+      console.error('Supabase RPC error:', err);
+      setDeleteError(err.message || '삭제 중 오류가 발생했습니다. 비밀번호를 확인해주세요.');
     }
   };
 
