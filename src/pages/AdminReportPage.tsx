@@ -71,9 +71,8 @@ const AdminReportPage: React.FC = () => {
             // Fetch distinct customer names
             const { data: customersData, error: customersError } = await supabase
                 .from('requests')
-                .select('customer_name')
-                .neq('customer_name', null) // Filter out null customer names
-                .distinct();
+                .select('customer_name', { distinct: true }) // distinct 옵션을 select 메서드 내에 추가
+                .neq('customer_name', null); // Filter out null customer names
 
             if (customersError) {
                 throw customersError;
