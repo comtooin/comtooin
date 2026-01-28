@@ -68,11 +68,15 @@ const AdminGuideEditorPage: React.FC = () => {
           throw updateError;
         }
         setSuccess('가이드가 성공적으로 수정되었습니다.');
-                } else {
-                  const { error: insertError } = await supabase
-                    .from('guide')
-                    .insert({ ...guideData, author_user_id: supabase.auth.session()?.user?.id }); // author_user_id 추가
-      
+                          } else {
+                            const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                            if (sessionError) throw sessionError;
+                            if (!session?.user?.id) throw new Error('로그인 정보가 없습니다.');
+                
+                            const { error: insertError } = await supabase
+                              .from('guide')
+                              .insert({ ...guideData, author_user_id: session.user.id }); // author_user_id 추가
+                      
                   if (insertError) {
                     throw insertError;
                   }

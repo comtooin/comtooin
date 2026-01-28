@@ -80,7 +80,7 @@ const HomePage: React.FC = () => {
         email: email,
         content: content,
         status: 'pending', // Default status for new requests
-        user_email: supabase.auth.session()?.user?.email, // 현재 로그인한 사용자의 이메일
+        user_email: (await supabase.auth.getSession())?.data.session?.user?.email, // 현재 로그인한 사용자의 이메일
         // Other fields if any, ensure they match your Supabase 'requests' table schema
       };
 
