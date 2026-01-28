@@ -13,11 +13,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
 
-// 기존 axios 인스턴스 대신 Supabase 클라이언트를 내보냅니다.
-export default supabase;
+// default export 제거 (named export로만 내보냄)
 
 /**
  * 이미지 등 정적 파일의 URL을 생성하기 위한 접두사.
  * Supabase Storage의 공개 URL을 기반으로 합니다.
+ * 실제 Storage URL은 'supabaseUrl/storage/v1/object/public' 형태입니다.
  */
-export const assetBaseURL = supabaseUrl;
+export const assetBaseURL = `${supabaseUrl}/storage/v1/object/public`;

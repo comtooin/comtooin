@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Typography, Paper, CircularProgress, Alert, Accordion, AccordionSummary, AccordionDetails, Divider, Box } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { Quiz as QuizIcon } from '@mui/icons-material';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
 
 // 삭제됨: const API_URL = ...

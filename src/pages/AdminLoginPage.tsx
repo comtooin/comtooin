@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert } from '@mui/material';
-import supabase from '../api';
+import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 // 삭제됨: const API_URL = ...
