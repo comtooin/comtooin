@@ -64,13 +64,23 @@ const HomePage: React.FC = () => {
     });
 
     try {
+      // 1. 비밀번호 해싱
+      const { data: hashedPassword, error: hashError } = await supabase.rpc('hash_password', { plaintext_password: password });
+      if (hashError) {
+        throw hashError;
+      }
+      if (!hashedPassword) { // data가 null일 경우를 대비
+        throw new Error('비밀번호 해싱에 실패했습니다.');
+      }
+
       const requestPayload = {
         customer_name: customerName,
         user_name: userName,
-        password: password, // Note: storing plaintext passwords is not recommended. Consider hashing.
+        password: hashedPassword as string, // 해시된 비밀번호 사용, 타입 단언
         email: email,
         content: content,
         status: 'pending', // Default status for new requests
+        user_email: supabase.auth.session()?.user?.email, // 현재 로그인한 사용자의 이메일
         // Other fields if any, ensure they match your Supabase 'requests' table schema
       };
 

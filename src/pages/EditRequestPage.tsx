@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton } from '@mui/material';
 import { PhotoCamera, Delete } from '@mui/icons-material';
-import api, { assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase, assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css'; // import styles
 import { Helmet } from 'react-helmet-async';
@@ -41,17 +41,27 @@ const EditRequestPage: React.FC = () => {
         const fetchRequest = async () => {
             try {
                 // 수정됨: api 모듈 사용
-                const response = await api.get(`/api/requests/${id}`);
+                const { data, error: fetchError } = await supabase
+                    .from('requests')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (fetchError) {
+                    throw fetchError;
+                }
                 setFormData({
-                    ...response.data,
-                    customer_name: response.data.customer_name || '',
-                    user_name: response.data.user_name || '',
-                    content: response.data.content || '',
+                    ...data,
+                    customer_name: data.customer_name || '',
+                    user_name: data.user_name || '',
+                    email: data.email || '', // email 필드도 추가
+                    content: data.content || '',
+                    images: data.images || [], // images 필드 추가
                 });
                 // Set existing images for preview
-                if (response.data.images && response.data.images.length > 0) {
+                if (data.images && data.images.length > 0) {
                     // 수정됨: baseURL 사용
-                    setImagePreviews(response.data.images.map((img: string) => `${assetBaseURL}/uploads/${img}`))
+                    setImagePreviews(data.images.map((img: string) => `${assetBaseURL}/uploads/${img}`))
                 }
             } catch (err: any) {
                 setError(err.response?.data?.error || '데이터를 불러오는 중 오류가 발생했습니다.');
@@ -110,30 +120,80 @@ const EditRequestPage: React.FC = () => {
         setError('');
         setSuccess('');
 
-        const submissionData = new FormData();
-        submissionData.append('customer_name', formData.customer_name);
-        submissionData.append('user_name', formData.user_name);
-        submissionData.append('password', password);
-        submissionData.append('email', formData.email);
-        submissionData.append('content', formData.content);
-
-        // Append existing images that are kept
-        formData.images.forEach(image => {
-            submissionData.append('existingImages', image);
-        });
-
-        // Append new image files
-        imageFiles.forEach(file => {
-            submissionData.append('images', file);
-        });
-
         try {
-            // 수정됨: api 모듈 사용
-            await api.put(`/api/requests/${id}`, submissionData);
+            // 1. 비밀번호 해싱 (수정 시에도 비밀번호를 입력받아 해싱)
+            let hashedPassword = '';
+            if (password) { // password 필드가 비어있지 않은 경우에만 해싱
+                const { data: hashed, error: hashError } = await supabase.rpc('hash_password', { plaintext_password: password });
+                if (hashError) throw hashError;
+                if (!hashed) throw new Error('비밀번호 해싱에 실패했습니다.');
+                hashedPassword = hashed as string;
+            }
+
+            // 2. 새로운 이미지 파일 업로드
+            const uploadedImageUrls: string[] = [];
+            for (const image of imageFiles) {
+                const fileExtension = image.name.split('.').pop();
+                const filePath = `${id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`; // Unique path for each image
+
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('uploads')
+                    .upload(filePath, image, {
+                        cacheControl: '3600',
+                        upsert: false,
+                    });
+
+                if (uploadError) {
+                    throw uploadError;
+                }
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('uploads')
+                    .getPublicUrl(filePath);
+
+                if (publicUrlData?.publicUrl) {
+                    uploadedImageUrls.push(publicUrlData.publicUrl); // 전체 public URL 저장
+                }
+            }
+
+            // 3. 업데이트할 데이터 페이로드 구성
+            const updatePayload: {
+                customer_name: string;
+                user_name: string;
+                email: string;
+                content: string;
+                password?: string; // 비밀번호는 선택적으로 업데이트
+                images?: string[]; // 이미지 URL 배열
+            } = {
+                customer_name: formData.customer_name,
+                user_name: formData.user_name,
+                email: formData.email,
+                content: formData.content,
+            };
+
+            if (hashedPassword) {
+                updatePayload.password = hashedPassword;
+            }
+
+            // 기존 이미지 URL과 새로 업로드된 이미지 URL 통합
+            updatePayload.images = [...formData.images, ...uploadedImageUrls];
+
+
+            // 4. Supabase DB 업데이트
+            const { error: updateError } = await supabase
+                .from('requests')
+                .update(updatePayload)
+                .eq('id', id);
+
+            if (updateError) {
+                throw updateError;
+            }
+
             setSuccess('성공적으로 수정되었습니다.');
-            setTimeout(() => navigate(`/check-request`), 1500);
+            setTimeout(() => navigate(`/submission-detail/${id}`), 1500); // 수정 후 상세 페이지로 이동
         } catch (err: any) {
-            setError(err.response?.data?.error || '수정 중 오류가 발생했습니다.');
+            console.error('Supabase API error:', err);
+            setError(err.message || '수정 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }

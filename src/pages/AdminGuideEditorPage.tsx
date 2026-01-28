@@ -4,7 +4,7 @@ import { Typography, Button, Box, Paper, CircularProgress, Alert, TextField, Div
 import { Edit as EditIcon } from '@mui/icons-material';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
 
 // 삭제됨: const API_URL = ...
@@ -68,18 +68,17 @@ const AdminGuideEditorPage: React.FC = () => {
           throw updateError;
         }
         setSuccess('가이드가 성공적으로 수정되었습니다.');
-      } else {
-        const { error: insertError } = await supabase
-          .from('guide')
-          .insert(guideData);
-
-        if (insertError) {
-          throw insertError;
-        }
-        setSuccess('가이드가 성공적으로 생성되었습니다.');
-        navigate('/admin/guides'); // Redirect after creation
-      }
-    } catch (err: any) {
+                } else {
+                  const { error: insertError } = await supabase
+                    .from('guide')
+                    .insert({ ...guideData, author_user_id: supabase.auth.session()?.user?.id }); // author_user_id 추가
+      
+                  if (insertError) {
+                    throw insertError;
+                  }
+                  setSuccess('가이드가 성공적으로 생성되었습니다.');
+                  navigate('/admin/guides'); // Redirect after creation
+                }    } catch (err: any) {
       console.error('Supabase save error:', err);
       setError(err.message || '가이드 저장 중 오류가 발생했습니다.');
     } finally {
