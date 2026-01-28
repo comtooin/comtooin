@@ -11,7 +11,7 @@ import { Dashboard as DashboardIcon } from '@mui/icons-material';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Helmet } from 'react-helmet-async';
-import api, { assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase, assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 
 // Define types for our data
 interface IComment {
@@ -72,10 +72,14 @@ const AdminDashboardPage: React.FC = () => {
     }
 
     try {
-      // 수정됨: api 모듈 사용
-      await api.delete(`/api/admin/requests/${requestToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const { error: deleteError } = await supabase
+        .from('requests')
+        .delete()
+        .eq('id', requestToDelete.id); // RLS 정책에 따라 삭제 권한이 부여된 사용자만 삭제 가능
+
+      if (deleteError) {
+        throw deleteError;
+      }
 
       setRequests(prevRequests => prevRequests.filter(req => req.id !== requestToDelete.id));
       setOpenDeleteConfirm(false);
@@ -83,35 +87,34 @@ const AdminDashboardPage: React.FC = () => {
       alert('접수 건이 성공적으로 삭제되었습니다.');
     } catch (err: any) {
       console.error("Failed to delete request", err);
-      alert(err.response?.data?.error || '삭제 중 오류가 발생했습니다.');
+      // Supabase 에러 객체에서 메시지를 가져오거나 일반 메시지 사용
+      alert(err.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     setError('');
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
+    // RLS 정책이 적용되므로, 클라이언트 측에서 토큰 검증 및 로그인 리다이렉션 로직은 제거.
+    // Supabase 클라이언트는 자동으로 세션 정보를 사용하여 RLS를 적용합니다.
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.get('/api/admin/requests', {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { _sort: orderBy, _order: order },
-      });
-      setRequests(response.data);
+      const { data, error: fetchError } = await supabase
+        .from('requests')
+        .select('*, comments(*)') // comments 관계도 함께 가져오기
+        .order(orderBy, { ascending: order === 'asc' }); // 정렬 적용
+
+      if (fetchError) {
+        throw fetchError;
+      }
+      setRequests(data || []);
     } catch (err: any) {
       console.error("Failed to fetch requests", err);
-      setError(err.response?.data?.error || '데이터를 불러오는 중 오류가 발생했습니다.');
-      if ((err as any).response?.status === 401 || (err as any).response?.status === 403) {
-        navigate('/admin/login');
-      }
+      setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+      // RLS에 의해 접근 거부된 경우 (예: 401/403) 에러 메시지는 Supabase에서 처리
     } finally {
       setLoading(false);
     }
-  }, [navigate, order, orderBy]);
+  }, [order, orderBy]);
 
   useEffect(() => {
     fetchRequests();
@@ -150,25 +153,47 @@ const AdminDashboardPage: React.FC = () => {
     if (!selectedRequest) return;
     setSaving(true);
     setSaveError('');
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin/login');
-      return;
-    }
+    // RLS 정책이 적용되므로, 클라이언트 측에서 토큰 검증 및 로그인 리다이렉션 로직은 제거.
 
     try {
-      // 수정됨: api 모듈 사용
-      const response = await api.put(`/api/admin/requests/${selectedRequest.id}`,
-        { status: newStatus, comment: newComment },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      setRequests(prevRequests =>
-        prevRequests.map(req => (req.id === selectedRequest.id ? response.data : req))
-      );
+      // 1. 요청 상태 업데이트
+      const { data: updatedRequestArray, error: updateError } = await supabase
+        .from('requests')
+        .update({ status: newStatus, updated_at: new Date().toISOString() }) // updated_at 자동 업데이트
+        .eq('id', selectedRequest.id)
+        .select(); // 업데이트된 데이터 반환
+
+      if (updateError) {
+        throw updateError;
+      }
+      const updatedRequest = updatedRequestArray?.[0]; // 배열로 반환되므로 첫 번째 항목 사용
+
+      // 2. 새로운 코멘트 추가 (newComment가 있고, 비어있지 않은 경우)
+      if (newComment && newComment.trim()) {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        if (!session?.user?.id) throw new Error('로그인 정보가 없습니다.');
+
+        const { error: commentInsertError } = await supabase
+          .from('comments')
+          .insert({
+            request_id: selectedRequest.id,
+            comment: newComment,
+            user_id: session.user.id, // 현재 로그인한 관리자 ID 할당
+          });
+        if (commentInsertError) {
+          throw commentInsertError;
+        }
+      }
+
+      // 상태 업데이트 후 데이터 다시 불러오기 (fetchRequests가 최신 데이터 반영)
+      fetchRequests(); // 전체 목록을 다시 불러와서 업데이트된 내용을 반영
       handleCloseDetailModal();
       alert('접수 정보가 성공적으로 업데이트되었습니다.');
     } catch (err: any) {
-      setSaveError(err.response?.data?.error || '업데이트 중 오류가 발생했습니다.');
+      console.error('Supabase save error:', err);
+      // Supabase 에러 객체에서 메시지를 가져오거나 일반 메시지 사용
+      setSaveError(err.message || '업데이트 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
     }
