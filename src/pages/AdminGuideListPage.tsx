@@ -4,7 +4,7 @@ import {
   Typography, Button, Box, Paper, IconButton, CircularProgress, Alert, Divider
 } from '@mui/material';
 import { Edit, Delete, ListAlt as ListAltIcon } from '@mui/icons-material';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
 import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
