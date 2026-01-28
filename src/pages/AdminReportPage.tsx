@@ -5,7 +5,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab
 } from '@mui/material';
 import { BarChart as BarChartIcon } from '@mui/icons-material';
-import api from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
