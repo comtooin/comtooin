@@ -68,15 +68,18 @@ const AdminReportPage: React.FC = () => {
   // Fetch data for filters (runs once)
     const fetchInitialData = useCallback(async () => {
         try {
-            // Fetch distinct customer names
-            const { data: customersData, error: customersError } = await supabase
+            const { data: rawData, error: customersError } = await supabase
                 .from('requests')
-                .select('customer_name', { distinct: true }) // distinct 옵션을 select 메서드 내에 추가
-                .neq('customer_name', null); // Filter out null customer names
+                .select('customer_name')
+                .neq('customer_name', null);
 
             if (customersError) {
                 throw customersError;
             }
+            // 데이터를 가져온 후 JavaScript에서 중복 제거
+            const customersData = rawData
+                ? Array.from(new Set(rawData.map(item => item.customer_name))).map(name => ({ customer_name: name }))
+                : [];
             setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
 
             // Fetch monthly summary using a Supabase RPC (assumed to exist)
