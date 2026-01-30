@@ -26,7 +26,7 @@ const SelfCheckGuidePage: React.FC = () => {
   useEffect(() => {
     const fetchGuides = async () => {
       try {
-        const { data, error: fetchError } = await supabase.from('guide').select('*');
+        const { data, error: fetchError } = await supabase.from('guides').select('*');
         if (fetchError) {
           throw fetchError;
         }
