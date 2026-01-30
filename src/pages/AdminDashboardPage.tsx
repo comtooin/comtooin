@@ -166,7 +166,7 @@ const AdminDashboardPage: React.FC = () => {
       if (updateError) {
         throw updateError;
       }
-      const updatedRequest = updatedRequestArray?.[0]; // 배열로 반환되므로 첫 번째 항목 사용
+
 
       // 2. 새로운 코멘트 추가 (newComment가 있고, 비어있지 않은 경우)
       if (newComment && newComment.trim()) {

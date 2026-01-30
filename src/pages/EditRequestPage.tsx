@@ -136,7 +136,7 @@ const EditRequestPage: React.FC = () => {
                 const fileExtension = image.name.split('.').pop();
                 const filePath = `${id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`; // Unique path for each image
 
-                const { data: uploadData, error: uploadError } = await supabase.storage
+                const { error: uploadError } = await supabase.storage
                     .from('uploads')
                     .upload(filePath, image, {
                         cacheControl: '3600',
