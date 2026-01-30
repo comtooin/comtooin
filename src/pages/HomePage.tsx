@@ -4,7 +4,7 @@ import {
   Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack
 } from '@mui/material';
 import { PhotoCamera, Delete, SupportAgent as SupportAgentIcon } from '@mui/icons-material';
-import { supabase } } from '../api';
+import { supabase } from '../api';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Helmet } from 'react-helmet-async'; // Import Helmet
