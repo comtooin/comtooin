@@ -157,7 +157,7 @@ const AdminDashboardPage: React.FC = () => {
 
     try {
       // 1. 요청 상태 업데이트
-      const { data: updatedRequestArray, error: updateError } = await supabase
+      const { error: updateError } = await supabase
         .from('requests')
         .update({ status: newStatus, updated_at: new Date().toISOString() }) // updated_at 자동 업데이트
         .eq('id', selectedRequest.id)
