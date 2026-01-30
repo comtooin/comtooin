@@ -254,7 +254,7 @@ const CheckRequestPage: React.FC = () => {
                       <Grid item key={index}>
                         {/* 수정됨: baseURL 사용 */}
                         <a href={`${assetBaseURL}/uploads/${image}`} target="_blank" rel="noopener noreferrer">
-                          <img src={`${assetBaseURL}/uploads/${image}`} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
+                          <img src={`${assetBaseURL}/uploads/${selectedRequest.id}/${image}`} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
                         </a>
                       </Grid>
                     ))}
