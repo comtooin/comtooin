@@ -4,7 +4,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText
 } from '@mui/material';
 import { ReceiptLong as ReceiptLongIcon } from '@mui/icons-material';
-import { supabase, assetBaseURL } from '../api';
+import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 import { useNavigate } from 'react-router-dom';
