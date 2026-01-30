@@ -38,7 +38,10 @@ interface IRequest {
 }
 interface MonthlySummary {
     month: string;
-    count: number;
+    total_requests: number;
+    pending_requests: number;
+    completed_requests: number;
+    cancelled_requests: number;
 }
 
 // --- COMPONENT START ---
@@ -54,11 +57,12 @@ const AdminReportPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [status, setStatus] = useState('all');
+  const currentYear = new Date().getFullYear(); // 현재 연도 추가
 
   // Tab and Chart states
   const [tabValue, setTabValue] = useState(0);
   const [statusData, setStatusData] = useState<any[]>([]);
-  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]); // 타입 변경
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -81,12 +85,14 @@ const AdminReportPage: React.FC = () => {
                 : [];
             setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
 
-            // Fetch monthly summary using a Supabase RPC (assumed to exist)
-            const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary');
+            // Fetch monthly summary using a Supabase RPC
+            // RPC 함수에 target_year 매개변수 전달
+            const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
 
             if (summaryError) {
                 throw summaryError;
             }
+            // summaryData가 null일 경우 빈 배열로 처리
             setAllMonths((summaryData || []).map((m: MonthlySummary) => m.month));
 
         } catch (err: any) {
@@ -95,7 +101,7 @@ const AdminReportPage: React.FC = () => {
         } finally {
             setLoading(false); // Set loading to false only after initial data is fetched
         }
-    }, []);
+    }, [currentYear]); // currentYear를 의존성 배열에 추가
 
   useEffect(() => {
     fetchInitialData();
@@ -130,26 +136,18 @@ const AdminReportPage: React.FC = () => {
       }
       setFilteredRequests(requestsData || []);
 
-      // Fetch summary data using Supabase RPCs (assumed to exist)
-      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary', {
-          _customer_name: selectedCustomer === 'all' ? null : selectedCustomer,
-          _month: selectedMonth === 'all' ? null : selectedMonth,
-          _status: status === 'all' ? null : status
-      });
+      // Fetch summary data using Supabase RPCs
+      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary');
       if (statusSummaryError) {
           throw statusSummaryError;
       }
       setStatusData(statusSummaryData || []);
 
-      const { data: monthlySummaryData, error: monthlySummaryError } = await supabase.rpc('get_monthly_summary', {
-          _customer_name: selectedCustomer === 'all' ? null : selectedCustomer,
-          _month: selectedMonth === 'all' ? null : selectedMonth,
-          _status: status === 'all' ? null : status
-      });
+      const { data: monthlySummaryData, error: monthlySummaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
       if (monthlySummaryError) {
           throw monthlySummaryError;
       }
-      setMonthlyData(monthlySummaryData || []);
+      setMonthlyData(monthlySummaryData as MonthlySummary[] || []);
 
     } catch (err: any) {
       console.error("Supabase apply filters error", err);
@@ -157,7 +155,7 @@ const AdminReportPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedCustomer, selectedMonth, status]);
+  }, [selectedCustomer, selectedMonth, status, currentYear]);
 
   // Initial data fetch on component mount
   useEffect(() => {
@@ -166,12 +164,50 @@ const AdminReportPage: React.FC = () => {
 
   const handleExportExcel = async () => {
     try {
-        // Excel export requires a server-side function (e.g., Supabase Edge Function or RPC)
-        // that can generate and return a file. This cannot be done directly via Supabase client.
-        throw new Error('Excel 내보내기 기능은 Supabase Edge Function 또는 RPC를 통해 서버 측에서 구현되어야 합니다.');
+        setLoading(true);
+        setError('');
+
+        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
+        if (!supabaseUrl) {
+            throw new Error("Supabase URL is not defined in environment variables.");
+        }
+        // Construct the URL for the Edge Function. Assuming 'export-excel' is the function name.
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/export-excel`;
+
+        const payload = {
+            customerName: selectedCustomer === 'all' ? null : selectedCustomer,
+            month: selectedMonth === 'all' ? null : parseInt(selectedMonth.split('-')[1]), // Extract month number
+            status: status === 'all' ? null : status
+        };
+
+        const response = await fetch(edgeFunctionUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`, // Use ANON_KEY for edge functions
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `report-${selectedCustomer}-${selectedMonth}-${status}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
     } catch (err: any) {
         console.error("Failed to export Excel", err);
         setError(err.message || 'Excel 다운로드 중 오류가 발생했습니다.');
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -189,7 +225,7 @@ const AdminReportPage: React.FC = () => {
     labels: (monthlyData || []).map(d => d.month),
     datasets: [{
       label: '월별 접수 건수',
-      data: (monthlyData || []).map(d => d.count),
+      data: (monthlyData || []).map(d => d.total_requests), // total_requests 사용
       backgroundColor: 'rgba(54, 162, 235, 0.6)',
       borderColor: 'rgba(54, 162, 235, 1)',
       borderWidth: 1,
