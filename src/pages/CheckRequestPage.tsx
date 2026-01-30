@@ -64,8 +64,8 @@ const CheckRequestPage: React.FC = () => {
       // Assuming a Supabase RPC function `authenticate_and_get_requests` exists
       // that takes username and password, authenticates, and returns associated requests.
       const { data, error: rpcError } = await supabase.rpc('authenticate_and_get_requests', {
-        user_name_param: name, // Parameters must match RPC function's argument names
-        password_param: pw,
+        _user_name: name, // Parameters must match RPC function's argument names
+        _password: pw,
       });
 
       if (rpcError) {
@@ -123,7 +123,7 @@ const CheckRequestPage: React.FC = () => {
       // that takes request_id and password, authenticates, and deletes the request.
       const { error: rpcError } = await supabase.rpc('delete_request_with_password', {
         request_id: selectedRequest.id,
-        password_param: deletePassword, // Parameter name must match RPC function
+        _password: deletePassword, // Parameter name must match RPC function
       });
 
       if (rpcError) {
