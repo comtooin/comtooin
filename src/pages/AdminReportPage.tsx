@@ -137,7 +137,7 @@ const AdminReportPage: React.FC = () => {
       setFilteredRequests(requestsData || []);
 
       // Fetch summary data using Supabase RPCs
-      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary');
+      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary', {});
       if (statusSummaryError) {
           throw statusSummaryError;
       }
