@@ -203,7 +203,7 @@ const CheckRequestPage: React.FC = () => {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6">접수번호: {req.id}</Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Chip label={req.status} color={getStatusChipColor(req.status)} />
+                      <Chip label={req.status === 'pending' ? '접수완료' : req.status} color={getStatusChipColor(req.status)} />
                       <Button variant="outlined" size="small" onClick={() => handleOpenModal(req)}>
                         상세보기
                       </Button>
@@ -233,7 +233,7 @@ const CheckRequestPage: React.FC = () => {
             <DialogTitle>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 접수 상세내용 (접수번호: {selectedRequest.id})
-                <Chip label={selectedRequest.status} color={getStatusChipColor(selectedRequest.status)} />
+                <Chip label={selectedRequest.status === 'pending' ? '접수완료' : selectedRequest.status} color={getStatusChipColor(selectedRequest.status)} />
               </Box>
             </DialogTitle>
             <DialogContent dividers>
