@@ -11,7 +11,7 @@ import { Dashboard as DashboardIcon } from '@mui/icons-material';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { Helmet } from 'react-helmet-async';
-import { supabase, assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 
 // Define types for our data
 interface IComment {
@@ -257,7 +257,7 @@ const AdminDashboardPage: React.FC = () => {
               <TableCell>{request.user_name}</TableCell>
               <TableCell>{stripHtmlTags(request.content).substring(0, 50)}...</TableCell>
               <TableCell>
-                <Chip label={request.status} color={getStatusChipColor(request.status)} size="small" />
+                <Chip label={request.status === 'pending' ? '접수완료' : request.status} color={getStatusChipColor(request.status)} size="small" />
               </TableCell>
               <TableCell>
                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -319,7 +319,7 @@ const AdminDashboardPage: React.FC = () => {
             <DialogTitle>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 접수 상세내용 (접수번호: {selectedRequest.id})
-                <Chip label={selectedRequest.status} color={getStatusChipColor(selectedRequest.status)} />
+                <Chip label={selectedRequest.status === 'pending' ? '접수완료' : selectedRequest.status} color={getStatusChipColor(selectedRequest.status)} />
               </Box>
             </DialogTitle>
             <DialogContent dividers>
@@ -339,9 +339,8 @@ const AdminDashboardPage: React.FC = () => {
                   <Grid container spacing={2} sx={{ mt: 1 }}>
                     {selectedRequest.images.map((image, index) => (
                       <Grid item key={index}>
-                        {/* 수정됨: baseURL 사용 */}
-                        <a href={`${assetBaseURL}/uploads/${image}`} target="_blank" rel="noopener noreferrer">
-                          <img src={`${assetBaseURL}/uploads/${image}`} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
+                        <a href={image} target="_blank" rel="noopener noreferrer">
+                          <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
                         </a>
                       </Grid>
                     ))}
