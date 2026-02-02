@@ -280,7 +280,7 @@ const AdminDashboardPage: React.FC = () => {
             button
             onClick={() => handleOpenDetailModal(request)}
             secondaryAction={
-              <Chip label={request.status} color={getStatusChipColor(request.status)} size="small" />
+              <Chip label={request.status === 'pending' ? '접수완료' : request.status} color={getStatusChipColor(request.status)} size="small" />
             }
           >
             <ListItemText
