@@ -4,7 +4,7 @@ import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
   Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField
 } from '@mui/material';
-import { supabase, assetBaseURL } from '../api';
+import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 // Define types for our data (can be moved to a shared types file later)
