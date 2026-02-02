@@ -176,7 +176,7 @@ const AdminReportPage: React.FC = () => {
 
         const payload = {
             customerName: selectedCustomer === 'all' ? null : selectedCustomer,
-            month: selectedMonth === 'all' ? null : parseInt(selectedMonth.split('-')[1]), // Extract month number
+            month: selectedMonth === 'all' ? null : selectedMonth, // Pass selectedMonth as string 'YYYY-MM'
             status: status === 'all' ? null : status
         };
 
