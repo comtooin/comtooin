@@ -121,8 +121,7 @@ const SubmissionDetailPage: React.FC = () => {
           접수 상세내용 (접수번호: {request.id})
         </Typography>
         
-        const displayStatus = request.status === 'pending' ? '접수완료' : request.status;
-        <Chip label={displayStatus} color={getStatusChipColor(request.status)} sx={{ mb: 2 }} />
+        <Chip label={request.status === 'pending' ? '접수완료' : request.status} color={getStatusChipColor(request.status)} sx={{ mb: 2 }} />
         <Typography gutterBottom><b>고객사명:</b> {request.customer_name}</Typography>
         <Typography gutterBottom><b>사용자명:</b> {request.user_name}</Typography>
         <Typography gutterBottom><b>접수일시:</b> {new Date(request.created_at).toLocaleString()}</Typography>
