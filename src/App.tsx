@@ -15,15 +15,15 @@ import NavBar from './components/NavBar';
 import AdminRoute from './components/AdminRoute';
 import AdminGuideListPage from './pages/AdminGuideListPage';
 
-const darkTheme = createTheme({
+const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
   },
 });
 
 function App() {
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
         <NavBar />
