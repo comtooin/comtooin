@@ -72,6 +72,32 @@ const AdminDashboardPage: React.FC = () => {
     }
 
     try {
+      // 1. Supabase Storage에서 첨부 파일 삭제
+      if (requestToDelete.images && requestToDelete.images.length > 0) {
+        const filePaths = requestToDelete.images.map(imageUrl => {
+          // 이미지 URL에서 스토리지 경로 추출
+          // 예: https://<project_id>.supabase.co/storage/v1/object/public/uploads/folder/image.jpg
+          const publicPathIndex = imageUrl.indexOf('/public/uploads/');
+          if (publicPathIndex !== -1) {
+            return imageUrl.substring(publicPathIndex + '/public/uploads/'.length);
+          }
+          return null; // 유효하지 않은 URL은 무시
+        }).filter((path): path is string => path !== null); // null 값 필터링
+
+        if (filePaths.length > 0) {
+          const { error: storageError } = await supabase.storage
+            .from('uploads') // 버킷 이름이 'uploads'라고 가정
+            .remove(filePaths);
+
+          if (storageError) {
+            console.error("Failed to delete files from storage:", storageError);
+            // 파일 삭제 실패 시에도 요청 삭제는 진행하도록 하되, 사용자에게 알림은 줄 수 있음
+            alert(`첨부 파일 삭제 중 오류가 발생했습니다: ${storageError.message}. 요청 자체는 삭제를 시도합니다.`);
+          }
+        }
+      }
+
+      // 2. 데이터베이스에서 요청 삭제
       const { error: deleteError } = await supabase
         .from('requests')
         .delete()
@@ -86,7 +112,7 @@ const AdminDashboardPage: React.FC = () => {
       setRequestToDelete(null);
       alert('접수 건이 성공적으로 삭제되었습니다.');
     } catch (err: any) {
-      console.error("Failed to delete request", err);
+      console.error("Failed to delete request or files", err);
       // Supabase 에러 객체에서 메시지를 가져오거나 일반 메시지 사용
       alert(err.message || '삭제 중 오류가 발생했습니다.');
     }

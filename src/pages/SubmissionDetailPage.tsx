@@ -167,10 +167,10 @@ const SubmissionDetailPage: React.FC = () => {
         )}
 
         <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-            <Button variant="contained" color="primary" onClick={() => navigate(`/edit-request/${id}`)} disabled={request.status !== '접수완료'}>
+            <Button variant="contained" color="primary" onClick={() => navigate(`/edit-request/${id}`)} disabled={request.status !== 'pending'}>
                 수정하기
             </Button>
-            <Button variant="contained" color="secondary" onClick={() => setOpenDeleteDialog(true)} disabled={request.status !== '접수완료'}>
+            <Button variant="contained" color="secondary" onClick={() => setOpenDeleteDialog(true)} disabled={request.status !== 'pending'}>
                 이 접수 건 삭제하기
             </Button>
             <Button variant="contained" onClick={() => navigate('/')}>
