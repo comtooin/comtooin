@@ -4,7 +4,7 @@ import {
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab
 } from '@mui/material';
 import { BarChart as BarChartIcon } from '@mui/icons-material';
-import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
+import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
@@ -14,11 +14,24 @@ import {
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-// 삭제됨: const API_URL = ...
-
 const stripHtmlTags = (html: string) => {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   return doc.body.textContent || "";
+};
+
+/**
+ * [추가] 상태 영문값을 한글로 변환하는 함수
+ */
+const getStatusLabel = (status: string) => {
+  const labels: Record<string, string> = {
+    'pending': '접수완료',
+    'processing': '처리중',
+    'completed': '처리완료',
+    '접수완료': '접수완료',
+    '처리중': '처리중',
+    '처리완료': '처리완료'
+  };
+  return labels[status] || status;
 };
 
 // --- TYPE DEFINITIONS ---
@@ -50,58 +63,49 @@ const AdminReportPage: React.FC = () => {
   const [error, setError] = useState('');
   const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
 
-
   // Filter states
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [status, setStatus] = useState('all');
-  const currentYear = new Date().getFullYear(); // 현재 연도 추가
+  const currentYear = new Date().getFullYear();
 
   // Tab and Chart states
   const [tabValue, setTabValue] = useState(0);
   const [statusData, setStatusData] = useState<any[]>([]);
-  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]); // 타입 변경
+  const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
   };
 
-  // Fetch data for filters (runs once)
-    const fetchInitialData = useCallback(async () => {
-        try {
-            const { data: rawData, error: customersError } = await supabase
-                .from('requests')
-                .select('customer_name')
-                .neq('customer_name', null);
+  const fetchInitialData = useCallback(async () => {
+      try {
+          const { data: rawData, error: customersError } = await supabase
+              .from('requests')
+              .select('customer_name')
+              .neq('customer_name', null);
 
-            if (customersError) {
-                throw customersError;
-            }
-            // 데이터를 가져온 후 JavaScript에서 중복 제거
-            const customersData = rawData
-                ? Array.from(new Set(rawData.map(item => item.customer_name))).map(name => ({ customer_name: name }))
-                : [];
-            setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
+          if (customersError) throw customersError;
+          
+          const customersData = rawData
+              ? Array.from(new Set(rawData.map(item => item.customer_name))).map(name => ({ customer_name: name }))
+              : [];
+          setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
 
-            // Fetch monthly summary using a Supabase RPC
-            // RPC 함수에 target_year 매개변수 전달
-            const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
+          const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
+          if (summaryError) throw summaryError;
+          
+          setAllMonths((summaryData || []).map((m: MonthlySummary) => m.month));
 
-            if (summaryError) {
-                throw summaryError;
-            }
-            // summaryData가 null일 경우 빈 배열로 처리
-            setAllMonths((summaryData || []).map((m: MonthlySummary) => m.month));
-
-        } catch (err: any) {
-            console.error("Failed to fetch initial data", err);
-            setError(err.message || '필터 옵션을 불러오는 중 오류가 발생했습니다.');
-        } finally {
-            setLoading(false); // Set loading to false only after initial data is fetched
-        }
-    }, [currentYear]); // currentYear를 의존성 배열에 추가
+      } catch (err: any) {
+          console.error("Failed to fetch initial data", err);
+          setError(err.message || '필터 옵션을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+          setLoading(false);
+      }
+  }, [currentYear]);
 
   useEffect(() => {
     fetchInitialData();
@@ -118,10 +122,13 @@ const AdminReportPage: React.FC = () => {
         requestsQuery = requestsQuery.eq('customer_name', selectedCustomer);
       }
       if (status !== 'all') {
-        requestsQuery = requestsQuery.eq('status', status);
+        // 필터링할 때도 한글/영문 대응을 위해 처리 (DB가 영문 기준이라면 영문으로 변환 필요할 수 있음)
+        const dbStatus = status === '접수완료' ? 'pending' :
+                         status === '처리중' ? 'processing' :
+                         status === '처리완료' ? 'completed' : status;
+        requestsQuery = requestsQuery.eq('status', dbStatus);
       }
       if (selectedMonth !== 'all') {
-        // Assuming selectedMonth is in 'YYYY-MM' format
         const year = selectedMonth.split('-')[0];
         const month = selectedMonth.split('-')[1];
         const startDate = `${year}-${month}-01T00:00:00.000Z`;
@@ -131,22 +138,15 @@ const AdminReportPage: React.FC = () => {
       requestsQuery = requestsQuery.order('created_at', { ascending: false });
 
       const { data: requestsData, error: requestsError } = await requestsQuery;
-      if (requestsError) {
-        throw requestsError;
-      }
+      if (requestsError) throw requestsError;
       setFilteredRequests(requestsData || []);
 
-      // Fetch summary data using Supabase RPCs
       const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary', {});
-      if (statusSummaryError) {
-          throw statusSummaryError;
-      }
+      if (statusSummaryError) throw statusSummaryError;
       setStatusData(statusSummaryData || []);
 
       const { data: monthlySummaryData, error: monthlySummaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
-      if (monthlySummaryError) {
-          throw monthlySummaryError;
-      }
+      if (monthlySummaryError) throw monthlySummaryError;
       setMonthlyData(monthlySummaryData as MonthlySummary[] || []);
 
     } catch (err: any) {
@@ -157,7 +157,6 @@ const AdminReportPage: React.FC = () => {
     }
   }, [selectedCustomer, selectedMonth, status, currentYear]);
 
-  // Initial data fetch on component mount
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
@@ -166,33 +165,26 @@ const AdminReportPage: React.FC = () => {
     try {
         setLoading(true);
         setError('');
-
         const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        if (!supabaseUrl) {
-            throw new Error("Supabase URL is not defined in environment variables.");
-        }
-        // Construct the URL for the Edge Function. Assuming 'export-excel' is the function name.
+        if (!supabaseUrl) throw new Error("Supabase URL is not defined.");
+        
         const edgeFunctionUrl = `${supabaseUrl}/functions/v1/export-excel`;
-
         const payload = {
             customerName: selectedCustomer === 'all' ? null : selectedCustomer,
-            month: selectedMonth === 'all' ? null : selectedMonth, // Pass selectedMonth as string 'YYYY-MM'
-            status: status === 'all' ? null : status
+            month: selectedMonth === 'all' ? null : selectedMonth,
+            status: status === 'all' ? null : (status === '접수완료' ? 'pending' : status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status)
         };
 
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`, // Use ANON_KEY for edge functions
+                'Authorization': `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY}`,
             },
             body: JSON.stringify(payload),
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Excel export failed`);
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
@@ -204,20 +196,18 @@ const AdminReportPage: React.FC = () => {
         a.remove();
         window.URL.revokeObjectURL(url);
     } catch (err: any) {
-        console.error("Failed to export Excel", err);
         setError(err.message || 'Excel 다운로드 중 오류가 발생했습니다.');
     } finally {
         setLoading(false);
     }
   };
 
-  // --- CHART DATA AND OPTIONS ---
+  // --- CHART DATA ---
   const pieChartData = {
-    labels: (statusData || []).map(d => d.status),
+    labels: (statusData || []).map(d => getStatusLabel(d.status)), // [수정] 한글 변환 적용
     datasets: [{
       data: (statusData || []).map(d => d.count),
       backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF'],
-      hoverBackgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF'],
     }],
   };
 
@@ -225,7 +215,7 @@ const AdminReportPage: React.FC = () => {
     labels: (monthlyData || []).map(d => d.month),
     datasets: [{
       label: '월별 접수 건수',
-      data: (monthlyData || []).map(d => d.total_requests), // total_requests 사용
+      data: (monthlyData || []).map(d => d.total_requests),
       backgroundColor: 'rgba(54, 162, 235, 0.6)',
       borderColor: 'rgba(54, 162, 235, 1)',
       borderWidth: 1,
@@ -273,19 +263,27 @@ const AdminReportPage: React.FC = () => {
 
       {/* --- TABS --- */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={tabValue} onChange={handleTabChange} aria-label="report tabs">
+        <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="상세 리스트" />
           <Tab label="요약 그래프" />
         </Tabs>
       </Box>
 
-      {/* --- TAB PANELS --- */}
       {loading ? <CircularProgress sx={{mt: 4}} /> : error ? <Alert severity="error" sx={{mt: 4}}>{error}</Alert> : (
         <Box sx={{ pt: 3 }}>
           {tabValue === 0 && (
             <TableContainer component={Paper}>
               <Table stickyHeader>
-                <TableHead><TableRow><TableCell>ID</TableCell><TableCell>접수일시</TableCell><TableCell>고객사명</TableCell><TableCell>사용자명</TableCell><TableCell>상태</TableCell><TableCell>처리내용</TableCell></TableRow></TableHead>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>ID</TableCell>
+                    <TableCell>접수일시</TableCell>
+                    <TableCell>고객사명</TableCell>
+                    <TableCell>사용자명</TableCell>
+                    <TableCell>상태</TableCell>
+                    <TableCell>처리내용</TableCell>
+                  </TableRow>
+                </TableHead>
                 <TableBody>
                   {(filteredRequests || []).length > 0 ? filteredRequests.map((request) => (
                     <TableRow key={request.id} hover>
@@ -293,7 +291,10 @@ const AdminReportPage: React.FC = () => {
                       <TableCell>{new Date(request.created_at).toLocaleString()}</TableCell>
                       <TableCell>{request.customer_name}</TableCell>
                       <TableCell>{request.user_name}</TableCell>
-                      <TableCell><Chip label={request.status} size="small" /></TableCell>
+                      <TableCell>
+                        {/* [수정] Chip label에 한글 변환 함수 적용 */}
+                        <Chip label={getStatusLabel(request.status)} size="small" />
+                      </TableCell>
                       <TableCell>{(request.comments || []).length > 0 ? stripHtmlTags(request.comments.map(c => c.comment).join(', ')) : ''}</TableCell>
                     </TableRow>
                   )) : (

@@ -333,11 +333,13 @@ const AdminDashboardPage: React.FC = () => {
                 <div dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
               </Paper>
 
-              {selectedRequest.images.length > 0 && (
+              {(selectedRequest.images?.length || 0) > 0 && (
                 <>
                   <Typography variant="h6" sx={{ mt: 2 }}>첨부 이미지</Typography>
                   <Grid container spacing={2} sx={{ mt: 1 }}>
-                    {selectedRequest.images.map((image, index) => (
+                    {selectedRequest.images
+                      ?.filter(image => typeof image === 'string' && image.trim() !== '')
+                      .map((image, index) => (
                       <Grid item key={index}>
                         <a href={image} target="_blank" rel="noopener noreferrer">
                           <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
