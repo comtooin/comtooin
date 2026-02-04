@@ -31,7 +31,7 @@ const AdminGuideListPage: React.FC = () => {
   const fetchGuides = async () => {
     setLoading(true);
     try {
-      const { data, error: fetchError } = await supabase.from('guide').select('*');
+      const { data, error: fetchError } = await supabase.from('guides').select('*');
       if (fetchError) {
         throw fetchError;
       }
@@ -52,7 +52,7 @@ const AdminGuideListPage: React.FC = () => {
 
     try {
       const { error: deleteError } = await supabase
-        .from('guide')
+        .from('guides')
         .delete()
         .eq('id', id);
 

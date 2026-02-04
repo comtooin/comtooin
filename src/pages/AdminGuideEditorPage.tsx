@@ -29,7 +29,7 @@ const AdminGuideEditorPage: React.FC = () => {
         try {
           // 수정됨: api 모듈 사용
           const { data, error: fetchError } = await supabase
-            .from('guide')
+            .from('guides')
             .select('*')
             .eq('id', id)
             .single(); // Assuming 'id' is unique
@@ -60,7 +60,7 @@ const AdminGuideEditorPage: React.FC = () => {
     try {
       if (isEditMode) {
         const { error: updateError } = await supabase
-          .from('guide')
+          .from('guides')
           .update(guideData)
           .eq('id', id);
 
@@ -74,7 +74,7 @@ const AdminGuideEditorPage: React.FC = () => {
                             if (!session?.user?.id) throw new Error('로그인 정보가 없습니다.');
                 
                             const { error: insertError } = await supabase
-                              .from('guide')
+                              .from('guides')
                               .insert({ ...guideData, author_user_id: session.user.id }); // author_user_id 추가
                       
                   if (insertError) {
