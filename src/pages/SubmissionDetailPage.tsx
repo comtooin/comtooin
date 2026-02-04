@@ -67,24 +67,53 @@ const SubmissionDetailPage: React.FC = () => {
   }, [id]);
 
   const handleDeleteConfirm = async () => {
-    if (!id) return;
-    setDeleteError('');
+    if (!id) return; // Keep this check
     try {
-      // Assuming a Supabase RPC function `delete_request_with_password` exists
-      // that takes request_id and password, authenticates, and deletes the request.
-      const { error: rpcError } = await supabase.rpc('delete_request_with_password', {
-        request_id: id,
-        password_param: deletePassword, // Parameter name must match RPC function
-      });
+        setDeleteError('');
+        
+        // 1. 삭제 전, 현재 접수건에 연결된 이미지 경로들을 미리 추출합니다.
+        // request.images는 ["https://.../uploads/folder/file.png", ...] 형태
+        const imagesToRemove = request?.images?.map((url: string) => { // Use 'request' instead of 'selectedRequest'
+            return url.split('/uploads/').pop(); // 'folder/file.png' 부분만 추출
+        }).filter(Boolean) as string[];
 
-      if (rpcError) {
-        throw rpcError;
-      }
-      alert('접수 건이 성공적으로 삭제되었습니다.');
-      navigate('/');
+        // 2. Supabase RPC 호출 (DB 레코드 삭제)
+        const { data: success, error: deleteError } = await supabase.rpc(
+            'delete_request_with_password',
+            {
+                request_id: id,
+                password_param: deletePassword
+            }
+        );
+
+        if (deleteError) throw deleteError;
+        // The user's code has `if (!success)`, but the RPC might return data as null for success,
+        // or a boolean true. Assuming `error` being null implies success,
+        // or `data` contains a success flag from the RPC.
+        // For now, I'll keep `if (!success)` as provided, assuming `data` is a boolean.
+        if (success === false) { // Explicitly check for false if success can be null/undefined or a more complex object
+            setDeleteError('비밀번호가 일치하지 않습니다.');
+            return;
+        }
+
+        // 3. DB 삭제가 성공했다면, 이제 실제 Storage 파일을 지웁니다.
+        if (imagesToRemove && imagesToRemove.length > 0) {
+            const { error: storageError } = await supabase.storage
+                .from('uploads')
+                .remove(imagesToRemove);
+
+            if (storageError) {
+                console.error('Storage 삭제 실패 (DB는 이미 삭제됨):', storageError);
+            }
+        }
+
+        alert('성공적으로 삭제되었습니다.');
+        setOpenDeleteDialog(false);
+        navigate('/'); // 메인으로 이동
+        
     } catch (err: any) {
-      console.error('Supabase RPC error:', err);
-      setDeleteError(err.message || '삭제 중 오류가 발생했습니다. 비밀번호를 확인해주세요.');
+        console.error('Delete error:', err);
+        setDeleteError(err.message || '삭제 중 오류가 발생했습니다.');
     }
   };
 
