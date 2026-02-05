@@ -1,0 +1,1 @@
+ALTER TABLE public.guides ADD COLUMN author_user_id UUID REFERENCES auth.users(id);

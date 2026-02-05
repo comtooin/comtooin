@@ -1,0 +1,1 @@
+ALTER TABLE public.comments ADD COLUMN user_id UUID REFERENCES auth.users(id);
