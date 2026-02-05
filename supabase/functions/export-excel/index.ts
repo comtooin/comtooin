@@ -95,7 +95,7 @@ serve(async (req: Request) => {
       headers: { 
         ...corsHeaders, 
         "Content-Type": "text/csv;charset=utf-8;", 
-        "Content-Disposition": `attachment; filename=${encodeURIComponent(fileName)}`
+        "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`
       }
     });
   } catch (err: any) {
