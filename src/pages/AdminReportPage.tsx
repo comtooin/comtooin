@@ -191,38 +191,42 @@ const AdminReportPage: React.FC = () => {
 
         if (!response.ok) throw new Error(`Excel export failed`);
 
-        // --- ⭐ 파일명 추출 로직 (가장 강력한 버전으로 교체) ---
-        let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`; // 기본값
+// --- ⭐ 파일명 추출 로직 (최종판: filename*= 대응) ---
+let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`; 
 
-        try {
-            const contentDisposition = response.headers.get('Content-Disposition');
-            console.log("받은 헤더:", contentDisposition); // 디버깅용
+try {
+    const contentDisposition = response.headers.get('Content-Disposition');
+    console.log("받은 헤더:", contentDisposition);
 
-            if (contentDisposition && contentDisposition.includes('filename=')) {
-                // filename=" 또는 filename= 이후의 문자열 추출
-                const parts = contentDisposition.split('filename=');
-                if (parts.length > 1) {
-                    let extractedName = parts[1].split(';')[0].replace(/['"]/g, '');
-                    
-                    if (extractedName) {
-                        actualFileName = decodeURIComponent(extractedName);
-                    }
-                }
+    if (contentDisposition) {
+        // 1. filename*=UTF-8'' 형식이 있는지 확인 (현재 사용자님의 상황)
+        if (contentDisposition.includes("filename*=")) {
+            const parts = contentDisposition.split("filename*=UTF-8''");
+            if (parts.length > 1) {
+                actualFileName = decodeURIComponent(parts[1].split(';')[0]);
             }
-        } catch (e) {
-            console.error("파일명 추출 중 에러:", e);
+        } 
+        // 2. 일반 filename= 형식이 있는지 확인 (백업)
+        else if (contentDisposition.includes("filename=")) {
+            const parts = contentDisposition.split('filename=');
+            let name = parts[1].split(';')[0].replace(/['"]/g, '');
+            actualFileName = decodeURIComponent(name);
         }
+    }
+} catch (e) {
+    console.error("파일명 추출 실패:", e);
+}
 
-        // 다운로드 실행
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = actualFileName; 
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        window.URL.revokeObjectURL(url);
+// 다운로드 처리
+const blob = await response.blob();
+const url = window.URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = actualFileName; 
+document.body.appendChild(a);
+a.click();
+a.remove();
+window.URL.revokeObjectURL(url);
     } catch (err: any) {
         setError(err.message || 'Excel 다운로드 중 오류가 발생했습니다.');
     } finally {
