@@ -89,6 +89,7 @@ serve(async (req: Request) => {
     const safeCustomerName = (!customerName || customerName === 'all') ? '전체고객사' : customerName;
     const safeMonth = (!month || month === 'all') ? '전체기간' : month;
     const fileName = `컴투인_기술지원리포트_${safeCustomerName}_${safeMonth}.csv`;
+    console.log("Generated fileName:", fileName);
 
     return new Response(csv, {
       headers: { 
