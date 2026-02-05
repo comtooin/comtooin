@@ -191,16 +191,18 @@ const AdminReportPage: React.FC = () => {
 
         if (!response.ok) throw new Error(`Excel export failed`);
 
-        // --- ⭐ 파일명 추출 로직 개선 ---
-        let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`;
+        // --- ⭐ 파일명 추출 로직 (더 확실한 버전) ---
+        let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`; // 기본값
+
         const contentDisposition = response.headers.get('Content-Disposition');
-        
         if (contentDisposition) {
-            // filename= 또는 filename*= 모두 대응 가능한 정규식
-            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
-            const matches = filenameRegex.exec(contentDisposition);
-            if (matches && matches[1]) {
-                actualFileName = decodeURIComponent(matches[1].replace(/['"]/g, '').replace('UTF-8\'\'', ''));
+            // 1. "filename=" 뒤의 값을 찾음
+            const parts = contentDisposition.split('filename=');
+            if (parts.length > 1) {
+                let name = parts[1].split(';')[0];
+                // 2. 따옴표나 인코딩된 문자 정리
+                name = name.replace(/['"]/g, ''); 
+                actualFileName = decodeURIComponent(name);
             }
         }
 
