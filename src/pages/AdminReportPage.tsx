@@ -193,11 +193,27 @@ const AdminReportPage: React.FC = () => {
         if (!response.ok) throw new Error(`Excel export failed`);
 
         const blob = await response.blob();
+
+        // Content-Disposition 헤더에서 파일명 추출
+        let actualFileName = `report-${selectedCustomer}-${selectedMonth}-${status}.csv`; // 기본 fallback 파일명
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+            const filenameRegex = /filename\*=(?:UTF-8'')?([^;]+)/i;
+            const matches = filenameRegex.exec(contentDisposition);
+            if (matches && matches[1]) {
+                try {
+                    // URL 디코딩 및 '+' 문자를 공백으로 처리 (URL 인코딩에서 공백은 '+' 또는 %20)
+                    actualFileName = decodeURIComponent(matches[1].replace(/\+/g, ' '));
+                } catch (e) {
+                    console.error("Error decoding filename from Content-Disposition", e);
+                }
+            }
+        }
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-
-        document.body.appendChild(a);
+        a.download = actualFileName; // 추출된 파일명 사용
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
