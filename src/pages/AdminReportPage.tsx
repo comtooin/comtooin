@@ -168,52 +168,48 @@ const AdminReportPage: React.FC = () => {
         const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
         if (!supabaseUrl) throw new Error("Supabase URL is not defined.");
         
-        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/export-excel`;
+        // [수정] Edge Function 경로 확인 (export-excel 인지 get-admin-report 인지 확인 필요)
+        const edgeFunctionUrl = `${supabaseUrl}/functions/v1/export-excel`; 
+        
         const payload = {
-            customerName: selectedCustomer === 'all' ? null : selectedCustomer,
-            month: selectedMonth === 'all' ? null : selectedMonth,
-            status: status === 'all' ? null : (status === '접수완료' ? 'pending' : status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status)
+            customerName: selectedCustomer,
+            month: selectedMonth,
+            status: status === 'all' ? 'all' : (status === '접수완료' ? 'pending' : status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status)
         };
 
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !session) {
-            throw new Error("User not authenticated or session expired. Please log in again.");
-        }
-        const accessToken = session.access_token;
+        const { data: { session } } = await supabase.auth.getSession();
+        const accessToken = session?.access_token;
 
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`, // 사용자의 JWT 토큰 사용
+                'Authorization': `Bearer ${accessToken}`,
             },
             body: JSON.stringify(payload),
         });
 
         if (!response.ok) throw new Error(`Excel export failed`);
 
-        const blob = await response.blob();
-
-        // Content-Disposition 헤더에서 파일명 추출
-        let actualFileName = `report-${selectedCustomer}-${selectedMonth}-${status}.csv`; // 기본 fallback 파일명
+        // --- ⭐ 파일명 추출 로직 개선 ---
+        let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`;
         const contentDisposition = response.headers.get('Content-Disposition');
+        
         if (contentDisposition) {
-            const filenameRegex = /filename\*=(?:UTF-8'')?([^;]+)/i;
+            // filename= 또는 filename*= 모두 대응 가능한 정규식
+            const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
             const matches = filenameRegex.exec(contentDisposition);
             if (matches && matches[1]) {
-                try {
-                    // URL 디코딩 및 '+' 문자를 공백으로 처리 (URL 인코딩에서 공백은 '+' 또는 %20)
-                    actualFileName = decodeURIComponent(matches[1].replace(/\+/g, ' '));
-                } catch (e) {
-                    console.error("Error decoding filename from Content-Disposition", e);
-                }
+                actualFileName = decodeURIComponent(matches[1].replace(/['"]/g, '').replace('UTF-8\'\'', ''));
             }
         }
 
+        const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = actualFileName; // 추출된 파일명 사용
+        a.download = actualFileName; 
+        document.body.appendChild(a); // DOM에 추가해야 안전함
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
