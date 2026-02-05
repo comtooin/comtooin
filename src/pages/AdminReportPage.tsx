@@ -191,27 +191,35 @@ const AdminReportPage: React.FC = () => {
 
         if (!response.ok) throw new Error(`Excel export failed`);
 
-        // --- ⭐ 파일명 추출 로직 (더 확실한 버전) ---
+        // --- ⭐ 파일명 추출 로직 (가장 강력한 버전으로 교체) ---
         let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`; // 기본값
 
-        const contentDisposition = response.headers.get('Content-Disposition');
-        if (contentDisposition) {
-            // 1. "filename=" 뒤의 값을 찾음
-            const parts = contentDisposition.split('filename=');
-            if (parts.length > 1) {
-                let name = parts[1].split(';')[0];
-                // 2. 따옴표나 인코딩된 문자 정리
-                name = name.replace(/['"]/g, ''); 
-                actualFileName = decodeURIComponent(name);
+        try {
+            const contentDisposition = response.headers.get('Content-Disposition');
+            console.log("받은 헤더:", contentDisposition); // 디버깅용
+
+            if (contentDisposition && contentDisposition.includes('filename=')) {
+                // filename=" 또는 filename= 이후의 문자열 추출
+                const parts = contentDisposition.split('filename=');
+                if (parts.length > 1) {
+                    let extractedName = parts[1].split(';')[0].replace(/['"]/g, '');
+                    
+                    if (extractedName) {
+                        actualFileName = decodeURIComponent(extractedName);
+                    }
+                }
             }
+        } catch (e) {
+            console.error("파일명 추출 중 에러:", e);
         }
 
+        // 다운로드 실행
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = actualFileName; 
-        document.body.appendChild(a); // DOM에 추가해야 안전함
+        document.body.appendChild(a);
         a.click();
         a.remove();
         window.URL.revokeObjectURL(url);
