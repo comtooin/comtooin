@@ -18,6 +18,12 @@ import AdminGuideListPage from './pages/AdminGuideListPage';
 const theme = createTheme({
   palette: {
     mode: 'light',
+    primary: {
+      main: '#607d8b', // Material Blue Grey 500
+    },
+    secondary: {
+      main: '#ffab91', // Material Deep Orange 200
+    },
   },
 });
 
