@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
-  Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField
+  Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Stack
 } from '@mui/material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
@@ -27,7 +27,23 @@ interface IRequest {
   comments: IComment[];
 }
 
-// 삭제됨: const API_URL = ...
+const getStatusLabel = (status: string): string => {
+    switch (status) {
+        case 'pending': return '접수완료';
+        case 'processing': return '처리중';
+        case 'completed': return '처리완료';
+        default: return status;
+    }
+};
+
+const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' => {
+    switch (status) {
+        case 'completed': return 'success';
+        case 'processing': return 'warning';
+        case 'pending': return 'info';
+        default: return 'info';
+    }
+};
 
 const SubmissionDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -117,16 +133,12 @@ const SubmissionDetailPage: React.FC = () => {
     }
   };
 
-  const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' => {
-    switch (status) {
-        case '처리완료': return 'success';
-        case '처리중': return 'warning';
-        default: return 'info';
-    }
-  };
-
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
@@ -142,7 +154,7 @@ const SubmissionDetailPage: React.FC = () => {
       <Helmet>
         <title>{`접수 상세내용 (접수번호: ${request.id})`}</title>
       </Helmet>
-      <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 4 }}> {/* Removed elevation, adjusted padding */}
         <Typography variant="h4" component="h1" gutterBottom>
           ✅ 정상적으로 접수되었습니다.
         </Typography>
@@ -150,25 +162,29 @@ const SubmissionDetailPage: React.FC = () => {
           접수 상세내용 (접수번호: {request.id})
         </Typography>
         
-        <Chip label={request.status === 'pending' ? '접수완료' : request.status} color={getStatusChipColor(request.status)} sx={{ mb: 2 }} />
-        <Typography gutterBottom><b>고객사명:</b> {request.customer_name}</Typography>
-        <Typography gutterBottom><b>사용자명:</b> {request.user_name}</Typography>
-        <Typography gutterBottom><b>접수일시:</b> {new Date(request.created_at).toLocaleString()}</Typography>
-        {request.email && <Typography gutterBottom><b>이메일:</b> {request.email}</Typography>}
+        <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} sx={{ mb: 2 }} />
+        <Stack spacing={1}> {/* Use Stack for consistent spacing */}
+          <Typography><b>고객사명:</b> {request.customer_name}</Typography>
+          <Typography><b>사용자명:</b> {request.user_name}</Typography>
+          <Typography><b>접수일시:</b> {new Date(request.created_at).toLocaleString()}</Typography>
+          {request.email && <Typography><b>이메일:</b> {request.email}</Typography>}
+        </Stack>
         
-        <Typography variant="h6" sx={{ mt: 3 }}>접수 내용</Typography>
-        <Paper variant="outlined" sx={{ p: 2, my: 1, maxHeight: 200, overflow: 'auto' }}>
+        <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>접수 내용</Typography>
+        <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, my: 1, maxHeight: 200, overflow: 'auto' }}>
           <div dangerouslySetInnerHTML={{ __html: request.content }} />
         </Paper>
 
         {request.images && request.images.length > 0 && (
           <>
-            <Typography variant="h6" sx={{ mt: 3 }}>첨부 이미지</Typography>
+            <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>첨부 이미지</Typography>
             <Grid container spacing={2} sx={{ mt: 1 }}>
-              {request.images.map((image, index) => (
+              {request.images
+                ?.filter(image => typeof image === 'string' && image.trim() !== '')
+                .map((image, index) => (
                 <Grid item key={index}>
                   <a href={image} target="_blank" rel="noopener noreferrer">
-                    <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
+                    <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: 'inherit' }} /> {/* Changed to inherit */}
                   </a>
                 </Grid>
               ))}
@@ -176,23 +192,27 @@ const SubmissionDetailPage: React.FC = () => {
           </>
         )}
 
-        <Typography variant="h6" sx={{ mt: 3 }}>처리내용</Typography>
+        <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>처리내용</Typography>
         {request.comments && request.comments.length > 0 ? (
-          request.comments.map(comment => (
-            <Paper
-              variant="outlined"
-              key={comment.id}
-              sx={{
-                p: 2,
-                my: 1,
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">{new Date(comment.created_at).toLocaleString()}</Typography>
-              <div dangerouslySetInnerHTML={{ __html: comment.comment }} />
-            </Paper>
-          ))
+          <Stack spacing={1}>
+            {request.comments.map(comment => (
+              <Paper
+                variant="outlined"
+                key={comment.id}
+                sx={{
+                  p: { xs: 1.5, sm: 2 },
+                  my: 1,
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">{new Date(comment.created_at).toLocaleString()}</Typography>
+                <div dangerouslySetInnerHTML={{ __html: comment.comment }} />
+              </Paper>
+            ))}
+          </Stack>
         ) : (
-          <Typography sx={{ my: 1 }}>-</Typography>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, my: 1 }}>
+            <Typography sx={{ my: 1 }} color="text.secondary">- 등록된 코멘트가 없습니다 -</Typography>
+          </Paper>
         )}
 
         <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
@@ -202,17 +222,17 @@ const SubmissionDetailPage: React.FC = () => {
             <Button variant="contained" color="secondary" onClick={() => setOpenDeleteDialog(true)} disabled={request.status !== 'pending'}>
                 이 접수 건 삭제하기
             </Button>
-            <Button variant="contained" onClick={() => navigate('/')}>
+            <Button variant="outlined" onClick={() => navigate('/')}> {/* Changed to outlined */}
                 추가 접수하기
             </Button>
         </Box>
       </Paper>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth> {/* Added maxWidth and fullWidth */}
         <DialogTitle>접수 내역 삭제</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ mb: 2 }}>
             이 접수 내역을 삭제하시려면 접수 시 사용했던 비밀번호를 입력해주세요. 이 작업은 되돌릴 수 없습니다.
           </DialogContentText>
           <TextField
@@ -221,7 +241,7 @@ const SubmissionDetailPage: React.FC = () => {
             label="비밀번호"
             type="password"
             fullWidth
-            variant="standard"
+            variant="outlined" // Changed to outlined
             value={deletePassword}
             onChange={(e) => setDeletePassword(e.target.value)}
           />
@@ -229,7 +249,7 @@ const SubmissionDetailPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>취소</Button>
-          <Button onClick={handleDeleteConfirm}>삭제 확인</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">삭제</Button> {/* Added color and variant */}
         </DialogActions>
       </Dialog>
     </Container>

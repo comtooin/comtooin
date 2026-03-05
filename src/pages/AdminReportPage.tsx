@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack
 } from '@mui/material';
-import { BarChart as BarChartIcon } from '@mui/icons-material';
+import { 
+  BarChart as BarChartIcon, 
+  ArticleOutlined as ArticleOutlinedIcon,
+  Description as DescriptionIcon 
+} from '@mui/icons-material'; // Changed DescriptionOffIcon to ArticleOutlinedIcon
 import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -22,17 +26,40 @@ const stripHtmlTags = (html: string) => {
 /**
  * [추가] 상태 영문값을 한글로 변환하는 함수
  */
+const formatMobileDateTime = (dateTimeString: string) => {
+  const date = new Date(dateTimeString);
+  return `${date.getFullYear().toString().substring(2, 4)}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+};
+
 const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     'pending': '접수완료',
     'processing': '처리중',
     'completed': '처리완료',
-    '접수완료': '접수완료',
-    '처리중': '처리중',
-    '처리완료': '처리완료'
+    '접수완료': '접수완료', // For cases where status might already be Korean
+    '처리중': '처리중',   // For cases where status might already be Korean
+    '처리완료': '처리완료' // For cases where status might already be Korean
   };
   return labels[status] || status;
 };
+
+// Helper function to get status chip color (Copied from AdminDashboardPage.tsx)
+const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' | 'default' => {
+  switch (status) {
+    case 'completed':
+    case '처리완료':
+      return 'success';
+    case 'processing':
+    case '처리중':
+      return 'warning';
+    case 'pending':
+    case '접수완료':
+      return 'info';
+    default:
+      return 'default';
+  }
+};
+
 
 // --- TYPE DEFINITIONS ---
 interface IComment {
@@ -272,65 +299,90 @@ window.URL.revokeObjectURL(url);
       <Divider sx={{ mb: 3 }} />
 
       {/* --- FILTERS --- */}
-      <Box sx={{ mb: 4, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-        <TextField select label="고객사" value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small" sx={{ minWidth: 150 }}>
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}> {/* Changed to Grid container */}
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField select label="고객사" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
+              <MenuItem value="all"><em>전체</em></MenuItem>
+              {(customers || []).map(name => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField select label="월 선택" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
+              <MenuItem value="all"><em>전체</em></MenuItem>
+              {(allMonths || []).map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
             <MenuItem value="all"><em>전체</em></MenuItem>
-            {(customers || []).map(name => <MenuItem key={name} value={name}>{name}</MenuItem>)}
-        </TextField>
-        <TextField select label="월 선택" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small" sx={{ minWidth: 120 }}>
-            <MenuItem value="all"><em>전체</em></MenuItem>
-            {(allMonths || []).map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
-        </TextField>
-        <TextField select label="상태" value={status} onChange={(e) => setStatus(e.target.value)} size="small" sx={{ minWidth: 120 }}>
-          <MenuItem value="all"><em>전체</em></MenuItem>
-          <MenuItem value="접수완료">접수완료</MenuItem>
-          <MenuItem value="처리중">처리중</MenuItem>
-          <MenuItem value="처리완료">처리완료</MenuItem>
-        </TextField>
-        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            <Button variant="contained" onClick={applyFilters} size="medium">필터 적용</Button>
-            <Button variant="outlined" color="secondary" onClick={handleExportExcel} size="medium">Excel 내보내기</Button>
-        </Box>
-      </Box>
+            <MenuItem value="pending">{getStatusLabel('pending')}</MenuItem> {/* Use getStatusLabel */}
+            <MenuItem value="processing">{getStatusLabel('processing')}</MenuItem> {/* Use getStatusLabel */}
+            <MenuItem value="completed">{getStatusLabel('completed')}</MenuItem> {/* Use getStatusLabel */}
+          </TextField>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: '100%' }}> {/* Stack for buttons, adjust direction for mobile */}
+              <Button variant="contained" onClick={applyFilters} size="medium" fullWidth sx={{ flexGrow: 1 }}>필터 적용</Button>
+              <Button variant="outlined" color="secondary" onClick={handleExportExcel} size="medium" fullWidth sx={{ flexGrow: 1 }}>Excel 내보내기</Button>
+          </Stack>
+        </Grid>
+      </Grid>
 
       {/* --- TABS --- */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}> {/* Added margin-bottom */}
         <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="상세 리스트" />
           <Tab label="요약 그래프" />
         </Tabs>
       </Box>
 
-      {loading ? <CircularProgress sx={{mt: 4}} /> : error ? <Alert severity="error" sx={{mt: 4}}>{error}</Alert> : (
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ mt: 4 }}>{error}</Alert>
+      ) : (
         <Box sx={{ pt: 3 }}>
           {tabValue === 0 && (
             <TableContainer component={Paper}>
               <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>접수일시</TableCell>
-                    <TableCell>고객사명</TableCell>
-                    <TableCell>사용자명</TableCell>
-                    <TableCell>상태</TableCell>
-                    <TableCell>처리내용</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>ID</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>접수일시</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>고객사명</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>사용자명</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>상태</TableCell>
+                    <TableCell sx={{ py: 0.5, px: 1 }}>처리내용</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {(filteredRequests || []).length > 0 ? filteredRequests.map((request) => (
                     <TableRow key={request.id} hover>
-                      <TableCell>{request.id}</TableCell>
-                      <TableCell>{new Date(request.created_at).toLocaleString()}</TableCell>
-                      <TableCell>{request.customer_name}</TableCell>
-                      <TableCell>{request.user_name}</TableCell>
-                      <TableCell>
-                        {/* [수정] Chip label에 한글 변환 함수 적용 */}
-                        <Chip label={getStatusLabel(request.status)} size="small" />
+                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.id}</Typography></TableCell>
+                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
+                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.customer_name}</Typography></TableCell>
+                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.user_name}</Typography></TableCell>
+                      <TableCell sx={{ py: 0.5, px: 1 }}>
+                        <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" />
                       </TableCell>
-                      <TableCell>{(request.comments || []).length > 0 ? stripHtmlTags(request.comments.map(c => c.comment).join(', ')) : ''}</TableCell>
+                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{(request.comments || []).length > 0 ? stripHtmlTags(request.comments.map(c => c.comment).join(', ')).substring(0, 30) + '...' : ''}</Typography></TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={6} align="center">표시할 데이터가 없습니다.</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        <Box sx={{ p: 3, textAlign: 'center' }}>
+                          <DescriptionIcon sx={{ fontSize: '4rem', color: 'text.secondary', mb: 2 }} />
+                          <Typography variant="h6" color="text.secondary" gutterBottom>
+                            필터링된 데이터가 없습니다.
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            다른 필터 조건을 선택하거나 필터를 초기화해 보세요.
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -338,14 +390,32 @@ window.URL.revokeObjectURL(url);
           )}
 
           {tabValue === 1 && (
-            <Grid container spacing={4}>
+            <Grid container spacing={2}> {/* Reduced spacing for mobile */}
               <Grid item xs={12} md={5}>
-                <Typography variant="h6" align="center" gutterBottom>상태별 접수 현황</Typography>
-                <Paper sx={{p: 2}}><Pie data={pieChartData} /></Paper>
+                <Typography variant="subtitle1" align="center" gutterBottom>상태별 접수 현황</Typography> {/* Smaller typography for title */}
+                <Paper sx={{p: { xs: 1.5, md: 3 }}}> {/* Responsive padding */}
+                  {(statusData || []).length > 0 ? <Pie data={pieChartData} /> : (
+                    <Box sx={{ p: 1.5, textAlign: 'center', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}> {/* Responsive minHeight */}
+                      <DescriptionIcon sx={{ fontSize: '3rem', color: 'text.secondary', mb: 1 }} /> {/* Smaller icon */}
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        표시할 통계 데이터가 없습니다.
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
               </Grid>
               <Grid item xs={12} md={7}>
-                <Typography variant="h6" align="center" gutterBottom>월별 접수 현황</Typography>
-                <Paper sx={{p: 2}}><Bar options={barChartOptions} data={barChartData} /></Paper>
+                <Typography variant="subtitle1" align="center" gutterBottom>월별 접수 현황</Typography> {/* Smaller typography for title */}
+                <Paper sx={{p: { xs: 1.5, md: 3 }}}> {/* Responsive padding */}
+                  {(monthlyData || []).length > 0 ? <Bar options={barChartOptions} data={barChartData} /> : (
+                    <Box sx={{ p: 1.5, textAlign: 'center', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}> {/* Responsive minHeight */}
+                      <DescriptionIcon sx={{ fontSize: '3rem', color: 'text.secondary', mb: 1 }} /> {/* Smaller icon */}
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        표시할 통계 데이터가 없습니다.
+                      </Typography>
+                    </Box>
+                  )}
+                </Paper>
               </Grid>
             </Grid>
           )}

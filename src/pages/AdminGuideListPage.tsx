@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, Button, Box, Paper, IconButton, CircularProgress, Alert, Divider
+  Typography, Button, Box, Paper, IconButton, CircularProgress, Alert, Divider, Stack
 } from '@mui/material';
-import { Edit, Delete, ListAlt as ListAltIcon } from '@mui/icons-material';
+import { Edit, Delete, ListAlt as ListAltIcon, AutoStoriesOutlined as AutoStoriesOutlinedIcon } from '@mui/icons-material'; // Added AutoStoriesOutlinedIcon
 import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
-import { Accordion, AccordionSummary, AccordionDetails } from '@mui/material';
+import { Accordion, AccordionSummary, AccordionDetails, useTheme } from '@mui/material'; // Added useTheme
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-
-// 삭제됨: const API_URL = ...
 
 interface IGuide {
   id: number;
@@ -23,6 +21,7 @@ const AdminGuideListPage: React.FC = () => {
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState<number | false>(false); // State for controlled accordion
   const navigate = useNavigate();
+  const theme = useTheme(); // Use theme for border radius
 
   const handleChange = (panelId: number) => (event: React.SyntheticEvent, isExpanded: boolean) => {
     setExpanded(isExpanded ? panelId : false);
@@ -67,8 +66,16 @@ const AdminGuideListPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
 
   return (
     <>
@@ -87,51 +94,63 @@ const AdminGuideListPage: React.FC = () => {
         </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
-      <Paper>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}> {/* Added responsive padding */}
         {guides.length > 0 ? (
-          guides.map((guide) => (
-            <Accordion
-              key={guide.id}
-              disableGutters
-              expanded={expanded === guide.id}
-              onChange={handleChange(guide.id)}
-              sx={{
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                '&:not(:last-child)': {
-                  borderBottom: 0,
-                },
-                '&:before': {
-                  display: 'none',
-                },
-                '&.Mui-expanded': {
-                  backgroundColor: (theme) => theme.palette.action.hover,
-                }
-              }}
-            >
-              <AccordionSummary
-                expandIcon={<ExpandMoreIcon />}
-                aria-controls={`panel${guide.id}-content`}
-                id={`panel${guide.id}-header`}
+          <Stack spacing={1}> {/* Stack for spacing between accordions */}
+            {guides.map((guide) => (
+              <Accordion
+                key={guide.id}
+                disableGutters
+                expanded={expanded === guide.id}
+                onChange={handleChange(guide.id)}
+                sx={{
+                  border: `1px solid ${theme.palette.divider}`, // Keep subtle border
+                  borderRadius: 0, // Apply global border radius
+                  '&:not(:last-child)': {
+                    mb: 1, // Margin bottom for spacing
+                  },
+                  '&:before': {
+                    display: 'none',
+                  },
+                  '&.Mui-expanded': {
+                    backgroundColor: theme.palette.action.hover,
+                    margin: '0 !important', // Override default Accordion margin when expanded
+                  },
+                }}
               >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 2 }}>
-                  <Typography variant="h6">{guide.title}</Typography>
-                  <Box onClick={(event) => event.stopPropagation()}> {/* Prevent accordion collapse when clicking buttons */}
-                    <IconButton edge="end" aria-label="edit" onClick={() => navigate(`/admin/guide/edit/${guide.id}`)}>
-                      <Edit />
-                    </IconButton>
-                    <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(guide.id)}>
-                      <Delete />
-                    </IconButton>
+                <AccordionSummary
+                  expandIcon={<ExpandMoreIcon />}
+                  aria-controls={`panel${guide.id}-content`}
+                  id={`panel${guide.id}-header`}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', pr: 2, flexWrap: 'wrap' }}>
+                    <Typography variant="h6" component="h2" sx={{ mr: 2, mb: { xs: 1, sm: 0 } }}>{guide.title}</Typography>
+                    <Box onClick={(event) => event.stopPropagation()}> {/* Prevent accordion collapse when clicking buttons */}
+                      <IconButton edge="end" aria-label="edit" onClick={() => navigate(`/admin/guide/edit/${guide.id}`)}>
+                        <Edit />
+                      </IconButton>
+                      <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(guide.id)}>
+                        <Delete />
+                      </IconButton>
+                    </Box>
                   </Box>
-                </Box>
-              </AccordionSummary>
-              <AccordionDetails>
-                <div dangerouslySetInnerHTML={{ __html: guide.content }} />
-              </AccordionDetails>
-            </Accordion>
-          ))
+                </AccordionSummary>
+                <AccordionDetails>
+                  <div dangerouslySetInnerHTML={{ __html: guide.content }} />
+                </AccordionDetails>
+              </Accordion>
+            ))}
+          </Stack>
         ) : (
-          <Typography sx={{ p: 2 }}>표시할 가이드가 없습니다.</Typography>
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <AutoStoriesOutlinedIcon sx={{ fontSize: '4rem', color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              등록된 가이드가 없습니다.
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              새로운 가이드를 작성하려면 "새 가이드 작성" 버튼을 클릭하세요.
+            </Typography>
+          </Box>
         )}
       </Paper>
     </>

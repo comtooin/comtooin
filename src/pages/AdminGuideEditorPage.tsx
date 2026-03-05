@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Typography, Button, Box, Paper, CircularProgress, Alert, TextField, Divider } from '@mui/material';
+import { Typography, Button, Box, Paper, CircularProgress, Alert, TextField, Divider, Stack } from '@mui/material'; // Added Stack
 import { Edit as EditIcon } from '@mui/icons-material';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
 import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
-
-// 삭제됨: const API_URL = ...
 
 const AdminGuideEditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,12 +25,11 @@ const AdminGuideEditorPage: React.FC = () => {
       const fetchGuide = async () => {
         setLoading(true);
         try {
-          // 수정됨: api 모듈 사용
           const { data, error: fetchError } = await supabase
             .from('guides')
             .select('*')
             .eq('id', id)
-            .single(); // Assuming 'id' is unique
+            .single();
 
           if (fetchError) {
             throw fetchError;
@@ -75,13 +72,13 @@ const AdminGuideEditorPage: React.FC = () => {
                 
                             const { error: insertError } = await supabase
                               .from('guides')
-                              .insert({ ...guideData, author_user_id: session.user.id }); // author_user_id 추가
+                              .insert({ ...guideData, author_user_id: session.user.id });
                       
                   if (insertError) {
                     throw insertError;
                   }
                   setSuccess('가이드가 성공적으로 생성되었습니다.');
-                  navigate('/admin/guides'); // Redirect after creation
+                  navigate('/admin/guides');
                 }    } catch (err: any) {
       console.error('Supabase save error:', err);
       setError(err.message || '가이드 저장 중 오류가 발생했습니다.');
@@ -90,10 +87,16 @@ const AdminGuideEditorPage: React.FC = () => {
     }
   };
 
-  if (loading) return <CircularProgress />;
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Paper sx={{ p: { xs: 2, sm: 3 } }}> {/* Adjusted responsive padding and removed border radius */}
       <Helmet>
         <title>{isEditMode ? '가이드 수정' : '새 가이드 작성'}</title>
       </Helmet>
@@ -105,7 +108,8 @@ const AdminGuideEditorPage: React.FC = () => {
       </Box>
       <Divider sx={{ mb: 3 }} />
         
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Stack spacing={3}> {/* Stack for consistent vertical spacing */}
+        {error && <Alert severity="error">{error}</Alert>}
         
         <TextField
           label="제목"
@@ -113,19 +117,20 @@ const AdminGuideEditorPage: React.FC = () => {
           variant="outlined"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          sx={{ mb: 2 }}
+          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
         />
 
-        <ReactQuill 
-          theme="snow" 
-          value={content} 
-          onChange={setContent} 
-          style={{ height: '400px', marginBottom: '70px' }}
-        />
+        <Box sx={{ minHeight: '400px', mb: 6 }}> {/* Wrapper Box for ReactQuill, minHeight adjusted */}
+          <ReactQuill
+            theme="snow"
+            value={content}
+            onChange={setContent}
+            style={{ height: '300px' }} // Fixed height for Quill editor
+          />
+        </Box>
+        {success && <Alert severity="success">{success}</Alert>}
 
-        {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
-
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}> {/* Adjusted mt */}
           <Button variant="outlined" onClick={() => navigate('/admin/guides')}>
             목록으로 돌아가기
           </Button>
@@ -137,7 +142,8 @@ const AdminGuideEditorPage: React.FC = () => {
             {saving ? <CircularProgress size={24} /> : '저장하기'}
           </Button>
         </Box>
-      </Paper>
+      </Stack>
+    </Paper>
   );
 };
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert // Added Alert
 } from '@mui/material';
 import { PhotoCamera, Delete, SupportAgent as SupportAgentIcon } from '@mui/icons-material';
 import { supabase } from '../api';
@@ -148,7 +148,7 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Paper elevation={0} sx={{ p: 3 }}>
+    <Paper sx={{ p: { xs: 2, sm: 3 } }}> {/* Adjusted padding for responsiveness, removed elevation={0} to use global */}
       <Helmet>
         <title>컴투인 기술 지원 서비스</title>
       </Helmet>
@@ -158,56 +158,128 @@ const HomePage: React.FC = () => {
           컴투인 기술 지원 서비스
         </Typography>
       </Box>
-      <Divider />
-      <Typography variant="subtitle1" align="left" sx={{ my: 2 }}>
+      <Divider sx={{ my: 2 }} /> {/* Added margin to divider */}
+      <Typography variant="subtitle1" align="left" sx={{ mb: 3, color: 'text.secondary' }}> {/* Adjusted margin and added color */}
         기술지원 요청을 접수하고 처리현황을 확인하세요.
       </Typography>
-      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-        <Stack spacing={3}>
-          {/* Text Fields */}
-          <TextField label="고객사명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
-          <TextField label="사용자명" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} />
-          <TextField label="접수 확인용 비밀번호" type="password" fullWidth required variant="outlined" size="small" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
-          <TextField label="비밀번호 확인" type="password" fullWidth required variant="outlined" size="small" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} autoComplete="new-password" />
-          <TextField label="이메일 주소 (알림 수신용, 선택)" type="email" fullWidth variant="outlined" size="small" value={email} onChange={(e) => setEmail(e.target.value)} />
-          
-          <Typography variant="h6">접수 내용 (필수)</Typography>
-          {/*
-            The Box wrapper with sx is a common workaround to set a fixed height
-            and allow scrolling if content overflows.
-            We also remove the problematic `marginBottom` from the inline style.
-          */}
-          <Box sx={{ height: '200px', '& .ql-container': { height: 'calc(100% - 42px)' } }}>
-            <ReactQuill theme="snow" value={content} onChange={handleContentChange} style={{ height: '100%' }} />
-          </Box>
+      <Box component="form" onSubmit={handleSubmit}>
+        <Stack spacing={4}> {/* Global spacing between major sections */}
 
-          {/* Image Upload */}
-          <Box>
-            <Button variant="outlined" component="label" startIcon={<PhotoCamera />}>
-              이미지 첨부 (최대 5개)
-              <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-            </Button>
-          </Box>
+          {/* Section 1: User Information */}
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
+            <Stack spacing={3}>
+              <Typography variant="h6" component="h2" gutterBottom>기본 정보</Typography>
+              <TextField 
+                label="고객사명" 
+                fullWidth required variant="outlined" 
+                size="small" 
+                value={customerName} 
+                onChange={(e) => setCustomerName(e.target.value)} 
+                helperText="귀하의 회사 또는 단체 이름을 입력해주세요."
+              />
+              <TextField 
+                label="사용자명" 
+                fullWidth required variant="outlined" 
+                size="small" 
+                value={userName} 
+                onChange={(e) => setUserName(e.target.value)}
+                helperText="귀하의 성함을 입력해주세요." 
+              />
+              <TextField 
+                label="접수 확인용 비밀번호" 
+                type="password" 
+                fullWidth required variant="outlined" 
+                size="small" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                autoComplete="new-password"
+                helperText="접수 내역 확인 및 수정을 위한 비밀번호를 설정해주세요." 
+              />
+              <TextField 
+                label="비밀번호 확인" 
+                type="password" 
+                fullWidth required variant="outlined" 
+                size="small" 
+                value={passwordConfirm} 
+                onChange={(e) => setPasswordConfirm(e.target.value)} 
+                autoComplete="new-password"
+                helperText="설정하신 비밀번호를 다시 한번 입력해주세요." 
+              />
+              <TextField 
+                label="이메일 주소 (알림 수신용, 선택)" 
+                type="email" 
+                fullWidth variant="outlined" 
+                size="small" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)}
+                helperText="요청 처리 상황이 업데이트될 때 알림을 받을 수 있습니다." 
+              />
+            </Stack>
+          </Paper>
 
-          {/* Image Previews */}
-          {images.length > 0 && (
-            <Grid container spacing={2}>
-              {images.map((image, index) => (
-                <Grid item key={index}>
-                  <Paper elevation={2} sx={{ position: 'relative', width: 100, height: 100 }}>
-                    <img src={URL.createObjectURL(image)} alt={`preview ${index}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: 0, right: 0, backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Paper>
+          {/* Section 2: Request Content */}
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
+            <Stack spacing={3}>
+              <Typography variant="h6" component="h2" gutterBottom>접수 내용 (필수)</Typography>
+              <Box sx={{ height: '250px', '& .ql-container': { height: 'calc(100% - 42px)' } }}> {/* Increased height for editor */}
+                <ReactQuill theme="snow" value={content} onChange={handleContentChange} style={{ height: '100%' }} />
+              </Box>
+            </Stack>
+          </Paper>
+
+          {/* Section 3: Image Upload */}
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
+            <Stack spacing={3}>
+              <Typography variant="h6" component="h2" gutterBottom>이미지 첨부 (선택)</Typography>
+              <Button 
+                variant="outlined" 
+                component="label" 
+                startIcon={<PhotoCamera />}
+                size="medium" // Ensure button is not too small on mobile
+                sx={{ py: 1.5 }} // Add vertical padding for better touch target
+              >
+                이미지 첨부 (최대 5개)
+                <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+              </Button>
+              {images.length > 0 && (
+                <Grid container spacing={2}>
+                  {images.map((image, index) => (
+                    <Grid item key={index}>
+                      <Paper sx={{ position: 'relative', width: 100, height: 100 }}> {/* Relies on global Paper style */}
+                        <img 
+                          src={URL.createObjectURL(image)} 
+                          alt={`preview ${index}`} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} // Added borderRadius: 'inherit'
+                        />
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleRemoveImage(index)} 
+                          sx={{ 
+                            position: 'absolute', 
+                            top: 4, 
+                            right: 4, 
+                            backgroundColor: 'background.paper', // Use theme color
+                            '&:hover': { backgroundColor: 'action.hover' },
+                            boxShadow: 1, // Subtle shadow for the icon button
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Paper>
+                    </Grid>
+                  ))}
                 </Grid>
-              ))}
-            </Grid>
+              )}
+            </Stack>
+          </Paper>
+
+          {/* Error and Submit Button */}
+          {error && (
+            <Alert severity="error" sx={{ mb: 3 }}> {/* Enhanced error display, adjusted margin */}
+              {error}
+            </Alert>
           )}
-          
-          {/* Messages and Submit Button */}
-          {error && <Typography color="error">{error}</Typography>}
-          <Button type="submit" variant="contained" color="primary" fullWidth size="large">
+          <Button type="submit" variant="contained" color="primary" fullWidth size="large" sx={{ mt: 2 }}>
             기술지원 요청
           </Button>
         </Stack>

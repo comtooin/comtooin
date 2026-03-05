@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText
+  Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText, Stack // Added Stack
 } from '@mui/material';
-import { ReceiptLong as ReceiptLongIcon } from '@mui/icons-material';
+import { ReceiptLong as ReceiptLongIcon, SearchOff as SearchOffIcon } from '@mui/icons-material'; // Added SearchOffIcon
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -29,10 +29,8 @@ interface IRequest {
   comments: IComment[];
 }
 
-// 삭제됨: const API_URL = '';
-
 const CheckRequestPage: React.FC = () => {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
   const [requests, setRequests] = useState<IRequest[]>([]);
@@ -55,16 +53,14 @@ const CheckRequestPage: React.FC = () => {
       // Trigger fetch automatically
       fetchRequests(name, pw);
     }
-  }, []); // Empty array ensures this runs only once on mount
+  }, []);
 
   const fetchRequests = async (name: string, pw: string) => {
     setLoading(true);
     setError('');
     try {
-      // Assuming a Supabase RPC function `authenticate_and_get_requests` exists
-      // that takes username and password, authenticates, and returns associated requests.
       const { data, error: rpcError } = await supabase.rpc('authenticate_and_get_requests', {
-        _user_name: name, // Parameters must match RPC function's argument names
+        _user_name: name,
         _password: pw,
       });
 
@@ -72,21 +68,17 @@ const CheckRequestPage: React.FC = () => {
         throw rpcError;
       }
 
-      // Supabase RPC typically returns an array directly
       const parsedRequests = data.map((req: any) => ({
         ...req,
-        // Assuming images are stored as a JSON string or array directly in Supabase table
         images: Array.isArray(req.images) ? req.images : (req.images && typeof req.images === 'string' && req.images.trim() !== '') ? JSON.parse(req.images) : [],
-        comments: Array.isArray(req.comments) ? req.comments : [], // Ensure comments is array
+        comments: Array.isArray(req.comments) ? req.comments : [],
       }));
       setRequests(parsedRequests);
       setIsLoggedIn(true);
-      // Save user info to session storage on successful login
       sessionStorage.setItem('comtooin_user', JSON.stringify({ name, pw }));
     } catch (err: any) {
       console.error('Supabase RPC error:', err);
       setError(err.message || '조회 중 오류가 발생했습니다. 사용자명 또는 비밀번호를 확인해주세요.');
-      // Clear session storage on failure
       sessionStorage.removeItem('comtooin_user');
     } finally {
       setLoading(false);
@@ -119,11 +111,9 @@ const CheckRequestPage: React.FC = () => {
     if (!selectedRequest?.id) return;
     setDeleteError('');
     try {
-      // Assuming a Supabase RPC function `delete_request_with_password` exists
-      // that takes request_id and password, authenticates, and deletes the request.
       const { error: rpcError } = await supabase.rpc('delete_request_with_password', {
         request_id: selectedRequest.id,
-        _password: deletePassword, // Parameter name must match RPC function
+        _password: deletePassword,
       });
 
       if (rpcError) {
@@ -139,22 +129,41 @@ const CheckRequestPage: React.FC = () => {
 
   const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' => {
     switch (status) {
-      case '처리완료':
+      case 'completed':
         return 'success';
-      case '처리중':
+      case 'processing':
         return 'warning';
+      case 'pending':
+        return 'info';
       default:
         return 'info';
     }
   };
 
+  const getStatusLabel = (status: string): string => {
+    switch (status) {
+      case 'pending':
+        return '접수완료';
+      case 'processing':
+        return '처리중';
+      case 'completed':
+        return '처리완료';
+      default:
+        return status;
+    }
+  };
+
   if (loading) {
-    return <CircularProgress />;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (!isLoggedIn) {
     return (
-      <Paper sx={{ p: 3 }}>
+      <Paper sx={{ p: { xs: 2, sm: 3 } }}>
         <Helmet>
           <title>내 접수 내역 확인</title>
         </Helmet>
@@ -166,12 +175,33 @@ const CheckRequestPage: React.FC = () => {
         </Box>
         <Divider sx={{ mb: 3 }} />
         <Box component="form" onSubmit={handleLogin}>
-          <TextField label="사용자명" fullWidth required margin="normal" variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} />
-          <TextField label="접수 확인용 비밀번호" type="password" fullWidth required margin="normal" variant="outlined" size="small" value={password} onChange={(e) => setPassword(e.target.value)} />
-          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-          <Button type="submit" variant="contained" fullWidth size="large" sx={{ mt: 2 }}>
-            조회하기
-          </Button>
+          <Stack spacing={2}> {/* Stack for consistent spacing */}
+            <TextField 
+              label="사용자명" 
+              fullWidth required 
+              margin="normal" 
+              variant="outlined" 
+              size="small" 
+              value={userName} 
+              onChange={(e) => setUserName(e.target.value)}
+              helperText="기술 지원 요청 시 입력했던 사용자 이름을 입력해주세요." 
+            />
+            <TextField 
+              label="접수 확인용 비밀번호" 
+              type="password" 
+              fullWidth required 
+              margin="normal" 
+              variant="outlined" 
+              size="small" 
+              value={password} 
+              onChange={(e) => setPassword(e.target.value)}
+              helperText="기술 지원 요청 시 설정했던 비밀번호를 입력해주세요." 
+            />
+            {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+            <Button type="submit" variant="contained" fullWidth size="large" sx={{ mt: 2 }}>
+              조회하기
+            </Button>
+          </Stack>
         </Box>
       </Paper>
     );
@@ -193,35 +223,44 @@ const CheckRequestPage: React.FC = () => {
       </Box>
       <Divider sx={{ mb: 3 }} />
       {requests.length === 0 ? (
-        <Typography>접수된 내역이 없습니다.</Typography>
+        <Paper sx={{ p: 3, textAlign: 'center', mt: 4 }}>
+          <SearchOffIcon sx={{ fontSize: '4rem', color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            아직 접수된 내역이 없습니다.
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            새로운 기술 지원 요청을 접수하려면 홈 페이지를 이용해주세요.
+          </Typography>
+        </Paper>
       ) : (
-        <List component={Paper} sx={{ width: '100%', bgcolor: 'background.paper' }}>
+        <List sx={{ width: '100%' }}>
           {requests.map(req => (
-            <ListItem key={req.id} divider>
-              <ListItemText
-                primary={
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6">접수번호: {req.id}</Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Chip label={req.status === 'pending' ? '접수완료' : req.status} color={getStatusChipColor(req.status)} />
-                      <Button variant="outlined" size="small" onClick={() => handleOpenModal(req)}>
-                        상세보기
-                      </Button>
+            <Paper key={req.id} sx={{ mb: 2, p: { xs: 2, sm: 3 } }}> {/* Wrapped ListItem in Paper */}
+              <ListItem disableGutters>
+                <ListItemText
+                  primary={
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <Typography variant="h6" component="h2" sx={{ mb: { xs: 1, sm: 0 } }}>접수번호: {req.id}</Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} />
+                        <Button variant="contained" size="small" onClick={() => handleOpenModal(req)}>
+                          상세보기
+                        </Button>
+                      </Box>
                     </Box>
-                  </Box>
-                }
-                secondary={
-                  <>
-                    <Typography component="span" variant="body2" color="text.secondary">
-                      접수일시: {new Date(req.created_at).toLocaleString()}
-                    </Typography>
-                    <br />
-                    <Typography component="span" variant="body1" sx={{ wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: req.content.substring(0, 100) + '...' }} />
-                  </>
-                }
-              />
-
-            </ListItem>
+                  }
+                  secondary={
+                    <>
+                      <Typography component="span" variant="body2" color="text.secondary">
+                        접수일시: {new Date(req.created_at).toLocaleString()}
+                      </Typography>
+                      <br />
+                      <Typography component="span" variant="body1" sx={{ wordBreak: 'break-word', mt: 1 }} dangerouslySetInnerHTML={{ __html: req.content.substring(0, 100) + '...' }} />
+                    </>
+                  }
+                />
+              </ListItem>
+            </Paper>
           ))}
         </List>
       )}
@@ -232,29 +271,30 @@ const CheckRequestPage: React.FC = () => {
           <>
             <DialogTitle>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                접수 상세내용 (접수번호: {selectedRequest.id})
-                <Chip label={selectedRequest.status === 'pending' ? '접수완료' : selectedRequest.status} color={getStatusChipColor(selectedRequest.status)} />
+                <Typography variant="h6" component="span">접수 상세내용 (접수번호: {selectedRequest.id})</Typography>
+                <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} />
               </Box>
             </DialogTitle>
             <DialogContent dividers>
-              <Typography gutterBottom><b>고객사명:</b> {selectedRequest.customer_name}</Typography>
-              <Typography gutterBottom><b>사용자명:</b> {selectedRequest.user_name}</Typography>
-              <Typography gutterBottom><b>접수일시:</b> {new Date(selectedRequest.created_at).toLocaleString()}</Typography>
-              <Typography gutterBottom><b>최종수정일:</b> {new Date(selectedRequest.updated_at).toLocaleString()}</Typography>
-              <Typography variant="h6" sx={{ mt: 2 }}>접수 내용</Typography>
-              <Paper variant="outlined" sx={{ p: 2, my: 1, maxHeight: 200, overflow: 'auto' }}>
+              <Stack spacing={2}>
+                <Typography><b>고객사명:</b> {selectedRequest.customer_name}</Typography>
+                <Typography><b>사용자명:</b> {selectedRequest.user_name}</Typography>
+                <Typography><b>접수일시:</b> {new Date(selectedRequest.created_at).toLocaleString()}</Typography>
+                <Typography><b>최종수정일:</b> {new Date(selectedRequest.updated_at).toLocaleString()}</Typography>
+              </Stack>
+              <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>접수 내용</Typography>
+              <Paper variant="outlined" sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
                 <div dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
               </Paper>
 
               {selectedRequest.images.length > 0 && (
                 <>
-                  <Typography variant="h6" sx={{ mt: 2 }}>첨부 이미지</Typography>
-                  <Grid container spacing={2} sx={{ mt: 1 }}>
+                  <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>첨부 이미지</Typography>
+                  <Grid container spacing={2}>
                     {selectedRequest.images.map((image, index) => (
                       <Grid item key={index}>
-                        {/* 수정됨: baseURL 사용 */}
                         <a href={image} target="_blank" rel="noopener noreferrer">
-                          <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: '4px' }} />
+                          <img src={image} alt={`attachment ${index}`} style={{ width: 150, height: 150, objectFit: 'cover', borderRadius: 'inherit' }} /> {/* Changed to inherit */}
                         </a>
                       </Grid>
                     ))}
@@ -262,7 +302,7 @@ const CheckRequestPage: React.FC = () => {
                 </>
               )}
 
-              <Typography variant="h6" sx={{ mt: 2 }}>처리내용</Typography>
+              <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>처리내용</Typography>
               {selectedRequest.comments.length > 0 ? (
                 selectedRequest.comments.map(comment => (
                   <Paper variant="outlined" key={comment.id} sx={{ p: 2, my: 1 }}>
@@ -271,11 +311,13 @@ const CheckRequestPage: React.FC = () => {
                   </Paper>
                 ))
               ) : (
-                <Typography>아직 등록된 코멘트가 없습니다.</Typography>
+                <Paper variant="outlined" sx={{ p: 2, my: 1 }}>
+                  <Typography color="text.secondary">아직 등록된 코멘트가 없습니다.</Typography>
+                </Paper>
               )}
             </DialogContent>
-            <DialogActions>
-              {selectedRequest.status === '접수완료' && (
+            <DialogActions sx={{ p: 3 }}> {/* Adjusted padding for actions */}
+              {selectedRequest.status === 'pending' && ( // Check for pending status from DB
                 <Button
                   variant="contained"
                   onClick={() => navigate(`/edit-request/${selectedRequest.id}`)}
@@ -283,7 +325,7 @@ const CheckRequestPage: React.FC = () => {
                   수정하기
                 </Button>
               )}
-              {selectedRequest.status === '접수완료' && (
+              {selectedRequest.status === 'pending' && ( // Check for pending status from DB
                 <Button
                   variant="contained"
                   color="secondary"
@@ -292,17 +334,17 @@ const CheckRequestPage: React.FC = () => {
                   삭제하기
                 </Button>
               )}
-              <Button onClick={handleCloseModal}>닫기</Button>
+              <Button onClick={handleCloseModal} variant="outlined">닫기</Button>
             </DialogActions>
           </>
         )}
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)}>
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle>접수 내역 삭제</DialogTitle>
         <DialogContent>
-          <DialogContentText>
+          <DialogContentText sx={{ mb: 2 }}>
             이 접수 내역을 삭제하시려면 접수 시 사용했던 비밀번호를 입력해주세요. 이 작업은 되돌릴 수 없습니다.
           </DialogContentText>
           <TextField
@@ -311,7 +353,7 @@ const CheckRequestPage: React.FC = () => {
             label="비밀번호"
             type="password"
             fullWidth
-            variant="standard"
+            variant="outlined" // Changed to outlined
             value={deletePassword}
             onChange={(e) => setDeletePassword(e.target.value)}
           />
@@ -319,7 +361,7 @@ const CheckRequestPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>취소</Button>
-          <Button onClick={handleDeleteConfirm}>삭제 확인</Button>
+          <Button onClick={handleDeleteConfirm} color="error" variant="contained">삭제</Button> {/* Changed color and variant */}
         </DialogActions>
       </Dialog>
     </>
