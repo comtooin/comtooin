@@ -4,7 +4,7 @@ import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button, TableSortLabel,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  useMediaQuery, List, ListItem, ListItemText, Stack
+  useMediaQuery, ListItem, ListItemText, Stack
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, AccessTime as AccessTimeIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
@@ -57,7 +57,6 @@ const AdminDashboardPage: React.FC = () => {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const navigate = useNavigate();
 
   const [selectedRequest, setSelectedRequest] = useState<IRequest | null>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
@@ -85,11 +84,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleDeleteRequest = async () => {
     if (!requestToDelete) return;
-    const token = localStorage.getItem('adminToken'); // This might not be needed if RLS is fully set up
-    // if (!token) { // RLS handles auth, so token check might not be relevant here
-    //   navigate('/admin/login');
-    //   return;
-    // }
+    // This might not be needed if RLS is fully set up
 
     try {
       // 1. Supabase Storage에서 첨부 파일 삭제
