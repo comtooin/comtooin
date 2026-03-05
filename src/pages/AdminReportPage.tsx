@@ -5,9 +5,8 @@ import {
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
-  ArticleOutlined as ArticleOutlinedIcon,
   Description as DescriptionIcon 
-} from '@mui/icons-material'; // Changed DescriptionOffIcon to ArticleOutlinedIcon
+} from '@mui/icons-material';
 import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
