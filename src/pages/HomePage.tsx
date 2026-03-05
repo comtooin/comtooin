@@ -221,8 +221,15 @@ const HomePage: React.FC = () => {
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
             <Stack spacing={3}>
               <Typography variant="h6" component="h2" gutterBottom>접수 내용 (필수)</Typography>
-              <Box sx={{ height: '250px', '& .ql-container': { height: 'calc(100% - 42px)' } }}> {/* Increased height for editor */}
-                <ReactQuill theme="snow" value={content} onChange={handleContentChange} style={{ height: '100%' }} />
+              <Box sx={{
+                minHeight: { xs: '250px', md: '600px' },
+                display: 'flex',
+                flexDirection: 'column',
+                '& .ql-editor': {
+                  minHeight: { xs: '200px', md: '550px' },
+                },
+              }}>
+                <ReactQuill theme="snow" value={content} onChange={handleContentChange} />
               </Box>
             </Stack>
           </Paper>
