@@ -4,7 +4,7 @@ import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button, TableSortLabel,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  useMediaQuery, ListItem, ListItemText, Stack
+  useMediaQuery, ListItem, ListItemText, Stack, ButtonBase
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, AccessTime as AccessTimeIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
@@ -74,13 +74,14 @@ const AdminDashboardPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  // New state for summary data
+  // New state for summary data and filter status
   const [summaryData, setSummaryData] = useState({
     total: 0,
     pending: 0,
     processing: 0,
     completed: 0,
   });
+  const [filterStatus, setFilterStatus] = useState<string | null>(null); // New state for filtering
 
   const handleDeleteRequest = async () => {
     if (!requestToDelete) return;
@@ -134,10 +135,16 @@ const AdminDashboardPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from('requests')
         .select('*, comments(*)')
         .order(orderBy, { ascending: order === 'asc' });
+
+      if (filterStatus) {
+        query = query.eq('status', filterStatus);
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (fetchError) {
         throw fetchError;
@@ -145,11 +152,12 @@ const AdminDashboardPage: React.FC = () => {
       const fetchedRequests = data || [];
       setRequests(fetchedRequests);
 
-      // Calculate summary data
-      const total = fetchedRequests.length;
-      const pending = fetchedRequests.filter(req => req.status === 'pending').length;
-      const processing = fetchedRequests.filter(req => req.status === 'processing').length;
-      const completed = fetchedRequests.filter(req => req.status === 'completed').length;
+      // Calculate summary data from all requests (ignoring current filter for summary)
+      const allRequests = (await supabase.from('requests').select('id, status')).data || [];
+      const total = allRequests.length;
+      const pending = allRequests.filter(req => req.status === 'pending').length;
+      const processing = allRequests.filter(req => req.status === 'processing').length;
+      const completed = allRequests.filter(req => req.status === 'completed').length;
       setSummaryData({ total, pending, processing, completed });
 
     } catch (err: any) {
@@ -158,11 +166,15 @@ const AdminDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [order, orderBy]);
+  }, [order, orderBy, filterStatus]); // Add filterStatus to dependencies
 
   useEffect(() => {
     fetchRequests();
-  }, [fetchRequests]);
+  }, [fetchRequests, filterStatus]); // Add filterStatus to useEffect dependencies
+
+  const handleStatusFilterClick = (status: string | null) => {
+    setFilterStatus(status);
+  };
 
   const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' | 'default' => {
     switch (status) {
@@ -184,6 +196,7 @@ const AdminDashboardPage: React.FC = () => {
     setSaveError('');
     setOpenDetailModal(true);
   };
+
 
   const handleCloseDetailModal = () => {
     setOpenDetailModal(false);
@@ -393,43 +406,107 @@ const AdminDashboardPage: React.FC = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Requests */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={2} sx={{ p: 1.5, display: 'flex', alignItems: 'center', borderLeft: `5px solid ${theme.palette.primary.main}` }}>
-            <CategoryIcon sx={{ fontSize: '2.5rem', color: theme.palette.primary.main, mr: 1.5 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">총 요청</Typography>
-              <Typography variant="h5" fontWeight="bold">{summaryData.total}</Typography>
-            </Box>
-          </Paper>
+          <ButtonBase
+            sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
+            onClick={() => handleStatusFilterClick(null)}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                borderLeft: `5px solid ${theme.palette.primary.main}`,
+                borderColor: filterStatus === null ? theme.palette.primary.dark : theme.palette.primary.main,
+                boxShadow: filterStatus === null ? `0px 0px 8px ${theme.palette.primary.light}` : undefined,
+              }}
+            >
+              <CategoryIcon sx={{ fontSize: '2.5rem', color: theme.palette.primary.main, mr: 1.5 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">총 요청</Typography>
+                <Typography variant="h5" fontWeight="bold">{summaryData.total}</Typography>
+              </Box>
+            </Paper>
+          </ButtonBase>
         </Grid>
         {/* Pending Requests */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={2} sx={{ p: 1.5, display: 'flex', alignItems: 'center', borderLeft: `5px solid ${theme.palette.info.main}` }}>
-            <AccessTimeIcon sx={{ fontSize: '2.5rem', color: theme.palette.info.main, mr: 1.5 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">접수 완료</Typography>
-              <Typography variant="h5" fontWeight="bold">{summaryData.pending}</Typography>
-            </Box>
-          </Paper>
+          <ButtonBase
+            sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
+            onClick={() => handleStatusFilterClick('pending')}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                borderLeft: `5px solid ${theme.palette.info.main}`,
+                borderColor: filterStatus === 'pending' ? theme.palette.info.dark : theme.palette.info.main,
+                boxShadow: filterStatus === 'pending' ? `0px 0px 8px ${theme.palette.info.light}` : undefined,
+              }}
+            >
+              <AccessTimeIcon sx={{ fontSize: '2.5rem', color: theme.palette.info.main, mr: 1.5 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">접수 완료</Typography>
+                <Typography variant="h5" fontWeight="bold">{summaryData.pending}</Typography>
+              </Box>
+            </Paper>
+          </ButtonBase>
         </Grid>
         {/* Processing Requests */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={2} sx={{ p: 1.5, display: 'flex', alignItems: 'center', borderLeft: `5px solid ${theme.palette.warning.main}` }}>
-            <SyncIcon sx={{ fontSize: '2.5rem', color: theme.palette.warning.main, mr: 1.5 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">처리 중</Typography>
-              <Typography variant="h5" fontWeight="bold">{summaryData.processing}</Typography>
-            </Box>
-          </Paper>
+          <ButtonBase
+            sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
+            onClick={() => handleStatusFilterClick('processing')}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                borderLeft: `5px solid ${theme.palette.warning.main}`,
+                borderColor: filterStatus === 'processing' ? theme.palette.warning.dark : theme.palette.warning.main,
+                boxShadow: filterStatus === 'processing' ? `0px 0px 8px ${theme.palette.warning.light}` : undefined,
+              }}
+            >
+              <SyncIcon sx={{ fontSize: '2.5rem', color: theme.palette.warning.main, mr: 1.5 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">처리 중</Typography>
+                <Typography variant="h5" fontWeight="bold">{summaryData.processing}</Typography>
+              </Box>
+            </Paper>
+          </ButtonBase>
         </Grid>
         {/* Completed Requests */}
         <Grid item xs={12} sm={6} md={3}>
-          <Paper elevation={2} sx={{ p: 1.5, display: 'flex', alignItems: 'center', borderLeft: `5px solid ${theme.palette.success.main}` }}>
-            <CheckCircleIcon sx={{ fontSize: '2.5rem', color: theme.palette.success.main, mr: 1.5 }} />
-            <Box>
-              <Typography variant="body2" color="text.secondary">처리 완료</Typography>
-              <Typography variant="h5" fontWeight="bold">{summaryData.completed}</Typography>
-            </Box>
-          </Paper>
+          <ButtonBase
+            sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
+            onClick={() => handleStatusFilterClick('completed')}
+          >
+            <Paper
+              elevation={2}
+              sx={{
+                p: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                width: '100%',
+                borderLeft: `5px solid ${theme.palette.success.main}`,
+                borderColor: filterStatus === 'completed' ? theme.palette.success.dark : theme.palette.success.main,
+                boxShadow: filterStatus === 'completed' ? `0px 0px 8px ${theme.palette.success.light}` : undefined,
+              }}
+            >
+              <CheckCircleIcon sx={{ fontSize: '2.5rem', color: theme.palette.success.main, mr: 1.5 }} />
+              <Box>
+                <Typography variant="body2" color="text.secondary">처리 완료</Typography>
+                <Typography variant="h5" fontWeight="bold">{summaryData.completed}</Typography>
+              </Box>
+            </Paper>
+          </ButtonBase>
         </Grid>
       </Grid>
 
