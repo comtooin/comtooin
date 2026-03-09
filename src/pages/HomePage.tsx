@@ -166,67 +166,76 @@ const HomePage: React.FC = () => {
         <Stack spacing={4}> {/* Global spacing between major sections */}
 
           {/* Section 1: User Information */}
-          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
-            <Stack spacing={3}>
-              <Typography variant="h6" component="h2" gutterBottom>기본 정보</Typography>
-              <TextField 
-                label="고객사명" 
-                fullWidth required variant="outlined" 
-                size="small" 
-                value={customerName} 
-                onChange={(e) => setCustomerName(e.target.value)} 
-                helperText="귀하의 회사 또는 단체 이름을 입력해주세요."
-              />
-              <TextField 
-                label="사용자명" 
-                fullWidth required variant="outlined" 
-                size="small" 
-                value={userName} 
-                onChange={(e) => setUserName(e.target.value)}
-                helperText="귀하의 성함을 입력해주세요." 
-              />
-              <TextField 
-                label="접수 확인용 비밀번호" 
-                type="password" 
-                fullWidth required variant="outlined" 
-                size="small" 
-                value={password} 
-                onChange={(e) => setPassword(e.target.value)} 
-                autoComplete="new-password"
-                helperText="접수 내역 확인 및 수정을 위한 비밀번호를 설정해주세요." 
-              />
-              <TextField 
-                label="비밀번호 확인" 
-                type="password" 
-                fullWidth required variant="outlined" 
-                size="small" 
-                value={passwordConfirm} 
-                onChange={(e) => setPasswordConfirm(e.target.value)} 
-                autoComplete="new-password"
-                helperText="설정하신 비밀번호를 다시 한번 입력해주세요." 
-              />
-              <TextField 
-                label="이메일 주소 (알림 수신용, 선택)" 
-                type="email" 
-                fullWidth variant="outlined" 
-                size="small" 
-                value={email} 
-                onChange={(e) => setEmail(e.target.value)}
-                helperText="요청 처리 상황이 업데이트될 때 알림을 받을 수 있습니다." 
-              />
-            </Stack>
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}>
+            <Typography variant="h6" component="h2" gutterBottom>기본 정보</Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="고객사명"
+                  fullWidth required variant="outlined"
+                  size="small"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  helperText="귀하의 회사 또는 단체 이름을 입력해주세요."
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="사용자명"
+                  fullWidth required variant="outlined"
+                  size="small"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  helperText="귀하의 성함을 입력해주세요."
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="접수 확인용 비밀번호"
+                  type="password"
+                  fullWidth required variant="outlined"
+                  size="small"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  helperText="접수 내역 확인 및 수정을 위한 비밀번호를 설정해주세요."
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="비밀번호 확인"
+                  type="password"
+                  fullWidth required variant="outlined"
+                  size="small"
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  autoComplete="new-password"
+                  helperText="설정하신 비밀번호를 다시 한번 입력해주세요."
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="이메일 주소 (알림 수신용, 선택)"
+                  type="email"
+                  fullWidth variant="outlined"
+                  size="small"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  helperText="요청 처리 상황이 업데이트될 때 알림을 받을 수 있습니다."
+                />
+              </Grid>
+            </Grid>
           </Paper>
-
           {/* Section 2: Request Content */}
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 } }}> {/* New Paper for section, added outlined variant */}
             <Stack spacing={3}>
               <Typography variant="h6" component="h2" gutterBottom>접수 내용 (필수)</Typography>
               <Box sx={{
-                minHeight: { xs: '250px', md: '600px' },
+                minHeight: { xs: '125px', md: '300px' }, // Reduced by half
                 display: 'flex',
                 flexDirection: 'column',
                 '& .ql-editor': {
-                  minHeight: { xs: '200px', md: '550px' },
+                  minHeight: { xs: '100px', md: '275px' }, // Reduced by half
                 },
               }}>
                 <ReactQuill theme="snow" value={content} onChange={handleContentChange} />
