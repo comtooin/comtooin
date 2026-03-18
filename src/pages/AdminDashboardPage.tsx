@@ -7,7 +7,7 @@ import {
   useMediaQuery, ListItem, ListItemText, Stack, ButtonBase
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, AccessTime as AccessTimeIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Helmet } from 'react-helmet-async';

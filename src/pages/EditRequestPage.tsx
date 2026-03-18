@@ -5,8 +5,6 @@ import { PhotoCamera, Delete } from '@mui/icons-material';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { supabase, assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css'; // import styles
 import { Helmet } from 'react-helmet-async';
 
 // 삭제됨: const API_URL = '';

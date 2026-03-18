@@ -16,10 +16,6 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
-import HomeIcon from '@mui/icons-material/Home';
-import ReceiptIcon from '@mui/icons-material/Receipt';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import SupportAgentIcon from '@mui/icons-material/SupportAgent';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';

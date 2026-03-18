@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Typography, Box, Paper, CircularProgress, Alert, Button,
+  Typography, Box, Paper, CircularProgress, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Card, CardContent
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
-  Description as DescriptionIcon,
   Assignment as AssignmentIcon,
   AccessTime as AccessTimeIcon,
   CheckCircle as CheckCircleIcon,
