@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  Typography, Box, Paper, CircularProgress, Button,
+  Typography, Box, Paper, CircularProgress, Alert, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Card, CardContent
 } from '@mui/material';
 import { 
@@ -35,7 +35,7 @@ const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     'processing': '처리중',
     'completed': '처리완료',
-    'pending': '처리중', // 내부 기록용이므로 pending도 처리중으로 간주
+    'pending': '처리중',
     '처리중': '처리중',
     '처리완료': '처리완료'
   };
@@ -82,7 +82,7 @@ interface MonthlySummary {
 
 const AdminReportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(''); // 에러 상태 복구
   const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
@@ -95,7 +95,6 @@ const AdminReportPage: React.FC = () => {
 
   const currentYear = new Date().getFullYear();
 
-  // 요약 데이터 계산
   const summaryStats = useMemo(() => {
     const total = filteredRequests.length;
     const processing = filteredRequests.filter(r => r.status === 'processing' || r.status === 'pending' || r.status === '처리중').length;
@@ -103,7 +102,6 @@ const AdminReportPage: React.FC = () => {
     return { total, processing, completed };
   }, [filteredRequests]);
 
-  // [추가] 거래처별 업무 점유율 데이터 계산
   const customerShareData = useMemo(() => {
     const counts: Record<string, number> = {};
     filteredRequests.forEach(r => {
@@ -164,7 +162,6 @@ const AdminReportPage: React.FC = () => {
       if (requestsError) throw requestsError;
       setFilteredRequests(requestsData || []);
 
-      // 차트용 집계 데이터
       const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
       setStatusData(statusSummaryData || []);
 
@@ -188,7 +185,6 @@ const AdminReportPage: React.FC = () => {
         setLoading(true);
         setError('');
         
-        // [수정] 환경변수 대신 supabase 객체에서 직접 URL 추출 시도
         const supabaseUrl = (supabase as any).supabaseUrl || process.env.REACT_APP_SUPABASE_URL;
         if (!supabaseUrl) {
             throw new Error("Supabase 설정(URL)을 찾을 수 없습니다.");
@@ -247,14 +243,13 @@ const AdminReportPage: React.FC = () => {
         window.URL.revokeObjectURL(url);
     } catch (err: any) {
         console.error("Excel Export Error:", err);
-        alert(`엑셀 다운로드 실패: ${err.message}`); // [추가] 즉각적인 피드백
+        alert(`엑셀 다운로드 실패: ${err.message}`);
         setError(err.message);
     } finally {
         setLoading(false);
     }
   };
 
-  // --- 차트 설정 ---
   const statusPieData = {
     labels: (statusData || []).filter(d => d.status !== 'pending').map(d => getStatusLabel(d.status)), 
     datasets: [{
@@ -290,6 +285,13 @@ const AdminReportPage: React.FC = () => {
         <Typography variant="h4" component="h1">유지보수 분석 리포트</Typography>
       </Box>
       <Divider sx={{ mb: 3 }} />
+
+      {/* 에러 알림창 (변수 사용 확인) */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+          {error}
+        </Alert>
+      )}
 
       {/* 요약 위젯 */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -398,7 +400,7 @@ const AdminReportPage: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10 }}>데이터가 없습니다.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}>데이터가 없습니다.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -407,7 +409,6 @@ const AdminReportPage: React.FC = () => {
 
           {tabValue === 1 && (
             <Grid container spacing={3}>
-              {/* 차트 1: 상태별 비중 */}
               <Grid item xs={12} md={4}>
                 <Paper sx={{ p: 3, textAlign: 'center' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
@@ -420,7 +421,6 @@ const AdminReportPage: React.FC = () => {
                 </Paper>
               </Grid>
 
-              {/* 차트 2: 거래처별 점유율 (새로 추가) */}
               <Grid item xs={12} md={4}>
                 <Paper sx={{ p: 3, textAlign: 'center' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
@@ -433,7 +433,6 @@ const AdminReportPage: React.FC = () => {
                 </Paper>
               </Grid>
 
-              {/* 차트 3: 월별 추이 */}
               <Grid item xs={12} md={4}>
                 <Paper sx={{ p: 3, textAlign: 'center' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
