@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Typography, Button, Box, Paper, CircularProgress, Alert, TextField, Divider, Stack } from '@mui/material'; // Added Stack
 import { Edit as EditIcon } from '@mui/icons-material';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import { Helmet } from 'react-helmet-async';
 
@@ -120,12 +120,21 @@ const AdminGuideEditorPage: React.FC = () => {
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
         />
 
-        <Box sx={{ minHeight: '400px', mb: 6 }}> {/* Wrapper Box for ReactQuill, minHeight adjusted */}
-          <ReactQuill
-            theme="snow"
-            value={content}
-            onChange={setContent}
-            style={{ height: '300px' }} // Fixed height for Quill editor
+        <Box sx={{ minHeight: '400px', mb: 2, '& .ck-editor__editable': { minHeight: '350px' } }}>
+          <Typography variant="subtitle1" gutterBottom>가이드 내용 작성</Typography>
+          <CKEditor
+            editor={ClassicEditor}
+            data={content}
+            onChange={(event: any, editor: any) => {
+              const data = editor.getData();
+              setContent(data);
+            }}
+            config={{
+              toolbar: [
+                'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                'insertTable', 'undo', 'redo'
+              ],
+            }}
           />
         </Box>
         {success && <Alert severity="success">{success}</Alert>}

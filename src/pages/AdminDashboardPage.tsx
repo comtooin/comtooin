@@ -8,8 +8,8 @@ import {
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, AccessTime as AccessTimeIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
-import ReactQuill from 'react-quill-new';
-import 'react-quill-new/dist/quill.snow.css';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 
@@ -24,6 +24,7 @@ interface IRequest {
   id: number;
   customer_name: string;
   user_name: string;
+  requester_name?: string;
   email: string;
   content: string;
   images: string[];
@@ -123,7 +124,7 @@ const AdminDashboardPage: React.FC = () => {
       setRequests(prevRequests => prevRequests.filter(req => req.id !== requestToDelete.id));
       setOpenDeleteConfirm(false);
       setRequestToDelete(null);
-      alert('접수 건이 성공적으로 삭제되었습니다.');
+      alert('업무 기록이 삭제되었습니다.');
       fetchRequests(); // Re-fetch to update summary
     } catch (err: any) {
       console.error("Failed to delete request or files", err);
@@ -292,10 +293,11 @@ const AdminDashboardPage: React.FC = () => {
             {(
               [
                 { id: 'id', label: 'ID' },
-                { id: 'created_at', label: '접수일시' },
-                { id: 'customer_name', label: '고객사명' },
-                { id: 'user_name', label: '사용자명' },
-                { id: 'content', label: '내용 요약' },
+                { id: 'created_at', label: '업무일시' },
+                { id: 'customer_name', label: '거래처명' },
+                { id: 'requester_name', label: '요청자' },
+                { id: 'user_name', label: '작성자' },
+                { id: 'content', label: '접수내용 요약' },
                 { id: 'status', label: '상태' },
               ] as const
             ).map((headCell) => (
@@ -325,6 +327,7 @@ const AdminDashboardPage: React.FC = () => {
               <TableCell component="th" scope="row">{request.id}</TableCell>
               <TableCell>{new Date(request.created_at).toLocaleString()}</TableCell>
               <TableCell>{request.customer_name}</TableCell>
+              <TableCell>{request.requester_name}</TableCell>
               <TableCell>{request.user_name}</TableCell>
               <TableCell>{stripHtmlTags(request.content).substring(0, 50)}...</TableCell>
               <TableCell>
@@ -371,7 +374,7 @@ const AdminDashboardPage: React.FC = () => {
               secondary={
                 <Stack spacing={0.5} sx={{ width: '100%' }}>
                   <Typography component="span" variant="caption" color="text.secondary">
-                    접수일시: {new Date(request.created_at).toLocaleDateString()} {new Date(request.created_at).toLocaleTimeString().substring(0, 5)}
+                    업무일시: {new Date(request.created_at).toLocaleDateString()} {new Date(request.created_at).toLocaleTimeString().substring(0, 5)}
                   </Typography>
                   <Typography component="span" variant="body2" sx={{ wordBreak: 'break-word' }}>
                     {stripHtmlTags(request.content).substring(0, 40) + '...'}
@@ -405,7 +408,7 @@ const AdminDashboardPage: React.FC = () => {
       {/* Summary Widgets */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Requests */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4}>
           <ButtonBase
             sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
             onClick={() => handleStatusFilterClick(null)}
@@ -424,40 +427,14 @@ const AdminDashboardPage: React.FC = () => {
             >
               <CategoryIcon sx={{ fontSize: '2.5rem', color: theme.palette.primary.main, mr: 1.5 }} />
               <Box>
-                <Typography variant="body2" color="text.secondary">총 요청</Typography>
+                <Typography variant="body2" color="text.secondary">총 업무 기록</Typography>
                 <Typography variant="h5" fontWeight="bold">{summaryData.total}</Typography>
               </Box>
             </Paper>
           </ButtonBase>
         </Grid>
-        {/* Pending Requests */}
-        <Grid item xs={12} sm={6} md={3}>
-          <ButtonBase
-            sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
-            onClick={() => handleStatusFilterClick('pending')}
-          >
-            <Paper
-              elevation={2}
-              sx={{
-                p: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                width: '100%',
-                borderLeft: `5px solid ${theme.palette.info.main}`,
-                borderColor: filterStatus === 'pending' ? theme.palette.info.dark : theme.palette.info.main,
-                boxShadow: filterStatus === 'pending' ? `0px 0px 8px ${theme.palette.info.light}` : undefined,
-              }}
-            >
-              <AccessTimeIcon sx={{ fontSize: '2.5rem', color: theme.palette.info.main, mr: 1.5 }} />
-              <Box>
-                <Typography variant="body2" color="text.secondary">접수 완료</Typography>
-                <Typography variant="h5" fontWeight="bold">{summaryData.pending}</Typography>
-              </Box>
-            </Paper>
-          </ButtonBase>
-        </Grid>
         {/* Processing Requests */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4}>
           <ButtonBase
             sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
             onClick={() => handleStatusFilterClick('processing')}
@@ -483,7 +460,7 @@ const AdminDashboardPage: React.FC = () => {
           </ButtonBase>
         </Grid>
         {/* Completed Requests */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4}>
           <ButtonBase
             sx={{ width: '100%', textAlign: 'left', borderRadius: theme.shape.borderRadius }}
             onClick={() => handleStatusFilterClick('completed')}
@@ -514,10 +491,10 @@ const AdminDashboardPage: React.FC = () => {
         <Paper sx={{ p: 3, textAlign: 'center', mt: 4 }}>
           <CheckCircleOutlineIcon sx={{ fontSize: '4rem', color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
-            현재 접수된 AS 요청이 없습니다.
+            등록된 유지보수 업무 내역이 없습니다.
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            새로운 요청이 접수되면 여기에 표시됩니다.
+            새로운 유지보수 업무를 기록하면 여기에 표시됩니다.
           </Typography>
         </Paper>
       ) : (
@@ -530,19 +507,19 @@ const AdminDashboardPage: React.FC = () => {
           <>
             <DialogTitle sx={{ pb: 0 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-                <Typography variant="h6" component="span" sx={{ mb: { xs: 1, sm: 0 } }}>접수 상세내용 (접수번호: {selectedRequest.id})</Typography>
+                <Typography variant="h6" component="span" sx={{ mb: { xs: 1, sm: 0 } }}>유지보수 업무 상세내용</Typography>
                 <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} />
               </Box>
             </DialogTitle>
             <DialogContent dividers sx={{ pt: 2 }}>
               <Stack spacing={2}>
-                <Typography><b>고객사명:</b> {selectedRequest.customer_name}</Typography>
-                <Typography><b>사용자명:</b> {selectedRequest.user_name}</Typography>
-                <Typography><b>이메일:</b> {selectedRequest.email}</Typography>
-                <Typography><b>접수일시:</b> {new Date(selectedRequest.created_at).toLocaleString()}</Typography>
+                <Typography><b>거래처명:</b> {selectedRequest.customer_name}</Typography>
+                <Typography><b>요청자:</b> {selectedRequest.requester_name}</Typography>
+                <Typography><b>작성자:</b> {selectedRequest.user_name}</Typography>
+                <Typography><b>업무일시:</b> {new Date(selectedRequest.created_at).toLocaleString()}</Typography>
                 <Typography><b>최종수정일:</b> {new Date(selectedRequest.updated_at).toLocaleString()}</Typography>
               </Stack>
-              <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>접수 내용</Typography>
+              <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>접수내용</Typography>
               <Paper variant="outlined" sx={{ p: 2, maxHeight: 200, overflow: 'auto' }}>
                 <div dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
               </Paper>
@@ -576,7 +553,7 @@ const AdminDashboardPage: React.FC = () => {
                 </Stack>
               ) : (
                 <Paper variant="outlined" sx={{ p: 2 }}>
-                  <Typography color="text.secondary">아직 등록된 코멘트가 없습니다.</Typography>
+                  <Typography color="text.secondary">아직 등록된 처리내용이 없습니다.</Typography>
                 </Paper>
               )}
 
@@ -589,17 +566,24 @@ const AdminDashboardPage: React.FC = () => {
                     label="상태 변경"
                     onChange={(e) => setNewStatus(e.target.value as string)}
                   >
-                    <MenuItem value="pending">{getStatusLabel('pending')}</MenuItem>
                     <MenuItem value="processing">{getStatusLabel('processing')}</MenuItem>
                     <MenuItem value="completed">{getStatusLabel('completed')}</MenuItem>
                   </Select>
                 </FormControl>
-                <ReactQuill
-                  theme="snow"
-                  value={newComment}
-                  onChange={setNewComment}
-                  style={{ height: '150px', marginTop: '16px', marginBottom: '16px' }}
-                />
+                <Box sx={{ mt: 2, mb: 1, '& .ck-editor__editable': { minHeight: '150px' } }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>처리내용/기타 추가사항</Typography>
+                  <CKEditor
+                    editor={ClassicEditor}
+                    data={newComment}
+                    onChange={(event: any, editor: any) => {
+                      const data = editor.getData();
+                      setNewComment(data);
+                    }}
+                    config={{
+                      toolbar: ['bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|', 'insertTable', 'undo', 'redo'],
+                    }}
+                  />
+                </Box>
                 {saveError && <Alert severity="error" sx={{ mt: 2 }}>{saveError}</Alert>}
               </Box>
             </DialogContent>
@@ -617,17 +601,17 @@ const AdminDashboardPage: React.FC = () => {
       <Dialog
         open={openDeleteConfirm}
         onClose={() => setOpenDeleteConfirm(false)}
-        maxWidth="sm"
+        maxWidth="xs"
         fullWidth
       >
-        <DialogTitle>정말로 삭제하시겠습니까?</DialogTitle>
+        <DialogTitle>업무 기록 삭제</DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{ mb: 2 }}>
-            접수번호 {requestToDelete?.id}번 (고객사: {requestToDelete?.customer_name}, 사용자: {requestToDelete?.user_name}) 접수 건을 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다.
+          <DialogContentText>
+            선택한 유지보수 업무 기록을 정말로 삭제하시겠습니까? 삭제된 데이터는 복구할 수 없습니다.
           </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteConfirm(false)}>취소</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setOpenDeleteConfirm(false)} variant="outlined">취소</Button>
           <Button onClick={handleDeleteRequest} color="error" variant="contained">삭제</Button>
         </DialogActions>
       </Dialog>

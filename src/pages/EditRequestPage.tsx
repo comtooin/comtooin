@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton } from '@mui/material';
 import { PhotoCamera, Delete } from '@mui/icons-material';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { supabase, assetBaseURL } from '../api'; // 수정됨: 중앙 API 모듈 임포트
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css'; // import styles
@@ -223,8 +225,23 @@ const EditRequestPage: React.FC = () => {
                     </Grid>
                     <TextField name="email" label="이메일 (선택사항)" type="email" fullWidth margin="normal" value={formData.email} onChange={handleInputChange} />
                     
-                    <Typography sx={{ mt: 2, mb: 1, color: 'text.secondary' }}>접수 내용</Typography>
-                    <ReactQuill theme="snow" value={formData.content} onChange={handleContentChange} style={{ height: '200px', marginBottom: '50px' }} />
+                    <Box sx={{ mt: 2, mb: 1, '& .ck-editor__editable': { minHeight: '200px' } }}>
+                        <Typography sx={{ mb: 1, color: 'text.secondary' }}>접수 내용</Typography>
+                        <CKEditor
+                            editor={ClassicEditor}
+                            data={formData.content}
+                            onChange={(event: any, editor: any) => {
+                                const data = editor.getData();
+                                handleContentChange(data);
+                            }}
+                            config={{
+                                toolbar: [
+                                    'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', '|',
+                                    'insertTable', 'undo', 'redo'
+                                ],
+                            }}
+                        />
+                    </Box>
 
                     <Box sx={{ my: 2 }}>
                         <Button variant="outlined" component="label">

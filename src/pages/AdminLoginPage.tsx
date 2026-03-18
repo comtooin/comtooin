@@ -30,9 +30,8 @@ const AdminLoginPage: React.FC = () => {
       if (data?.session) {
         // Store the access token (JWT) from Supabase session
         localStorage.setItem('adminToken', data.session.access_token);
-        // You might also want to store user ID or role for admin check
-        // For example, you can fetch user roles from a separate table using RLS after login
-        navigate('/admin/dashboard');
+        // Navigate to work record page (HomePage)
+        navigate('/');
       } else {
         throw new Error('로그인 정보가 올바르지 않습니다.');
       }

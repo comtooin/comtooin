@@ -1,47 +1,52 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, Container, useMediaQuery, useTheme } from '@mui/material'; // Added useMediaQuery, useTheme
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider, createTheme, CssBaseline, Container, useMediaQuery, useTheme } from '@mui/material';
 import HomePage from './pages/HomePage';
-import SubmissionDetailPage from './pages/SubmissionDetailPage'; // Import new page
-import CheckRequestPage from './pages/CheckRequestPage';
-import AdminLoginPage from './pages/AdminLoginPage'; // Import new page
+import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
+import AdminLoginPage from './pages/AdminLoginPage'; 
 import AdminDashboardPage from './pages/AdminDashboardPage';
-import AdminReportPage from './pages/AdminReportPage'; // Import new page
+import AdminReportPage from './pages/AdminReportPage'; 
+import AdminCustomerPage from './pages/AdminCustomerPage'; // Added Customer Management Page
 
-import SelfCheckGuidePage from './pages/SelfCheckGuidePage'; // Import new page
 import AdminGuideEditorPage from './pages/AdminGuideEditorPage';
+
 import EditRequestPage from './pages/EditRequestPage';
 import NavBar from './components/NavBar';
 import AdminRoute from './components/AdminRoute';
-import AdminGuideListPage from './pages/AdminGuideListPage';
 
 const theme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#607d8b', // Material Blue Grey 500
+      main: '#607d8b',
     },
     secondary: {
-      main: '#ffab91', // Material Deep Orange 200
+      main: '#ffab91',
     },
   },
-  shape: { // Added shape property for global border radius
-    borderRadius: 12, // Consistent border radius for components
+  shape: {
+    borderRadius: 12,
   },
   components: {
     MuiPaper: {
       styleOverrides: {
-        root: ({ theme }) => ({ // Applied global subtle shadow to Paper components
-          boxShadow: theme.shadows[1], // Use MUI's default elevation 1 shadow
+        root: ({ theme }) => ({
+          boxShadow: theme.shadows[1],
         }),
       },
     },
   },
 });
 
+// 로그인 상태에 따라 루트 경로를 분기해주는 컴포넌트
+const RootRoute = () => {
+  const isAdminLoggedIn = !!localStorage.getItem('adminToken');
+  return isAdminLoggedIn ? <HomePage /> : <Navigate to="/admin/login" replace />;
+};
+
 function App() {
-  const currentTheme = useTheme(); // Use useTheme to access the theme
-  const isMobile = useMediaQuery(currentTheme.breakpoints.down('sm')); // Check if screen is mobile
+  const currentTheme = useTheme(); 
+  const isMobile = useMediaQuery(currentTheme.breakpoints.down('sm'));
 
   return (
     <ThemeProvider theme={theme}>
@@ -53,17 +58,16 @@ function App() {
           maxWidth="lg"
           sx={{
             mt: 4,
-            px: isMobile ? 2 : 3, // Responsive horizontal padding: 2 for mobile, 3 for desktop
+            px: isMobile ? 2 : 3,
           }}
         >
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/submission-detail/:id" element={<SubmissionDetailPage />} />
-            <Route path="/check-request" element={<CheckRequestPage />} />
-            <Route path="/self-check-guide" element={<SelfCheckGuidePage />} />
+            {/* Root path: RootRoute 컴포넌트 내부에서 매번 토큰을 확인하도록 함 */}
+            <Route path="/" element={<RootRoute />} />
+            
             <Route path="/admin/login" element={<AdminLoginPage />} />
 
-            {/* Authenticated Admin Routes */}
+            {/* 인증된 관리자 전용 경로 */}
             <Route
               path="/admin/dashboard"
               element={<AdminRoute><AdminDashboardPage /></AdminRoute>}
@@ -73,23 +77,29 @@ function App() {
               element={<AdminRoute><AdminReportPage /></AdminRoute>}
             />
             <Route
-              path="/admin/guides"
-              element={<AdminRoute><AdminGuideListPage /></AdminRoute>}
+              path="/admin/customers"
+              element={<AdminRoute><AdminCustomerPage /></AdminRoute>}
             />
-           <Route
-            path="/admin/guide/new"
-            element={<AdminRoute><AdminGuideEditorPage /></AdminRoute>}
-          />
-          <Route
-            path="/admin/guide/edit/:id"
-            element={<AdminRoute><AdminGuideEditorPage /></AdminRoute>}
-          />
-           <Route
-            path="/edit-request/:id"
-            element={<EditRequestPage />}
-          />
+            <Route
+              path="/admin/guide/new"
+              element={<AdminRoute><AdminGuideEditorPage /></AdminRoute>}
+            />
+            <Route
+              path="/admin/guide/edit/:id"
+              element={<AdminRoute><AdminGuideEditorPage /></AdminRoute>}
+            />
+            <Route
+              path="/admin/request/detail/:id"
+              element={<AdminRoute><SubmissionDetailPage /></AdminRoute>}
+            />
+            <Route
+              path="/admin/request/edit/:id"
+              element={<AdminRoute><EditRequestPage /></AdminRoute>}
+            />
 
-        </Routes>
+            {/* 정의되지 않은 모든 경로는 루트로 리다이렉트 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </Container>
       </Router>
     </ThemeProvider>

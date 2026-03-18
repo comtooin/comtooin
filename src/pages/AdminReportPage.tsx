@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Card, CardContent
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
-  Description as DescriptionIcon 
+  Description as DescriptionIcon,
+  Assignment as AssignmentIcon,
+  AccessTime as AccessTimeIcon,
+  CheckCircle as CheckCircleIcon,
+  Business as BusinessIcon,
+  PieChart as PieChartIcon
 } from '@mui/icons-material';
 import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -22,9 +27,6 @@ const stripHtmlTags = (html: string) => {
   return doc.body.textContent || "";
 };
 
-/**
- * [추가] 상태 영문값을 한글로 변환하는 함수
- */
 const formatMobileDateTime = (dateTimeString: string) => {
   const date = new Date(dateTimeString);
   return `${date.getFullYear().toString().substring(2, 4)}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
@@ -32,33 +34,28 @@ const formatMobileDateTime = (dateTimeString: string) => {
 
 const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
-    'pending': '접수완료',
     'processing': '처리중',
     'completed': '처리완료',
-    '접수완료': '접수완료', // For cases where status might already be Korean
-    '처리중': '처리중',   // For cases where status might already be Korean
-    '처리완료': '처리완료' // For cases where status might already be Korean
+    'pending': '처리중', // 내부 기록용이므로 pending도 처리중으로 간주
+    '처리중': '처리중',
+    '처리완료': '처리완료'
   };
   return labels[status] || status;
 };
 
-// Helper function to get status chip color (Copied from AdminDashboardPage.tsx)
 const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' | 'default' => {
   switch (status) {
     case 'completed':
     case '처리완료':
       return 'success';
     case 'processing':
+    case 'pending':
     case '처리중':
       return 'warning';
-    case 'pending':
-    case '접수완료':
-      return 'info';
     default:
       return 'default';
   }
 };
-
 
 // --- TYPE DEFINITIONS ---
 interface IComment {
@@ -70,6 +67,7 @@ interface IRequest {
   id: number;
   customer_name: string;
   user_name: string;
+  requester_name?: string;
   content: string;
   status: string;
   created_at: string;
@@ -83,24 +81,39 @@ interface MonthlySummary {
     cancelled_requests: number;
 }
 
-// --- COMPONENT START ---
 const AdminReportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
-
-  // Filter states
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [status, setStatus] = useState('all');
-  const currentYear = new Date().getFullYear();
-
-  // Tab and Chart states
   const [tabValue, setTabValue] = useState(0);
   const [statusData, setStatusData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
+
+  const currentYear = new Date().getFullYear();
+
+  // 요약 데이터 계산
+  const summaryStats = useMemo(() => {
+    const total = filteredRequests.length;
+    const processing = filteredRequests.filter(r => r.status === 'processing' || r.status === 'pending' || r.status === '처리중').length;
+    const completed = filteredRequests.filter(r => r.status === 'completed' || r.status === '처리완료').length;
+    return { total, processing, completed };
+  }, [filteredRequests]);
+
+  // [추가] 거래처별 업무 점유율 데이터 계산
+  const customerShareData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    filteredRequests.forEach(r => {
+      counts[r.customer_name] = (counts[r.customer_name] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [filteredRequests]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
@@ -108,26 +121,14 @@ const AdminReportPage: React.FC = () => {
 
   const fetchInitialData = useCallback(async () => {
       try {
-          const { data: rawData, error: customersError } = await supabase
-              .from('requests')
-              .select('customer_name')
-              .neq('customer_name', null);
+          const { data: customerData } = await supabase.from('customers').select('name').order('name', { ascending: true });
+          if (customerData) setCustomers(customerData.map(c => c.name));
 
-          if (customersError) throw customersError;
-          
-          const customersData = rawData
-              ? Array.from(new Set(rawData.map(item => item.customer_name))).map(name => ({ customer_name: name }))
-              : [];
-          setCustomers((customersData || []).map((c: { customer_name: string }) => c.customer_name));
-
-          const { data: summaryData, error: summaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
-          if (summaryError) throw summaryError;
-          
-          setAllMonths((summaryData || []).map((m: MonthlySummary) => m.month));
-
+          const { data: summaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
+          if (summaryData) setAllMonths(summaryData.map((m: MonthlySummary) => m.month));
       } catch (err: any) {
-          console.error("Failed to fetch initial data", err);
-          setError(err.message || '필터 옵션을 불러오는 중 오류가 발생했습니다.');
+          console.error("Initial data fetch error", err);
+          setError('기본 데이터를 불러오는 중 오류가 발생했습니다.');
       } finally {
           setLoading(false);
       }
@@ -148,10 +149,7 @@ const AdminReportPage: React.FC = () => {
         requestsQuery = requestsQuery.eq('customer_name', selectedCustomer);
       }
       if (status !== 'all') {
-        // 필터링할 때도 한글/영문 대응을 위해 처리 (DB가 영문 기준이라면 영문으로 변환 필요할 수 있음)
-        const dbStatus = status === '접수완료' ? 'pending' :
-                         status === '처리중' ? 'processing' :
-                         status === '처리완료' ? 'completed' : status;
+        const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
         requestsQuery = requestsQuery.eq('status', dbStatus);
       }
       if (selectedMonth !== 'all') {
@@ -167,17 +165,16 @@ const AdminReportPage: React.FC = () => {
       if (requestsError) throw requestsError;
       setFilteredRequests(requestsData || []);
 
-      const { data: statusSummaryData, error: statusSummaryError } = await supabase.rpc('get_status_summary', {});
-      if (statusSummaryError) throw statusSummaryError;
+      // 차트용 집계 데이터
+      const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
       setStatusData(statusSummaryData || []);
 
-      const { data: monthlySummaryData, error: monthlySummaryError } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
-      if (monthlySummaryError) throw monthlySummaryError;
+      const { data: monthlySummaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
       setMonthlyData(monthlySummaryData as MonthlySummary[] || []);
 
     } catch (err: any) {
-      console.error("Supabase apply filters error", err);
-      setError(err.message || '리포트 데이터를 불러오는 중 오류가 발생했습니다.');
+      console.error("Filter apply error", err);
+      setError('리포트 데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
@@ -191,20 +188,27 @@ const AdminReportPage: React.FC = () => {
     try {
         setLoading(true);
         setError('');
-        const supabaseUrl = process.env.REACT_APP_SUPABASE_URL;
-        if (!supabaseUrl) throw new Error("Supabase URL is not defined.");
         
-        // [수정] Edge Function 경로 확인 (export-excel 인지 get-admin-report 인지 확인 필요)
+        // [수정] 환경변수 대신 supabase 객체에서 직접 URL 추출 시도
+        const supabaseUrl = (supabase as any).supabaseUrl || process.env.REACT_APP_SUPABASE_URL;
+        if (!supabaseUrl) {
+            throw new Error("Supabase 설정(URL)을 찾을 수 없습니다.");
+        }
+        
         const edgeFunctionUrl = `${supabaseUrl}/functions/v1/export-excel`; 
         
         const payload = {
             customerName: selectedCustomer,
             month: selectedMonth,
-            status: status === 'all' ? 'all' : (status === '접수완료' ? 'pending' : status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status)
+            status: status === 'all' ? 'all' : (status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status)
         };
 
         const { data: { session } } = await supabase.auth.getSession();
         const accessToken = session?.access_token;
+
+        if (!accessToken) {
+            throw new Error("인증 세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
 
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
@@ -215,173 +219,187 @@ const AdminReportPage: React.FC = () => {
             body: JSON.stringify(payload),
         });
 
-        if (!response.ok) throw new Error(`Excel export failed`);
-
-// --- ⭐ 파일명 추출 로직 (최종판: filename*= 대응) ---
-let actualFileName = `컴투인_리포트_${new Date().toISOString().split('T')[0]}.csv`; 
-
-try {
-    const contentDisposition = response.headers.get('Content-Disposition');
-    console.log("받은 헤더:", contentDisposition);
-
-    if (contentDisposition) {
-        // 1. filename*=UTF-8'' 형식이 있는지 확인 (현재 사용자님의 상황)
-        if (contentDisposition.includes("filename*=")) {
-            const parts = contentDisposition.split("filename*=UTF-8''");
-            if (parts.length > 1) {
-                actualFileName = decodeURIComponent(parts[1].split(';')[0]);
-            }
-        } 
-        // 2. 일반 filename= 형식이 있는지 확인 (백업)
-        else if (contentDisposition.includes("filename=")) {
-            const parts = contentDisposition.split('filename=');
-            let name = parts[1].split(';')[0].replace(/['"]/g, '');
-            actualFileName = decodeURIComponent(name);
+        if (!response.ok) {
+            const errorBody = await response.json().catch(() => ({}));
+            throw new Error(errorBody.error || `서버 응답 오류 (${response.status})`);
         }
-    }
-} catch (e) {
-    console.error("파일명 추출 실패:", e);
-}
 
-// 다운로드 처리
-const blob = await response.blob();
-const url = window.URL.createObjectURL(blob);
-const a = document.createElement('a');
-a.href = url;
-a.download = actualFileName; 
-document.body.appendChild(a);
-a.click();
-a.remove();
-window.URL.revokeObjectURL(url);
+        let actualFileName = `컴투인_유지보수_리포트_${new Date().toISOString().split('T')[0]}.csv`; 
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+            if (contentDisposition.includes("filename*=")) {
+                const parts = contentDisposition.split("filename*=UTF-8''");
+                if (parts.length > 1) actualFileName = decodeURIComponent(parts[1].split(';')[0]);
+            } else if (contentDisposition.includes("filename=")) {
+                const parts = contentDisposition.split('filename=');
+                let name = parts[1].split(';')[0].replace(/['"]/g, '');
+                actualFileName = decodeURIComponent(name);
+            }
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = actualFileName; 
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
     } catch (err: any) {
-        setError(err.message || 'Excel 다운로드 중 오류가 발생했습니다.');
+        console.error("Excel Export Error:", err);
+        alert(`엑셀 다운로드 실패: ${err.message}`); // [추가] 즉각적인 피드백
+        setError(err.message);
     } finally {
         setLoading(false);
     }
   };
 
-  // --- CHART DATA ---
-  const pieChartData = {
-    labels: (statusData || []).map(d => getStatusLabel(d.status)), // [수정] 한글 변환 적용
+  // --- 차트 설정 ---
+  const statusPieData = {
+    labels: (statusData || []).filter(d => d.status !== 'pending').map(d => getStatusLabel(d.status)), 
     datasets: [{
-      data: (statusData || []).map(d => d.count),
-      backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF'],
+      data: (statusData || []).filter(d => d.status !== 'pending').map(d => d.count),
+      backgroundColor: ['#ed6c02', '#2e7d32', '#9966FF'],
+    }],
+  };
+
+  const customerPieData = {
+    labels: customerShareData.map(d => d.name),
+    datasets: [{
+      data: customerShareData.map(d => d.count),
+      backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF', '#C9CBCF'],
     }],
   };
 
   const barChartData = {
     labels: (monthlyData || []).map(d => d.month),
     datasets: [{
-      label: '월별 접수 건수',
+      label: selectedCustomer === 'all' ? '전체 업무 건수' : `${selectedCustomer} 업무 추이`,
       data: (monthlyData || []).map(d => d.total_requests),
-      backgroundColor: 'rgba(54, 162, 235, 0.6)',
-      borderColor: 'rgba(54, 162, 235, 1)',
+      backgroundColor: 'rgba(96, 125, 139, 0.6)',
+      borderColor: 'rgba(96, 125, 139, 1)',
       borderWidth: 1,
     }],
   };
 
-  const barChartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { position: 'top' as const },
-      title: { display: true, text: '월별 접수 현황' },
-    },
-  };
-
   return (
     <>
-      <Helmet><title>리포트 및 통계</title></Helmet>
+      <Helmet><title>유지보수 분석 리포트</title></Helmet>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <BarChartIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-        <Typography variant="h4" component="h1">리포트 및 통계</Typography>
+        <Typography variant="h4" component="h1">유지보수 분석 리포트</Typography>
       </Box>
       <Divider sx={{ mb: 3 }} />
 
-      {/* --- FILTERS --- */}
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}> {/* Changed to Grid container */}
+      {/* 요약 위젯 */}
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        <Grid item xs={12} sm={4}>
+          <Card variant="outlined" sx={{ borderLeft: '4px solid #607d8b' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <AssignmentIcon color="primary" />
+                <Typography variant="overline">총 업무 기록</Typography>
+              </Stack>
+              <Typography variant="h4">{summaryStats.total}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={4}>
+          <Card variant="outlined" sx={{ borderLeft: '4px solid #ed6c02' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <AccessTimeIcon color="warning" />
+                <Typography variant="overline">처리중</Typography>
+              </Stack>
+              <Typography variant="h4">{summaryStats.processing}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+        <Grid item xs={6} sm={4}>
+          <Card variant="outlined" sx={{ borderLeft: '4px solid #2e7d32' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <CheckCircleIcon color="success" />
+                <Typography variant="overline">처리완료</Typography>
+              </Stack>
+              <Typography variant="h4">{summaryStats.completed}</Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* 필터 섹션 */}
+      <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <TextField select label="고객사" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
-              <MenuItem value="all"><em>전체</em></MenuItem>
-              {(customers || []).map(name => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+          <TextField select label="거래처 선택" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
+              <MenuItem value="all"><em>전체 거래처</em></MenuItem>
+              {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
           </TextField>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <TextField select label="월 선택" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
-              <MenuItem value="all"><em>전체</em></MenuItem>
-              {(allMonths || []).map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+          <TextField select label="기간(월)" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
+              <MenuItem value="all"><em>전체 기간</em></MenuItem>
+              {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
           </TextField>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
           <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
-            <MenuItem value="all"><em>전체</em></MenuItem>
-            <MenuItem value="pending">{getStatusLabel('pending')}</MenuItem> {/* Use getStatusLabel */}
-            <MenuItem value="processing">{getStatusLabel('processing')}</MenuItem> {/* Use getStatusLabel */}
-            <MenuItem value="completed">{getStatusLabel('completed')}</MenuItem> {/* Use getStatusLabel */}
+            <MenuItem value="all"><em>전체 상태</em></MenuItem>
+            <MenuItem value="processing">처리중</MenuItem>
+            <MenuItem value="completed">처리완료</MenuItem>
           </TextField>
         </Grid>
         <Grid item xs={12} sm={6} md={3}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: '100%' }}> {/* Stack for buttons, adjust direction for mobile */}
-              <Button variant="contained" onClick={applyFilters} size="medium" fullWidth sx={{ flexGrow: 1 }}>필터 적용</Button>
-              <Button variant="outlined" color="secondary" onClick={handleExportExcel} size="medium" fullWidth sx={{ flexGrow: 1 }}>Excel 내보내기</Button>
+          <Stack direction="row" spacing={1}>
+            <Button variant="contained" onClick={applyFilters} fullWidth>조회</Button>
+            <Button variant="outlined" color="secondary" onClick={handleExportExcel} fullWidth>Excel</Button>
           </Stack>
         </Grid>
       </Grid>
 
-      {/* --- TABS --- */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}> {/* Added margin-bottom */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="상세 리스트" />
-          <Tab label="요약 그래프" />
+          <Tab label="업무 상세 리스트" />
+          <Tab label="시각화 분석" />
         </Tabs>
       </Box>
 
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-          <CircularProgress />
-        </Box>
-      ) : error ? (
-        <Alert severity="error" sx={{ mt: 4 }}>{error}</Alert>
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
       ) : (
-        <Box sx={{ pt: 3 }}>
+        <Box sx={{ pt: 1 }}>
           {tabValue === 0 && (
             <TableContainer component={Paper}>
               <Table stickyHeader>
                 <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>ID</TableCell>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>접수일시</TableCell>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>고객사명</TableCell>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>사용자명</TableCell>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>상태</TableCell>
-                    <TableCell sx={{ py: 0.5, px: 1 }}>처리내용</TableCell>
+                  <TableRow sx={{ bgcolor: 'grey.50' }}>
+                    <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>작성자</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
+                    <TableCell sx={{ fontWeight: 'bold' }}>접수내용 요약</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {(filteredRequests || []).length > 0 ? filteredRequests.map((request) => (
+                  {filteredRequests.length > 0 ? filteredRequests.map((request) => (
                     <TableRow key={request.id} hover>
-                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.id}</Typography></TableCell>
-                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
-                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.customer_name}</Typography></TableCell>
-                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{request.user_name}</Typography></TableCell>
-                      <TableCell sx={{ py: 0.5, px: 1 }}>
-                        <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" />
+                      <TableCell><Typography variant="body2">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
+                      <TableCell><Typography variant="body2" fontWeight="medium">{request.customer_name}</Typography></TableCell>
+                      <TableCell><Typography variant="body2">{request.requester_name}</Typography></TableCell>
+                      <TableCell><Typography variant="body2">{request.user_name}</Typography></TableCell>
+                      <TableCell>
+                        <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" variant="outlined" />
                       </TableCell>
-                      <TableCell sx={{ py: 0.5, px: 1 }}><Typography variant="caption">{(request.comments || []).length > 0 ? stripHtmlTags(request.comments.map(c => c.comment).join(', ')).substring(0, 30) + '...' : ''}</Typography></TableCell>
+                      <TableCell>
+                        <Typography variant="caption" color="text.secondary">
+                          {stripHtmlTags(request.content).substring(0, 40)}...
+                        </Typography>
+                      </TableCell>
                     </TableRow>
                   )) : (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        <Box sx={{ p: 3, textAlign: 'center' }}>
-                          <DescriptionIcon sx={{ fontSize: '4rem', color: 'text.secondary', mb: 2 }} />
-                          <Typography variant="h6" color="text.secondary" gutterBottom>
-                            필터링된 데이터가 없습니다.
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            다른 필터 조건을 선택하거나 필터를 초기화해 보세요.
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                    <TableRow><TableCell colSpan={5} align="center" sx={{ py: 10 }}>데이터가 없습니다.</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -389,31 +407,43 @@ window.URL.revokeObjectURL(url);
           )}
 
           {tabValue === 1 && (
-            <Grid container spacing={2}> {/* Reduced spacing for mobile */}
-              <Grid item xs={12} md={5}>
-                <Typography variant="subtitle1" align="center" gutterBottom>상태별 접수 현황</Typography> {/* Smaller typography for title */}
-                <Paper sx={{p: { xs: 1.5, md: 3 }}}> {/* Responsive padding */}
-                  {(statusData || []).length > 0 ? <Pie data={pieChartData} /> : (
-                    <Box sx={{ p: 1.5, textAlign: 'center', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}> {/* Responsive minHeight */}
-                      <DescriptionIcon sx={{ fontSize: '3rem', color: 'text.secondary', mb: 1 }} /> {/* Smaller icon */}
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        표시할 통계 데이터가 없습니다.
-                      </Typography>
-                    </Box>
-                  )}
+            <Grid container spacing={3}>
+              {/* 차트 1: 상태별 비중 */}
+              <Grid item xs={12} md={4}>
+                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                    <PieChartIcon color="action" fontSize="small" />
+                    <Typography variant="subtitle2">상태별 업무 비중</Typography>
+                  </Stack>
+                  <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
+                    <Pie data={statusPieData} options={{ maintainAspectRatio: false }} />
+                  </Box>
                 </Paper>
               </Grid>
-              <Grid item xs={12} md={7}>
-                <Typography variant="subtitle1" align="center" gutterBottom>월별 접수 현황</Typography> {/* Smaller typography for title */}
-                <Paper sx={{p: { xs: 1.5, md: 3 }}}> {/* Responsive padding */}
-                  {(monthlyData || []).length > 0 ? <Bar options={barChartOptions} data={barChartData} /> : (
-                    <Box sx={{ p: 1.5, textAlign: 'center', minHeight: '200px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}> {/* Responsive minHeight */}
-                      <DescriptionIcon sx={{ fontSize: '3rem', color: 'text.secondary', mb: 1 }} /> {/* Smaller icon */}
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        표시할 통계 데이터가 없습니다.
-                      </Typography>
-                    </Box>
-                  )}
+
+              {/* 차트 2: 거래처별 점유율 (새로 추가) */}
+              <Grid item xs={12} md={4}>
+                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                    <BusinessIcon color="action" fontSize="small" />
+                    <Typography variant="subtitle2">거래처별 업무 점유율</Typography>
+                  </Stack>
+                  <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
+                    <Pie data={customerPieData} options={{ maintainAspectRatio: false }} />
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* 차트 3: 월별 추이 */}
+              <Grid item xs={12} md={4}>
+                <Paper sx={{ p: 3, textAlign: 'center' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                    <BarChartIcon color="action" fontSize="small" />
+                    <Typography variant="subtitle2">월별 업무 추이</Typography>
+                  </Stack>
+                  <Box sx={{ height: 250 }}>
+                    <Bar data={barChartData} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
+                  </Box>
                 </Paper>
               </Grid>
             </Grid>
