@@ -19,11 +19,10 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import EditNoteIcon from '@mui/icons-material/EditNote';
-import BusinessIcon from '@mui/icons-material/Business'; // Added Business Icon
-
+import BusinessIcon from '@mui/icons-material/Business';
 import LogoutIcon from '@mui/icons-material/Logout';
-
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -36,12 +35,12 @@ const NavBar: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     setIsAdminLoggedIn(!!token);
-  }, [location]); // Re-check on every route change
+  }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
     setIsAdminLoggedIn(false);
-    navigate('/'); // Navigate to home page after logout
+    navigate('/admin/login');
   };
 
   const handleDrawerToggle = () => {
@@ -60,7 +59,7 @@ const NavBar: React.FC = () => {
           <>
             <ListItem button component={RouterLink} to="/">
               <ListItemIcon><EditNoteIcon /></ListItemIcon>
-              <ListItemText primary="유지보수 업무내역작성" />
+              <ListItemText primary="유지보수 업무기록" />
             </ListItem>
             <ListItem button component={RouterLink} to="/admin/dashboard">
               <ListItemIcon><DashboardIcon /></ListItemIcon>
@@ -70,11 +69,14 @@ const NavBar: React.FC = () => {
               <ListItemIcon><AssessmentIcon /></ListItemIcon>
               <ListItemText primary="리포트" />
             </ListItem>
+            <ListItem button component={RouterLink} to="/admin/archive">
+              <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
+              <ListItemText primary="자료실" />
+            </ListItem>
             <ListItem button component={RouterLink} to="/admin/customers">
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText primary="거래처 관리" />
             </ListItem>
-
             <ListItem button onClick={handleLogout}>
               <ListItemIcon><LogoutIcon /></ListItemIcon>
               <ListItemText primary="로그아웃" />
@@ -94,13 +96,12 @@ const NavBar: React.FC = () => {
     <>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" component={RouterLink} to="/" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none' }}>
+          <Typography variant="h6" component={RouterLink} to="/" sx={{ flexGrow: 1, color: 'inherit', textDecoration: 'none', fontWeight: 'bold' }}>
             COMTOOIN
           </Typography>
           {isMobile ? (
             <IconButton
               color="inherit"
-              aria-label="open drawer"
               edge="start"
               onClick={handleDrawerToggle}
             >
@@ -110,26 +111,15 @@ const NavBar: React.FC = () => {
             <Box>
               {isAdminLoggedIn ? (
                 <>
-                  <Button color="inherit" component={RouterLink} to="/">
-                    유지보수 업무내역작성
-                  </Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/dashboard">
-                    대시보드
-                  </Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/reports">
-                    리포트
-                  </Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/customers">
-                    거래처 관리
-                  </Button>
-                  <Button color="inherit" onClick={handleLogout}>
-                    로그아웃
-                  </Button>
+                  <Button color="inherit" component={RouterLink} to="/">유지보수 업무기록</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/dashboard">대시보드</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/reports">리포트</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/archive">자료실</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/customers">거래처 관리</Button>
+                  <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
                 </>
               ) : (
-                <Button color="inherit" component={RouterLink} to="/admin/login">
-                  관리자 로그인
-                </Button>
+                <Button color="inherit" component={RouterLink} to="/admin/login">관리자 로그인</Button>
               )}
             </Box>
           )}
