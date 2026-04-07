@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button, TableSortLabel,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button,
   Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  useMediaQuery, ListItem, ListItemText, Stack, ButtonBase, TextField
+  ButtonBase, TextField, Stack
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import { Dashboard as DashboardIcon, CheckCircleOutline as CheckCircleOutlineIcon, Category as CategoryIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { Dashboard as DashboardIcon, Category as CategoryIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
 
@@ -30,11 +29,6 @@ interface IRequest {
   comments: IComment[];
 }
 
-const stripHtmlTags = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || "";
-};
-
 const getStatusLabel = (status: string): string => {
   switch (status) {
     case 'pending': return '접수완료';
@@ -54,16 +48,6 @@ const AdminDashboardPage: React.FC = () => {
   const [newStatus, setNewStatus] = useState('');
   const [newComment, setNewComment] = useState('');
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
-
-  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
-  const [orderBy, setOrderBy] = useState('created_at');
-
-  const [requestToDelete, setRequestToDelete] = useState<IRequest | null>(null);
-  const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [summaryData, setSummaryData] = useState({
     total: 0,
@@ -80,7 +64,7 @@ const AdminDashboardPage: React.FC = () => {
       let query = supabase
         .from('requests')
         .select('*, comments(*)')
-        .order(orderBy, { ascending: order === 'asc' });
+        .order('created_at', { ascending: false });
 
       if (filterStatus) {
         query = query.eq('status', filterStatus);
@@ -104,18 +88,18 @@ const AdminDashboardPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [order, orderBy, filterStatus]);
+  }, [filterStatus]);
 
   useEffect(() => {
     fetchRequests();
   }, [fetchRequests]);
 
   const handleDeleteRequest = async () => {
-    if (!requestToDelete) return;
+    if (!selectedRequest) return;
     try {
-      const { error: deleteError } = await supabase.from('requests').delete().eq('id', requestToDelete.id);
+      const { error: deleteError } = await supabase.from('requests').delete().eq('id', selectedRequest.id);
       if (deleteError) throw deleteError;
-      setOpenDeleteConfirm(false);
+      setOpenDetailModal(false);
       fetchRequests();
       alert('업무 기록이 삭제되었습니다.');
     } catch (err: any) {
@@ -145,7 +129,7 @@ const AdminDashboardPage: React.FC = () => {
       setOpenDetailModal(false);
       alert('성공적으로 업데이트되었습니다.');
     } catch (err: any) {
-      setSaveError(err.message || '업데이트 중 오류가 발생했습니다.');
+      alert(err.message || '업데이트 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
     }
@@ -157,15 +141,6 @@ const AdminDashboardPage: React.FC = () => {
       case 'processing': return 'warning';
       case 'pending': return 'info';
       default: return 'default';
-    }
-  };
-
-  const getStatusBorderColor = (status: string) => {
-    switch (status) {
-      case 'pending': return theme.palette.info.main;
-      case 'processing': return theme.palette.warning.main;
-      case 'completed': return theme.palette.success.main;
-      default: return theme.palette.grey[300];
     }
   };
 
@@ -183,9 +158,9 @@ const AdminDashboardPage: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {[
-          { label: '총 업무 기록', count: summaryData.total, icon: <CategoryIcon />, color: theme.palette.primary.main, filter: null },
-          { label: '처리 중', count: summaryData.processing, icon: <SyncIcon />, color: theme.palette.warning.main, filter: 'processing' },
-          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon />, color: theme.palette.success.main, filter: 'completed' },
+          { label: '총 업무 기록', count: summaryData.total, icon: <CategoryIcon />, color: '#607d8b', filter: null },
+          { label: '처리 중', count: summaryData.processing, icon: <SyncIcon />, color: '#ed6c02', filter: 'processing' },
+          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon />, color: '#2e7d32', filter: 'completed' },
         ].map((item, idx) => (
           <Grid item xs={12} sm={4} key={idx}>
             <ButtonBase sx={{ width: '100%', borderRadius: 1 }} onClick={() => setFilterStatus(item.filter)}>
@@ -201,39 +176,32 @@ const AdminDashboardPage: React.FC = () => {
         ))}
       </Grid>
 
-      {requests.length === 0 ? (
-        <Paper sx={{ p: 5, textAlign: 'center' }}>
-          <Typography color="text.secondary">기록된 업무 내역이 없습니다.</Typography>
-        </Paper>
-      ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>업무일시</TableCell>
-                <TableCell>거래처명</TableCell>
-                <TableCell>요청자</TableCell>
-                <TableCell>상태</TableCell>
-                <TableCell>액션</TableCell>
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>업무일시</TableCell>
+              <TableCell>거래처명</TableCell>
+              <TableCell>요청자</TableCell>
+              <TableCell>상태</TableCell>
+              <TableCell>액션</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {requests.map((req) => (
+              <TableRow key={req.id} hover>
+                <TableCell>{new Date(req.created_at).toLocaleString()}</TableCell>
+                <TableCell>{req.customer_name}</TableCell>
+                <TableCell>{req.requester_name}</TableCell>
+                <TableCell><Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} size="small" /></TableCell>
+                <TableCell>
+                  <Button size="small" variant="outlined" onClick={() => { setSelectedRequest(req); setNewStatus(req.status); setOpenDetailModal(true); }}>상세</Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {requests.map((req) => (
-                <TableRow key={req.id} hover>
-                  <TableCell>{new Date(req.created_at).toLocaleString()}</TableCell>
-                  <TableCell>{req.customer_name}</TableCell>
-                  <TableCell>{req.requester_name}</TableCell>
-                  <TableCell><Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} size="small" /></TableCell>
-                  <TableCell>
-                    <Button size="small" variant="outlined" sx={{ mr: 1 }} onClick={() => { setSelectedRequest(req); setNewStatus(req.status); setOpenDetailModal(true); }}>상세</Button>
-                    <Button size="small" variant="outlined" color="error" onClick={() => { setRequestToDelete(req); setOpenDeleteConfirm(true); }}>삭제</Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
 
       <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
         {selectedRequest && (
@@ -273,19 +241,11 @@ const AdminDashboardPage: React.FC = () => {
             </DialogContent>
             <DialogActions>
               <Button onClick={() => setOpenDetailModal(false)}>취소</Button>
+              <Button onClick={handleDeleteRequest} color="error">삭제</Button>
               <Button onClick={handleSaveRequest} variant="contained" disabled={saving}>저장</Button>
             </DialogActions>
           </>
         )}
-      </Dialog>
-
-      <Dialog open={openDeleteConfirm} onClose={() => setOpenDeleteConfirm(false)}>
-        <DialogTitle>삭제 확인</DialogTitle>
-        <DialogContent><DialogContentText>정말 삭제하시겠습니까?</DialogContentText></DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDeleteConfirm(false)}>취소</Button>
-          <Button onClick={handleDeleteRequest} color="error" variant="contained">삭제</Button>
-        </DialogActions>
       </Dialog>
     </>
   );

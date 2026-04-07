@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton } from '@mui/material';
-import { PhotoCamera, Delete } from '@mui/icons-material';
+import { Delete } from '@mui/icons-material';
 import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
