@@ -393,3 +393,8 @@ entrypoint = "./functions/export-excel/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/export-excel/*.html" ]
+
+[functions.polish-text]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/polish-text/index.ts"

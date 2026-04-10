@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Tooltip
 } from '@mui/material';
-import { PhotoCamera, Delete, Assignment as AssignmentIcon } from '@mui/icons-material';
+import { PhotoCamera, Delete, Assignment as AssignmentIcon, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -20,6 +20,8 @@ const HomePage: React.FC = () => {
   const [images, setImages] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
+  const [isListening, setIsListening] = useState(false);
+  const [isPolishing, setIsPolishing] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -37,6 +39,60 @@ const HomePage: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  const handleVoiceInput = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+      return;
+    }
+
+    if (isListening) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ko-KR';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      console.error("Speech Recognition Error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      setContent(prev => prev ? `${prev} ${transcript}` : transcript);
+    };
+
+    recognition.start();
+  };
+
+  const handlePolishText = async () => {
+    if (!content.trim()) {
+      setError("정돈할 내용이 없습니다.");
+      return;
+    }
+    setIsPolishing(true);
+    setError('');
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke('polish-text', {
+        body: { text: content },
+      });
+      if (functionError) throw functionError;
+      if (data?.polishedText) {
+        setContent(data.polishedText);
+      } else if (data?.error) {
+        throw new Error(data.error);
+      }
+    } catch (err: any) {
+      console.error("AI Polish error", err);
+      setError("AI 정돈 중 오류가 발생했습니다: " + (err.message || "다시 시도해주세요."));
+    } finally {
+      setIsPolishing(false);
+    }
+  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -132,7 +188,35 @@ const HomePage: React.FC = () => {
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h6">접수내용 (필수)</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                <Typography variant="h6">접수내용 (필수)</Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Tooltip title="음성으로 내용을 입력합니다">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={isListening ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                      onClick={handleVoiceInput}
+                      disabled={isListening || isPolishing}
+                      color={isListening ? "secondary" : "primary"}
+                    >
+                      {isListening ? "인식 중..." : "음성 입력"}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="AI가 내용을 전문적인 문체로 다듬어줍니다">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={isPolishing ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                      onClick={handlePolishText}
+                      disabled={isPolishing || isListening || !content.trim()}
+                      color="success"
+                    >
+                      {isPolishing ? "정돈 중..." : "AI 정돈"}
+                    </Button>
+                  </Tooltip>
+                </Box>
+              </Box>
               <TextField 
                 label="요청자 (고객 담당자)" 
                 fullWidth variant="outlined" size="small"
