@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
   DialogContent, TextField, DialogActions, MenuItem, Select, FormControl, 
-  InputLabel, CircularProgress, Alert, Divider, Stack, Chip
+  InputLabel, CircularProgress, Alert, Divider, Stack, Chip, useMediaQuery, useTheme
 } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -26,6 +26,9 @@ interface Staff { id: string; name: string; email: string; }
 interface Customer { id: string; name: string; }
 
 const AdminSchedulePage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  
   const [events, setEvents] = useState<any[]>([]);
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [customerList, setCustomerList] = useState<Customer[]>([]);
@@ -34,9 +37,9 @@ const AdminSchedulePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   // 팝업 상태 관리
-  const [open, setOpen] = useState(false); // 등록 팝업
-  const [detailOpen, setDetailOpen] = useState(false); // 상세 팝업
-  const [selectedEvent, setSelectedEvent] = useState<any>(null); // 선택된 일정 정보
+  const [open, setOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
@@ -65,32 +68,29 @@ const AdminSchedulePage: React.FC = () => {
     if (data) {
       const formatted = data.map(item => ({
         id: item.id,
-        title: `[${item.customer_name || '일반'}] ${item.title}`,
+        title: isMobile ? item.title : `[${item.customer_name || '일반'}] ${item.title}`,
         start: item.start_time,
-        extendedProps: { ...item } // 상세 정보를 캘린더 이벤트 객체에 포함
+        extendedProps: { ...item }
       }));
       setEvents(formatted);
     }
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     fetchData();
     fetchSchedules();
   }, [fetchData, fetchSchedules]);
 
-  // 달력 날짜 클릭 (새 일정 등록)
   const handleDateClick = (arg: any) => {
     setFormData(prev => ({ ...prev, date: arg.dateStr, title: '', content: '' }));
     setOpen(true);
   };
 
-  // 일정 클릭 (상세 보기)
   const handleEventClick = (info: any) => {
     setSelectedEvent(info.event.extendedProps);
     setDetailOpen(true);
   };
 
-  // STT & AI 정돈 로직
   const handleSTT = () => {
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SpeechRecognition) return alert('음성 인식을 지원하지 않는 브라우저입니다.');
@@ -111,7 +111,6 @@ const AdminSchedulePage: React.FC = () => {
     } finally { setLoading(false); }
   };
 
-  // 일정 저장
   const handleSave = async () => {
     if (!formData.title || !formData.date || !formData.assignee) return alert('제목, 날짜, 담당자는 필수입니다.');
     setLoading(true);
@@ -151,7 +150,6 @@ const AdminSchedulePage: React.FC = () => {
     } finally { setLoading(false); }
   };
 
-  // 일정 삭제
   const handleDelete = async (id: string) => {
     if (!window.confirm('이 일정을 삭제하시겠습니까?')) return;
     try {
@@ -166,43 +164,77 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4, bgcolor: '#f5f7fa', minHeight: '100vh' }}>
+    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, bgcolor: '#f5f7fa', minHeight: '100vh', px: { xs: 1, sm: 2 } }}>
       <Helmet><title>일정 관리</title></Helmet>
       
-      {/* 주말 색상 지정을 위한 커스텀 CSS */}
       <style>{`
         .fc-day-sun .fc-col-header-cell-cushion, 
-        .fc-day-sun .fc-daygrid-day-number { color: #d32f2f !important; } /* 일요일: 빨간색 */
+        .fc-day-sun .fc-daygrid-day-number { color: #d32f2f !important; }
         .fc-day-sat .fc-col-header-cell-cushion, 
-        .fc-day-sat .fc-daygrid-day-number { color: #1976d2 !important; } /* 토요일: 파란색 */
+        .fc-day-sat .fc-daygrid-day-number { color: #1976d2 !important; }
         .fc-event { cursor: pointer; transition: transform 0.1s; }
         .fc-event:hover { transform: scale(1.02); }
+        
+        /* 모바일 헤더 겹침 방지 및 줄바꿈 최적화 */
+        @media (max-width: 600px) {
+          .fc .fc-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center !important;
+            gap: 8px;
+            margin-bottom: 1em !important;
+          }
+          .fc .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+          }
+          /* 제목을 최상단 중앙에 배치 */
+          .fc .fc-toolbar-title { 
+            width: 100%; 
+            text-align: center; 
+            font-size: 1.15rem !important;
+            margin-bottom: 2px !important;
+          }
+          .fc .fc-button { padding: 4px 8px !important; font-size: 0.8rem !important; }
+        }
       `}</style>
       
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <CalendarMonthIcon sx={{ mr: 1.5, fontSize: '2.5rem', color: 'primary.main' }} />
-        <Typography variant="h4" component="h1" fontWeight="bold">일정 관리</Typography>
+        <CalendarMonthIcon sx={{ mr: 1.5, fontSize: { xs: '2rem', md: '2.5rem' }, color: 'primary.main' }} />
+        <Typography variant={isMobile ? "h5" : "h4"} component="h1" fontWeight="bold">일정 관리</Typography>
       </Box>
-      <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ mb: { xs: 2, md: 3 } }} />
 
       {error && <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>{error}</Alert>}
 
-      <Paper elevation={3} sx={{ p: 2, borderRadius: 3, bgcolor: '#ffffff' }}>
+      <Paper elevation={3} sx={{ p: { xs: 1, md: 2 }, borderRadius: 3, bgcolor: '#ffffff' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
-          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
-          events={events}
-          height="75vh"
+          headerToolbar={{
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+          }}
+          buttonText={{
+            today: '오늘',
+            month: '월',
+            week: '주',
+            day: '일'
+          }}
+          height={isMobile ? "auto" : "75vh"}
+          aspectRatio={isMobile ? 0.85 : 1.35}
           locale="ko"
           dateClick={handleDateClick}
-          eventClick={handleEventClick} // 일정 클릭 핸들러 추가
+          eventClick={handleEventClick}
           selectable={true}
+          dayMaxEvents={isMobile ? 2 : true}
         />
       </Paper>
 
-      {/* [1] 새 일정 등록 팝업 */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
+      {/* 등록 팝업 */}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>{formData.date} 일정 등록</DialogTitle>
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
@@ -238,7 +270,7 @@ const AdminSchedulePage: React.FC = () => {
                   setFormData({...formData, assignee: staff || null});
                 }}
               >
-                {staffList.map(s => <MenuItem key={s.id} value={s.id}>{s.name} ({s.email})</MenuItem>)}
+                {staffList.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               </Select>
             </FormControl>
           </Box>
@@ -251,8 +283,8 @@ const AdminSchedulePage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* [2] 일정 상세 보기 팝업 */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="xs" fullWidth>
+      {/* 상세 보기 팝업 */}
+      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
         {selectedEvent && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -289,7 +321,7 @@ const AdminSchedulePage: React.FC = () => {
                   <PersonIcon color="action" />
                   <Box>
                     <Typography variant="caption" color="text.secondary">담당자</Typography>
-                    <Typography variant="body1">{selectedEvent.assignee_name} ({selectedEvent.assignee_email})</Typography>
+                    <Typography variant="body1">{selectedEvent.assignee_name}</Typography>
                   </Box>
                 </Box>
               </Stack>
