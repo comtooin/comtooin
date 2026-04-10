@@ -77,6 +77,10 @@ const NavBar: React.FC = () => {
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText primary="거래처 관리" />
             </ListItem>
+            <ListItem button component={RouterLink} to="/admin/schedule">
+              <ListItemIcon><AssessmentIcon /></ListItemIcon>
+              <ListItemText primary="일정 관리" />
+            </ListItem>
             <ListItem button onClick={handleLogout}>
               <ListItemIcon><LogoutIcon /></ListItemIcon>
               <ListItemText primary="로그아웃" />
@@ -116,6 +120,7 @@ const NavBar: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/admin/reports">리포트</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive">자료실</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/customers">거래처 관리</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/schedule">일정 관리</Button>
                   <Button color="inherit" onClick={handleLogout}>로그아웃</Button>
                 </>
               ) : (
