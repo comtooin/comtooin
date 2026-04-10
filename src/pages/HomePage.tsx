@@ -59,6 +59,11 @@ const HomePage: React.FC = () => {
     recognition.onerror = (event: any) => {
       console.error("Speech Recognition Error", event.error);
       setIsListening(false);
+      if (event.error === 'not-allowed') {
+        alert("마이크 사용 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.");
+      } else {
+        alert("음성 인식 중 오류가 발생했습니다: " + event.error);
+      }
     };
 
     recognition.onresult = (event: any) => {
