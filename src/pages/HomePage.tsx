@@ -20,8 +20,8 @@ const HomePage: React.FC = () => {
   const [images, setImages] = useState<File[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
-  const [isListening, setIsListening] = useState(false);
-  const [isPolishing, setIsPolishing] = useState(false);
+  const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
+  const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -40,7 +40,7 @@ const HomePage: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleVoiceInput = () => {
+  const handleVoiceInput = (target: 'content' | 'processingContent') => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
       alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
@@ -54,11 +54,11 @@ const HomePage: React.FC = () => {
     recognition.interimResults = false;
     recognition.continuous = false;
 
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onstart = () => setIsListening(target);
+    recognition.onend = () => setIsListening(null);
     recognition.onerror = (event: any) => {
       console.error("Speech Recognition Error", event.error);
-      setIsListening(false);
+      setIsListening(null);
       if (event.error === 'not-allowed') {
         alert("마이크 사용 권한이 거부되었습니다. 브라우저 설정에서 마이크 권한을 허용해주세요.");
       } else {
@@ -68,26 +68,35 @@ const HomePage: React.FC = () => {
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      setContent(prev => prev ? `${prev} ${transcript}` : transcript);
+      if (target === 'content') {
+        setContent(prev => prev ? `${prev} ${transcript}` : transcript);
+      } else {
+        setProcessingContent(prev => prev ? `${prev} ${transcript}` : transcript);
+      }
     };
 
     recognition.start();
   };
 
-  const handlePolishText = async () => {
-    if (!content.trim()) {
+  const handlePolishText = async (target: 'content' | 'processingContent') => {
+    const textToPolish = target === 'content' ? content : processingContent;
+    if (!textToPolish.trim()) {
       setError("정돈할 내용이 없습니다.");
       return;
     }
-    setIsPolishing(true);
+    setIsPolishing(target);
     setError('');
     try {
       const { data, error: functionError } = await supabase.functions.invoke('polish-text', {
-        body: { text: content },
+        body: { text: textToPolish },
       });
       if (functionError) throw functionError;
       if (data?.polishedText) {
-        setContent(data.polishedText);
+        if (target === 'content') {
+          setContent(data.polishedText);
+        } else {
+          setProcessingContent(data.polishedText);
+        }
       } else if (data?.error) {
         throw new Error(data.error);
       }
@@ -95,7 +104,7 @@ const HomePage: React.FC = () => {
       console.error("AI Polish error", err);
       setError("AI 정돈 중 오류가 발생했습니다: " + (err.message || "다시 시도해주세요."));
     } finally {
-      setIsPolishing(false);
+      setIsPolishing(null);
     }
   };
 
@@ -200,24 +209,24 @@ const HomePage: React.FC = () => {
                     <Button
                       variant="outlined"
                       size="small"
-                      startIcon={isListening ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
-                      onClick={handleVoiceInput}
-                      disabled={isListening || isPolishing}
-                      color={isListening ? "secondary" : "primary"}
+                      startIcon={isListening === 'content' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                      onClick={() => handleVoiceInput('content')}
+                      disabled={isListening !== null || isPolishing !== null}
+                      color={isListening === 'content' ? "secondary" : "primary"}
                     >
-                      {isListening ? "인식 중..." : "음성 입력"}
+                      {isListening === 'content' ? "인식 중..." : "음성 입력"}
                     </Button>
                   </Tooltip>
                   <Tooltip title="AI가 내용을 전문적인 문체로 다듬어줍니다">
                     <Button
                       variant="outlined"
                       size="small"
-                      startIcon={isPolishing ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
-                      onClick={handlePolishText}
-                      disabled={isPolishing || isListening || !content.trim()}
+                      startIcon={isPolishing === 'content' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                      onClick={() => handlePolishText('content')}
+                      disabled={isPolishing !== null || isListening !== null || !content.trim()}
                       color="success"
                     >
-                      {isPolishing ? "정돈 중..." : "AI 정돈"}
+                      {isPolishing === 'content' ? "정돈 중..." : "AI 정돈"}
                     </Button>
                   </Tooltip>
                 </Box>
@@ -239,7 +248,35 @@ const HomePage: React.FC = () => {
 
           <Paper variant="outlined" sx={{ p: 3 }}>
             <Stack spacing={2}>
-              <Typography variant="h6">처리내용 (선택)</Typography>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                <Typography variant="h6">처리내용 (선택)</Typography>
+                <Box sx={{ display: "flex", gap: 1 }}>
+                  <Tooltip title="음성으로 내용을 입력합니다">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={isListening === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                      onClick={() => handleVoiceInput('processingContent')}
+                      disabled={isListening !== null || isPolishing !== null}
+                      color={isListening === 'processingContent' ? "secondary" : "primary"}
+                    >
+                      {isListening === 'processingContent' ? "인식 중..." : "음성 입력"}
+                    </Button>
+                  </Tooltip>
+                  <Tooltip title="AI가 내용을 전문적인 문체로 다듬어줍니다">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={isPolishing === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                      onClick={() => handlePolishText('processingContent')}
+                      disabled={isPolishing !== null || isListening !== null || !processingContent.trim()}
+                      color="success"
+                    >
+                      {isPolishing === 'processingContent' ? "정돈 중..." : "AI 정돈"}
+                    </Button>
+                  </Tooltip>
+                </Box>
+              </Box>
               <TextField
                 label="처리내용"
                 multiline rows={6} fullWidth variant="outlined"
