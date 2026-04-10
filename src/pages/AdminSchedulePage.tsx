@@ -223,6 +223,7 @@ const AdminSchedulePage: React.FC = () => {
             week: '주',
             day: '일'
           }}
+          events={events}
           height={isMobile ? "auto" : "75vh"}
           aspectRatio={isMobile ? 0.85 : 1.35}
           locale="ko"
