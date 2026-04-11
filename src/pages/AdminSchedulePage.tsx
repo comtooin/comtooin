@@ -269,8 +269,8 @@ const AdminSchedulePage: React.FC = () => {
       `}</style>
       
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <CalendarMonthIcon sx={{ mr: 1.5, fontSize: { xs: '2rem', md: '2.5rem' }, color: 'primary.main' }} />
-        <Typography variant={isMobile ? "h5" : "h4"} component="h1" fontWeight="bold">일정 관리</Typography>
+        <CalendarMonthIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+        <Typography variant="h5" component="h1" fontWeight="bold">일정 관리</Typography>
       </Box>
       <Divider sx={{ mb: { xs: 2, md: 3 } }} />
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton } from '@mui/material';
-import { Delete } from '@mui/icons-material';
+import { Delete, EditNote as EditNoteIcon } from '@mui/icons-material';
 import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -146,8 +146,11 @@ const EditRequestPage: React.FC = () => {
     return (
         <Container maxWidth="md">
             <Helmet><title>접수 내용 수정</title></Helmet>
-            <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-                <Typography variant="h4" gutterBottom>접수 내용 수정</Typography>
+            <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <EditNoteIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+                    <Typography variant="h5" fontWeight="bold">접수 내용 수정</Typography>
+                </Box>
                 <Box component="form" onSubmit={handleSubmit}>
                     <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>

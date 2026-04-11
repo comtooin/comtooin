@@ -214,12 +214,12 @@ const CheckRequestPage: React.FC = () => {
       </Helmet>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <ReceiptLongIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-          <Typography variant="h4" component="h1">
+          <ReceiptLongIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
             {userName}님의 접수 내역
           </Typography>
         </Box>
-        <Button variant="outlined" onClick={handleLogout}>다른 이름으로 조회</Button>
+        <Button variant="outlined" onClick={handleLogout} size="small">다른 이름으로 조회</Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
       {requests.length === 0 ? (

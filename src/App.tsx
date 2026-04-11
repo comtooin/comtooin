@@ -23,6 +23,34 @@ const theme = createTheme({
       main: '#ffab91',
     },
   },
+  typography: {
+    fontFamily: '"Noto Sans KR", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 700,
+      fontSize: '1.75rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.5rem',
+      },
+    },
+    h5: {
+      fontWeight: 700,
+      fontSize: '1.5rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.25rem',
+      },
+    },
+    h6: {
+      fontWeight: 600,
+      fontSize: '1.15rem',
+      '@media (max-width:600px)': {
+        fontSize: '1.1rem',
+      },
+    },
+    button: {
+      fontWeight: 500,
+      fontSize: '0.95rem',
+    },
+  },
   shape: {
     borderRadius: 12,
   },
@@ -32,6 +60,13 @@ const theme = createTheme({
         root: ({ theme }) => ({
           boxShadow: theme.shadows[1],
         }),
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none', // 버튼 텍스트가 강제로 대문자가 되지 않도록 설정
+        },
       },
     },
   },

@@ -48,8 +48,8 @@ const AdminLoginPage: React.FC = () => {
       <Helmet>
         <title>관리자 로그인</title>
       </Helmet>
-      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
-        <Typography variant="h5" component="h1" align="center" gutterBottom>
+      <Paper elevation={3} sx={{ p: 4, mt: 8, borderRadius: 3 }}>
+        <Typography variant="h5" component="h1" align="center" gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
           관리자 로그인
         </Typography>
         <Box component="form" onSubmit={handleSubmit}>

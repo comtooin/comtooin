@@ -4,6 +4,10 @@ import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
   Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Stack
 } from '@mui/material';
+import { 
+  CheckCircle as CheckCircleIcon,
+  Assignment as AssignmentIcon
+} from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -154,11 +158,14 @@ const SubmissionDetailPage: React.FC = () => {
       <Helmet>
         <title>{`접수 상세내용 (접수번호: ${request.id})`}</title>
       </Helmet>
-      <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 4 }}> {/* Removed elevation, adjusted padding */}
-        <Typography variant="h4" component="h1" gutterBottom>
-          ✅ 정상적으로 접수되었습니다.
-        </Typography>
-        <Typography variant="h6" gutterBottom>
+      <Paper sx={{ p: { xs: 2, sm: 3 }, mt: 4, borderRadius: 3 }}> {/* Removed elevation, adjusted padding */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+          <CheckCircleIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'success.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            정상적으로 접수되었습니다.
+          </Typography>
+        </Box>
+        <Typography variant="h6" sx={{ mb: 2, color: 'text.secondary' }}>
           접수 상세내용 (접수번호: {request.id})
         </Typography>
         

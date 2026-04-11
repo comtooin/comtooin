@@ -9,7 +9,8 @@ import {
   AccessTime as AccessTimeIcon,
   CheckCircle as CheckCircleIcon,
   Business as BusinessIcon,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
 import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -281,9 +282,10 @@ const AdminReportPage: React.FC = () => {
     <>
       <Helmet><title>유지보수 분석 리포트</title></Helmet>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <BarChartIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-        <Typography variant="h4" component="h1">유지보수 분석 리포트</Typography>
+        <AssessmentIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+        <Typography variant="h5" component="h1">유지보수 분석 리포트</Typography>
       </Box>
+
       <Divider sx={{ mb: 3 }} />
 
       {/* 에러 알림창 (변수 사용 확인) */}

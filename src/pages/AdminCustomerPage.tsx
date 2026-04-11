@@ -79,10 +79,8 @@ const AdminCustomerPage: React.FC = () => {
         <title>거래처 관리 - 컴투인</title>
       </Helmet>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <BusinessIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-        <Typography variant="h5" component="h1">
-          거래처 관리
-        </Typography>
+        <BusinessIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+        <Typography variant="h5" component="h1">거래처 관리</Typography>
       </Box>
       <Divider sx={{ my: 2 }} />
 

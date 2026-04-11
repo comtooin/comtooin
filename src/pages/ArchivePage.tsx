@@ -3,7 +3,8 @@ import {
   Typography, Box, Paper, Divider, Stack, Container
 } from '@mui/material';
 import { 
-  InfoOutlined as InfoOutlinedIcon
+  InfoOutlined as InfoOutlinedIcon,
+  CloudDownload as CloudDownloadIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 
@@ -20,14 +21,15 @@ const ArchivePage: React.FC = () => {
         </Helmet>
 
         {/* 헤더 섹션 */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="h4" component="h1" fontWeight="bold" color="text.primary">
+        <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+          <CloudDownloadIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold" color="text.primary">
             통합 자료실
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            매뉴얼, 드라이버 및 업무 관련 사진을 안전하게 공유하고 관리합니다.
-          </Typography>
         </Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, ml: 5 }}>
+          매뉴얼, 드라이버 및 업무 관련 사진을 안전하게 공유하고 관리합니다.
+        </Typography>
         
         <Divider sx={{ mb: 4 }} />
 

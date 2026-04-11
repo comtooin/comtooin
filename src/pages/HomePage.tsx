@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Tooltip
 } from '@mui/material';
-import { PhotoCamera, Delete, Assignment as AssignmentIcon, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
+import { PhotoCamera, Delete, Assignment as AssignmentIcon, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -175,10 +175,11 @@ const HomePage: React.FC = () => {
   return (
     <Paper sx={{ p: { xs: 2, sm: 3 } }}>
       <Helmet><title>유지보수 업무내역작성</title></Helmet>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <AssignmentIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-        <Typography variant="h5">유지보수 업무내역작성</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <EditNoteIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+        <Typography variant="h5" fontWeight="bold">유지보수 업무내역 작성</Typography>
       </Box>
+
       <Divider sx={{ my: 2 }} />
       
       <Box component="form" onSubmit={handleSubmit}>

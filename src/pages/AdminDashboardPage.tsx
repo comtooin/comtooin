@@ -151,8 +151,8 @@ const AdminDashboardPage: React.FC = () => {
     <>
       <Helmet><title>관리자 대시보드</title></Helmet>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <DashboardIcon sx={{ mr: 1.5, fontSize: '2rem' }} />
-        <Typography variant="h4" component="h1">관리자 대시보드</Typography>
+        <DashboardIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
+        <Typography variant="h5" component="h1">관리자 대시보드</Typography>
       </Box>
       <Divider sx={{ mb: 3 }} />
 
