@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Tooltip
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Tooltip, Container
 } from '@mui/material';
 import { PhotoCamera, Delete, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon } from '@mui/icons-material';
 import { supabase } from '../api';
@@ -173,19 +173,28 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="md">
       <Helmet><title>유지보수 업무내역작성</title></Helmet>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <EditNoteIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-        <Typography variant="h5" fontWeight="bold">유지보수 업무내역 작성</Typography>
+      
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <EditNoteIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            유지보수 업무내역 작성
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          현장에서 발생한 유지보수 업무 내용을 상세히 기록해 주세요.
+        </Typography>
       </Box>
 
-      <Divider sx={{ my: 2 }} />
+      <Divider sx={{ mb: 4 }} />
       
       <Box component="form" onSubmit={handleSubmit}>
         <Stack spacing={4}>
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>기본 정보</Typography>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보</Typography>
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} md={4}>
@@ -201,10 +210,10 @@ const HomePage: React.FC = () => {
             </Grid>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Stack spacing={3}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="h6">접수내용 (필수)</Typography>
+                <Typography variant="h6" fontWeight="bold">접수내용 (필수)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
                     <Button
@@ -247,10 +256,10 @@ const HomePage: React.FC = () => {
             </Stack>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Stack spacing={2}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Stack spacing={3}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="h6">처리내용 (선택)</Typography>
+                <Typography variant="h6" fontWeight="bold">처리내용 (선택)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
                     <Button
@@ -288,18 +297,18 @@ const HomePage: React.FC = () => {
             </Stack>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>이미지 첨부</Typography>
-            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth>
-              파일 선택
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>이미지 첨부</Typography>
+            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 2, borderStyle: 'dashed' }}>
+              파일 선택 (이미지 파일)
               <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
             </Button>
             <Grid container spacing={2} sx={{ mt: 2 }}>
               {images.map((image, index) => (
                 <Grid item key={index}>
                   <Box sx={{ position: 'relative' }}>
-                    <img src={URL.createObjectURL(image)} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover' }} />
-                    <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'white' }}><Delete fontSize="small" /></IconButton>
+                    <img src={URL.createObjectURL(image)} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }} />
+                    <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: -10, right: -10, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}><Delete fontSize="small" /></IconButton>
                   </Box>
                 </Grid>
               ))}
@@ -307,10 +316,10 @@ const HomePage: React.FC = () => {
           </Paper>
 
           {error && <Alert severity="error">{error}</Alert>}
-          <Button type="submit" variant="contained" fullWidth size="large">저장하기</Button>
+          <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}>저장하기</Button>
         </Stack>
       </Box>
-    </Paper>
+    </Container>
   );
 };
 

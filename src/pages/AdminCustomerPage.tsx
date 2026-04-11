@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem, ListItemText,
-  IconButton, Divider, CircularProgress, Alert, Stack
+  IconButton, Divider, CircularProgress, Alert, Stack, Container
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon, Business as BusinessIcon } from '@mui/icons-material';
 import { supabase } from '../api';
@@ -74,68 +74,90 @@ const AdminCustomerPage: React.FC = () => {
   };
 
   return (
-    <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+    <Container maxWidth="md">
       <Helmet>
         <title>거래처 관리 - 컴투인</title>
       </Helmet>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <BusinessIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-        <Typography variant="h5" component="h1">거래처 관리</Typography>
-      </Box>
-      <Divider sx={{ my: 2 }} />
 
-      <Box component="form" onSubmit={handleAddCustomer} sx={{ mb: 4 }}>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            label="새 거래처 이름"
-            variant="outlined"
-            size="small"
-            fullWidth
-            value={newCustomerName}
-            onChange={(e) => setNewCustomerName(e.target.value)}
-            disabled={submitting}
-          />
-          <Button
-            type="submit"
-            variant="contained"
-            startIcon={<AddIcon />}
-            disabled={submitting || !newCustomerName.trim()}
-            sx={{ minWidth: '100px' }}
-          >
-            추가
-          </Button>
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <BusinessIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            거래처 관리
+          </Typography>
         </Stack>
+        <Typography variant="body2" color="text.secondary">
+          유지보수 대상 고객사 목록을 관리합니다.
+        </Typography>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <Divider sx={{ mb: 4 }} />
 
-      {loading ? (
-        <Box sx={{ textAlign: 'center', py: 4 }}><CircularProgress /></Box>
-      ) : (
-        <List>
-          {customers.length === 0 ? (
-            <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
-              등록된 거래처가 없습니다.
-            </Typography>
-          ) : (
-            customers.map((customer) => (
-              <React.Fragment key={customer.id}>
-                <ListItem
-                  secondaryAction={
-                    <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)}>
-                      <DeleteIcon color="error" />
-                    </IconButton>
-                  }
-                >
-                  <ListItemText primary={customer.name} />
-                </ListItem>
-                <Divider component="li" />
-              </React.Fragment>
-            ))
-          )}
-        </List>
-      )}
-    </Paper>
+      <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+        <Box component="form" onSubmit={handleAddCustomer} sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>새 거래처 등록</Typography>
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="거래처 이름"
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={newCustomerName}
+              onChange={(e) => setNewCustomerName(e.target.value)}
+              disabled={submitting}
+              placeholder="예: (주)컴투인"
+            />
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<AddIcon />}
+              disabled={submitting || !newCustomerName.trim()}
+              sx={{ minWidth: '100px', fontWeight: 'bold' }}
+            >
+              추가
+            </Button>
+          </Stack>
+        </Box>
+
+        <Divider sx={{ mb: 3 }} />
+
+        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>등록된 거래처 목록</Typography>
+        
+        {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+        {loading ? (
+          <Box sx={{ textAlign: 'center', py: 6 }}><CircularProgress /></Box>
+        ) : (
+          <List sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 1 }}>
+            {customers.length === 0 ? (
+              <Typography color="text.secondary" align="center" sx={{ py: 6 }}>
+                등록된 거래처가 없습니다.
+              </Typography>
+            ) : (
+              customers.map((customer, index) => (
+                <React.Fragment key={customer.id}>
+                  <ListItem
+                    secondaryAction={
+                      <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
+                        <DeleteIcon color="action" fontSize="small" />
+                      </IconButton>
+                    }
+                    sx={{ transition: 'bgcolor 0.2s', '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}
+                  >
+                    <ListItemText 
+                      primary={customer.name} 
+                      primaryTypographyProps={{ fontWeight: 'medium' }}
+                    />
+                  </ListItem>
+                  {index < customers.length - 1 && <Divider component="li" />}
+                </React.Fragment>
+              ))
+            )}
+          </List>
+        )}
+      </Paper>
+    </Container>
   );
 };
 

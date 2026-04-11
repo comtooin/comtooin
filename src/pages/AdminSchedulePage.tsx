@@ -232,7 +232,7 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: { xs: 2, md: 4 }, bgcolor: '#f5f7fa', minHeight: '100vh', px: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="lg">
       <Helmet><title>일정 관리</title></Helmet>
       
       <style>{`
@@ -268,15 +268,24 @@ const AdminSchedulePage: React.FC = () => {
         }
       `}</style>
       
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <CalendarMonthIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-        <Typography variant="h5" component="h1" fontWeight="bold">일정 관리</Typography>
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <CalendarMonthIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            일정 관리
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          유지보수 일정 및 사내 주요 이벤트를 통합 관리합니다.
+        </Typography>
       </Box>
-      <Divider sx={{ mb: { xs: 2, md: 3 } }} />
 
-      {error && <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>{error}</Alert>}
+      <Divider sx={{ mb: 4 }} />
 
-      <Paper elevation={3} sx={{ p: { xs: 1, md: 2 }, borderRadius: 3, bgcolor: '#ffffff' }}>
+      {error && <Alert severity="error" sx={{ mb: 3, whiteSpace: 'pre-line' }}>{error}</Alert>}
+
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
@@ -292,7 +301,7 @@ const AdminSchedulePage: React.FC = () => {
             day: '일'
           }}
           events={events}
-          height={isMobile ? "auto" : "75vh"}
+          height={isMobile ? "auto" : "70vh"}
           aspectRatio={isMobile ? 0.85 : 1.35}
           locale="ko"
           dateClick={handleDateClick}

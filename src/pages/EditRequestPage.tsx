@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton } from '@mui/material';
+import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton, Stack, Divider } from '@mui/material';
 import { Delete, EditNote as EditNoteIcon } from '@mui/icons-material';
 import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
@@ -146,58 +146,116 @@ const EditRequestPage: React.FC = () => {
     return (
         <Container maxWidth="md">
             <Helmet><title>접수 내용 수정</title></Helmet>
-            <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                    <EditNoteIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-                    <Typography variant="h5" fontWeight="bold">접수 내용 수정</Typography>
-                </Box>
+
+            {/* 표준 헤더 섹션 */}
+            <Box sx={{ mb: 4 }}>
+                <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+                    <EditNoteIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+                    <Typography variant="h5" component="h1" fontWeight="bold">
+                        접수 내용 수정
+                    </Typography>
+                </Stack>
+                <Typography variant="body2" color="text.secondary">
+                    이미 접수된 업무 기록의 내용을 상세히 수정합니다. (접수번호: {id})
+                </Typography>
+            </Box>
+
+            <Divider sx={{ mb: 4 }} />
+
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
                 <Box component="form" onSubmit={handleSubmit}>
-                    <Grid container spacing={2}>
+                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보 수정</Typography>
+                    <Grid container spacing={3}>
                         <Grid item xs={12} sm={6}>
-                            <TextField name="customer_name" label="거래처명" fullWidth required margin="normal" value={formData.customer_name} onChange={handleInputChange} />
+                            <TextField name="customer_name" label="거래처명" fullWidth required variant="outlined" size="small" value={formData.customer_name} onChange={handleInputChange} />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                            <TextField name="user_name" label="작성자명" fullWidth required margin="normal" value={formData.user_name} onChange={handleInputChange} />
+                            <TextField name="user_name" label="작성자명" fullWidth required variant="outlined" size="small" value={formData.user_name} onChange={handleInputChange} />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <TextField name="email" label="이메일 주소" fullWidth variant="outlined" size="small" value={formData.email} onChange={handleInputChange} placeholder="example@email.com" />
                         </Grid>
                     </Grid>
-                    <TextField name="email" label="이메일" fullWidth margin="normal" value={formData.email} onChange={handleInputChange} />
                     
+                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 4, mb: 2 }}>상세 내용</Typography>
                     <TextField
                         label="접수 내용"
-                        multiline rows={6} fullWidth variant="outlined"
+                        multiline rows={8} fullWidth variant="outlined"
                         value={formData.content}
                         onChange={(e) => handleContentChange(e.target.value)}
                         spellCheck={false}
                         InputProps={{ style: { fontSize: '16px' } }}
-                        sx={{ mt: 2 }}
                     />
 
-                    <Box sx={{ my: 2 }}>
-                        <Button variant="outlined" component="label">
-                            이미지 첨부 (최대 5개)
+                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 4, mb: 2 }}>이미지 관리</Typography>
+                    <Box sx={{ mb: 2 }}>
+                        <Button variant="outlined" component="label" fullWidth sx={{ py: 1.5, borderStyle: 'dashed' }}>
+                            이미지 추가 첨부 (최대 5개)
                             <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
                         </Button>
                     </Box>
 
-                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid container spacing={2} sx={{ mb: 4 }}>
                         {imagePreviews.map((preview, index) => (
-                            <Grid item key={index}>
+                            <Grid item key={index} xs={6} sm={4} md={3}>
                                 <Box sx={{ position: 'relative' }}>
-                                    <img src={preview} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover' }} />
-                                    <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: 0, right: 0, bgcolor: 'rgba(255,255,255,0.7)' }}>
-                                        <Delete fontSize="small" />
+                                    <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 2, height: 100 }}>
+                                        <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    </Paper>
+                                    <IconButton 
+                                        size="small" 
+                                        onClick={() => handleRemoveImage(index)} 
+                                        sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
+                                    >
+                                        <Delete fontSize="small" color="error" />
                                     </IconButton>
                                 </Box>
                             </Grid>
                         ))}
                     </Grid>
 
-                    <TextField label="비밀번호 확인" type="password" fullWidth required margin="normal" value={password} onChange={(e) => setPassword(e.target.value)} />
-                    {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-                    {success && <Alert severity="success" sx={{ mt: 2 }}>{success}</Alert>}
-                    <Button type="submit" variant="contained" fullWidth size="large" sx={{ mt: 3 }} disabled={loading}>
-                        {loading ? <CircularProgress size={24} /> : '수정 완료'}
-                    </Button>
+                    <Divider sx={{ my: 4 }} />
+
+                    <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 2, mb: 3 }}>
+                        <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="primary">수정 권한 확인</Typography>
+                        <TextField 
+                            label="접수 비밀번호" 
+                            type="password" 
+                            fullWidth 
+                            required 
+                            variant="outlined" 
+                            size="small"
+                            value={password} 
+                            onChange={(e) => setPassword(e.target.value)} 
+                            placeholder="본인 확인을 위한 비밀번호 입력"
+                            sx={{ bgcolor: 'white' }}
+                        />
+                    </Box>
+
+                    {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+                    {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+                    
+                    <Stack direction="row" spacing={2}>
+                        <Button 
+                            variant="outlined" 
+                            fullWidth 
+                            size="large" 
+                            onClick={() => navigate(`/admin/request/detail/${id}`)}
+                            sx={{ py: 1.5, fontWeight: 'bold' }}
+                        >
+                            취소
+                        </Button>
+                        <Button 
+                            type="submit" 
+                            variant="contained" 
+                            fullWidth 
+                            size="large" 
+                            sx={{ py: 1.5, fontWeight: 'bold' }}
+                            disabled={loading}
+                        >
+                            {loading ? <CircularProgress size={24} /> : '수정 사항 저장'}
+                        </Button>
+                    </Stack>
                 </Box>
             </Paper>
         </Container>

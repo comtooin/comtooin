@@ -3,7 +3,7 @@ import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  ButtonBase, TextField, Stack
+  ButtonBase, TextField, Stack, Container
 } from '@mui/material';
 import { Dashboard as DashboardIcon, Category as CategoryIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
@@ -96,6 +96,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleDeleteRequest = async () => {
     if (!selectedRequest) return;
+    if (!window.confirm('정말로 이 기록을 삭제하시겠습니까?')) return;
     try {
       const { error: deleteError } = await supabase.from('requests').delete().eq('id', selectedRequest.id);
       if (deleteError) throw deleteError;
@@ -145,16 +146,26 @@ const AdminDashboardPage: React.FC = () => {
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
-  if (error) return <Alert severity="error">{error}</Alert>;
+  if (error) return <Container maxWidth="lg" sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>;
 
   return (
-    <>
+    <Container maxWidth="lg">
       <Helmet><title>관리자 대시보드</title></Helmet>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <DashboardIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-        <Typography variant="h5" component="h1">관리자 대시보드</Typography>
+      
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <DashboardIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            관리자 대시보드
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          전체 유지보수 접수 현황을 실시간으로 확인하고 관리합니다.
+        </Typography>
       </Box>
-      <Divider sx={{ mb: 3 }} />
+
+      <Divider sx={{ mb: 4 }} />
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {[
@@ -163,12 +174,26 @@ const AdminDashboardPage: React.FC = () => {
           { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon />, color: '#2e7d32', filter: 'completed' },
         ].map((item, idx) => (
           <Grid item xs={12} sm={4} key={idx}>
-            <ButtonBase sx={{ width: '100%', borderRadius: 1 }} onClick={() => setFilterStatus(item.filter)}>
-              <Paper elevation={2} sx={{ p: 2, display: 'flex', alignItems: 'center', width: '100%', borderLeft: `5px solid ${item.color}`, bgcolor: filterStatus === item.filter ? 'action.selected' : 'background.paper' }}>
-                <Box sx={{ color: item.color, mr: 2 }}>{item.icon}</Box>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">{item.label}</Typography>
-                  <Typography variant="h5" fontWeight="bold">{item.count}</Typography>
+            <ButtonBase sx={{ width: '100%', borderRadius: 3, overflow: 'hidden' }} onClick={() => setFilterStatus(item.filter)}>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: 3, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  width: '100%', 
+                  borderLeft: `6px solid ${item.color}`, 
+                  bgcolor: filterStatus === item.filter ? 'action.selected' : 'background.paper',
+                  transition: 'all 0.2s',
+                  '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }
+                }}
+              >
+                <Box sx={{ color: item.color, mr: 2.5, display: 'flex' }}>
+                  {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '2.5rem' } })}
+                </Box>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body2" color="text.secondary" fontWeight="medium">{item.label}</Typography>
+                  <Typography variant="h4" fontWeight="bold">{item.count}</Typography>
                 </Box>
               </Paper>
             </ButtonBase>
@@ -176,78 +201,97 @@ const AdminDashboardPage: React.FC = () => {
         ))}
       </Grid>
 
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>업무일시</TableCell>
-              <TableCell>거래처명</TableCell>
-              <TableCell>요청자</TableCell>
-              <TableCell>상태</TableCell>
-              <TableCell>액션</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {requests.map((req) => (
-              <TableRow key={req.id} hover>
-                <TableCell>{new Date(req.created_at).toLocaleString()}</TableCell>
-                <TableCell>{req.customer_name}</TableCell>
-                <TableCell>{req.requester_name}</TableCell>
-                <TableCell><Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} size="small" /></TableCell>
-                <TableCell>
-                  <Button size="small" variant="outlined" onClick={() => { setSelectedRequest(req); setNewStatus(req.status); setOpenDetailModal(true); }}>상세</Button>
-                </TableCell>
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' }}>
+        <TableContainer>
+          <Table>
+            <TableHead sx={{ bgcolor: 'grey.50' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 'bold' }}>액션</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
+            </TableHead>
+            <TableBody>
+              {requests.length > 0 ? requests.map((req) => (
+                <TableRow key={req.id} hover>
+                  <TableCell>{new Date(req.created_at).toLocaleString()}</TableCell>
+                  <TableCell sx={{ fontWeight: 'medium' }}>{req.customer_name}</TableCell>
+                  <TableCell>{req.requester_name}</TableCell>
+                  <TableCell><Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} size="small" variant="outlined" sx={{ fontWeight: 'bold' }} /></TableCell>
+                  <TableCell align="right">
+                    <Button size="small" variant="outlined" onClick={() => { setSelectedRequest(req); setNewStatus(req.status); setOpenDetailModal(true); }}>상세보기</Button>
+                  </TableCell>
+                </TableRow>
+              )) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                    <Typography color="text.secondary">표시할 데이터가 없습니다.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
       <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
         {selectedRequest && (
           <>
-            <DialogTitle>업무 상세 (번호: {selectedRequest.id})</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 (번호: {selectedRequest.id})</DialogTitle>
             <DialogContent dividers>
-              <Stack spacing={2}>
-                <Typography><b>거래처:</b> {selectedRequest.customer_name} / <b>요청자:</b> {selectedRequest.requester_name}</Typography>
-                <Typography variant="h6">접수내용</Typography>
-                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50' }} dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
+              <Stack spacing={2.5}>
+                <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
+                  <Typography variant="body2"><b>거래처:</b> {selectedRequest.customer_name} / <b>요청자:</b> {selectedRequest.requester_name}</Typography>
+                </Box>
                 
-                <Typography variant="h6">처리내용 기록</Typography>
-                {selectedRequest.comments.map(c => (
-                  <Paper key={c.id} variant="outlined" sx={{ p: 1.5, mb: 1 }}>
-                    <Typography variant="caption" color="text.secondary">{new Date(c.created_at).toLocaleString()}</Typography>
-                    <div dangerouslySetInnerHTML={{ __html: c.comment }} />
-                  </Paper>
-                ))}
+                <Typography variant="h6" fontWeight="bold">접수내용</Typography>
+                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'white' }} dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
+                
+                <Typography variant="h6" fontWeight="bold">처리내용 기록</Typography>
+                <Stack spacing={1}>
+                  {selectedRequest.comments.map(c => (
+                    <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
+                      <Typography variant="caption" color="text.secondary" display="block" gutterBottom>{new Date(c.created_at).toLocaleString()}</Typography>
+                      <div dangerouslySetInnerHTML={{ __html: c.comment }} />
+                    </Paper>
+                  ))}
+                  {selectedRequest.comments.length === 0 && (
+                    <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>등록된 코멘트가 없습니다.</Typography>
+                  )}
+                </Stack>
 
-                <Divider />
-                <FormControl fullWidth sx={{ mt: 2 }}>
+                <Divider sx={{ my: 1 }} />
+                
+                <FormControl fullWidth>
                   <InputLabel>상태 변경</InputLabel>
                   <Select value={newStatus} label="상태 변경" onChange={(e) => setNewStatus(e.target.value)}>
                     <MenuItem value="processing">처리중</MenuItem>
                     <MenuItem value="completed">처리완료</MenuItem>
                   </Select>
                 </FormControl>
+                
                 <TextField
                   label="새로운 처리내용 입력"
                   multiline rows={4} fullWidth variant="outlined"
                   value={newComment} onChange={(e) => setNewComment(e.target.value)}
                   spellCheck={false}
-                  InputProps={{ style: { fontSize: '16px' } }}
-                  sx={{ mt: 2 }}
+                  placeholder="추가할 처리 내용을 입력해 주세요."
                 />
               </Stack>
             </DialogContent>
-            <DialogActions>
+            <DialogActions sx={{ p: 2.5 }}>
               <Button onClick={() => setOpenDetailModal(false)}>취소</Button>
-              <Button onClick={handleDeleteRequest} color="error">삭제</Button>
-              <Button onClick={handleSaveRequest} variant="contained" disabled={saving}>저장</Button>
+              <Button onClick={handleDeleteRequest} color="error" sx={{ ml: 'auto', mr: 1 }}>삭제</Button>
+              <Button onClick={handleSaveRequest} variant="contained" disabled={saving} sx={{ fontWeight: 'bold' }}>
+                {saving ? <CircularProgress size={24} color="inherit" /> : '변경사항 저장'}
+              </Button>
             </DialogActions>
           </>
         )}
       </Dialog>
-    </>
+    </Container>
   );
 };
 

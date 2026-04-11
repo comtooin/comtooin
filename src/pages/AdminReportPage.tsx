@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Card, CardContent
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -83,7 +83,7 @@ interface MonthlySummary {
 
 const AdminReportPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(''); // 에러 상태 복구
+  const [error, setError] = useState('');
   const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
@@ -279,16 +279,25 @@ const AdminReportPage: React.FC = () => {
   };
 
   return (
-    <>
+    <Container maxWidth="lg">
       <Helmet><title>유지보수 분석 리포트</title></Helmet>
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <AssessmentIcon sx={{ mr: 1.5, fontSize: '1.75rem', color: 'primary.main' }} />
-        <Typography variant="h5" component="h1">유지보수 분석 리포트</Typography>
+      
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <AssessmentIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            유지보수 분석 리포트
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          업무 기록 데이터를 기반으로 기간별, 거래처별 통계를 분석합니다.
+        </Typography>
       </Box>
 
-      <Divider sx={{ mb: 3 }} />
+      <Divider sx={{ mb: 4 }} />
 
-      {/* 에러 알림창 (변수 사용 확인) */}
+      {/* 에러 알림창 */}
       {error && (
         <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
           {error}
@@ -296,75 +305,71 @@ const AdminReportPage: React.FC = () => {
       )}
 
       {/* 요약 위젯 */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={4}>
-          <Card variant="outlined" sx={{ borderLeft: '4px solid #607d8b' }}>
-            <CardContent sx={{ p: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <AssignmentIcon color="primary" />
-                <Typography variant="overline">총 업무 기록</Typography>
-              </Stack>
-              <Typography variant="h4">{summaryStats.total}</Typography>
-            </CardContent>
-          </Card>
+          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #607d8b', borderRadius: 3 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <AssignmentIcon color="primary" />
+              <Typography variant="overline" fontWeight="bold">총 업무 기록</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.total}</Typography>
+          </Paper>
         </Grid>
         <Grid item xs={6} sm={4}>
-          <Card variant="outlined" sx={{ borderLeft: '4px solid #ed6c02' }}>
-            <CardContent sx={{ p: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <AccessTimeIcon color="warning" />
-                <Typography variant="overline">처리중</Typography>
-              </Stack>
-              <Typography variant="h4">{summaryStats.processing}</Typography>
-            </CardContent>
-          </Card>
+          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #ed6c02', borderRadius: 3 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <AccessTimeIcon color="warning" />
+              <Typography variant="overline" fontWeight="bold">처리중</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.processing}</Typography>
+          </Paper>
         </Grid>
         <Grid item xs={6} sm={4}>
-          <Card variant="outlined" sx={{ borderLeft: '4px solid #2e7d32' }}>
-            <CardContent sx={{ p: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <CheckCircleIcon color="success" />
-                <Typography variant="overline">처리완료</Typography>
-              </Stack>
-              <Typography variant="h4">{summaryStats.completed}</Typography>
-            </CardContent>
-          </Card>
+          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #2e7d32', borderRadius: 3 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <CheckCircleIcon color="success" />
+              <Typography variant="overline" fontWeight="bold">처리완료</Typography>
+            </Stack>
+            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.completed}</Typography>
+          </Paper>
         </Grid>
       </Grid>
 
       {/* 필터 섹션 */}
-      <Grid container spacing={2} alignItems="center" sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField select label="거래처 선택" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
-              <MenuItem value="all"><em>전체 거래처</em></MenuItem>
-              {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
-          </TextField>
+      <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: 'background.paper' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField select label="거래처 선택" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
+                <MenuItem value="all"><em>전체 거래처</em></MenuItem>
+                {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField select label="기간(월)" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
+                <MenuItem value="all"><em>전체 기간</em></MenuItem>
+                {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
+              <MenuItem value="all"><em>전체 상태</em></MenuItem>
+              <MenuItem value="processing">처리중</MenuItem>
+              <MenuItem value="completed">처리완료</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6} md={3}>
+            <Stack direction="row" spacing={1}>
+              <Button variant="contained" onClick={applyFilters} fullWidth sx={{ fontWeight: 'bold' }}>조회</Button>
+              <Button variant="outlined" color="secondary" onClick={handleExportExcel} fullWidth sx={{ fontWeight: 'bold' }}>Excel</Button>
+            </Stack>
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField select label="기간(월)" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
-              <MenuItem value="all"><em>전체 기간</em></MenuItem>
-              {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
-            <MenuItem value="all"><em>전체 상태</em></MenuItem>
-            <MenuItem value="processing">처리중</MenuItem>
-            <MenuItem value="completed">처리완료</MenuItem>
-          </TextField>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Stack direction="row" spacing={1}>
-            <Button variant="contained" onClick={applyFilters} fullWidth>조회</Button>
-            <Button variant="outlined" color="secondary" onClick={handleExportExcel} fullWidth>Excel</Button>
-          </Stack>
-        </Grid>
-      </Grid>
+      </Paper>
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs value={tabValue} onChange={handleTabChange}>
-          <Tab label="업무 상세 리스트" />
-          <Tab label="시각화 분석" />
+        <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
+          <Tab label="업무 상세 리스트" sx={{ fontWeight: 'bold' }} />
+          <Tab label="시각화 분석" sx={{ fontWeight: 'bold' }} />
         </Tabs>
       </Box>
 
@@ -373,49 +378,51 @@ const AdminReportPage: React.FC = () => {
       ) : (
         <Box sx={{ pt: 1 }}>
           {tabValue === 0 && (
-            <TableContainer component={Paper}>
-              <Table stickyHeader>
-                <TableHead>
-                  <TableRow sx={{ bgcolor: 'grey.50' }}>
-                    <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>작성자</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>접수내용 요약</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredRequests.length > 0 ? filteredRequests.map((request) => (
-                    <TableRow key={request.id} hover>
-                      <TableCell><Typography variant="body2">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
-                      <TableCell><Typography variant="body2" fontWeight="medium">{request.customer_name}</Typography></TableCell>
-                      <TableCell><Typography variant="body2">{request.requester_name}</Typography></TableCell>
-                      <TableCell><Typography variant="body2">{request.user_name}</Typography></TableCell>
-                      <TableCell>
-                        <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="caption" color="text.secondary">
-                          {stripHtmlTags(request.content).substring(0, 40)}...
-                        </Typography>
-                      </TableCell>
+            <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+              <TableContainer>
+                <Table stickyHeader>
+                  <TableHead sx={{ bgcolor: 'grey.50' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>작성자</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold' }}>접수내용 요약</TableCell>
                     </TableRow>
-                  )) : (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}>데이터가 없습니다.</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {filteredRequests.length > 0 ? filteredRequests.map((request) => (
+                      <TableRow key={request.id} hover>
+                        <TableCell><Typography variant="body2">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" fontWeight="medium">{request.customer_name}</Typography></TableCell>
+                        <TableCell><Typography variant="body2">{request.requester_name}</Typography></TableCell>
+                        <TableCell><Typography variant="body2">{request.user_name}</Typography></TableCell>
+                        <TableCell>
+                          <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary">
+                            {stripHtmlTags(request.content).substring(0, 40)}...
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           )}
 
           {tabValue === 1 && (
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <PieChartIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2">상태별 업무 비중</Typography>
+                    <Typography variant="subtitle2" fontWeight="bold">상태별 업무 비중</Typography>
                   </Stack>
                   <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
                     <Pie data={statusPieData} options={{ maintainAspectRatio: false }} />
@@ -424,10 +431,10 @@ const AdminReportPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <BusinessIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2">거래처별 업무 점유율</Typography>
+                    <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 점유율</Typography>
                   </Stack>
                   <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
                     <Pie data={customerPieData} options={{ maintainAspectRatio: false }} />
@@ -436,10 +443,10 @@ const AdminReportPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Paper sx={{ p: 3, textAlign: 'center' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={2}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <BarChartIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2">월별 업무 추이</Typography>
+                    <Typography variant="subtitle2" fontWeight="bold">월별 업무 추이</Typography>
                   </Stack>
                   <Box sx={{ height: 250 }}>
                     <Bar data={barChartData} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
@@ -450,7 +457,7 @@ const AdminReportPage: React.FC = () => {
           )}
         </Box>
       )}
-    </>
+    </Container>
   );
 };
 
