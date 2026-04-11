@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, Container, useMediaQuery, useTheme, Box } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import HomePage from './pages/HomePage';
 import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
 import AdminLoginPage from './pages/AdminLoginPage'; 
