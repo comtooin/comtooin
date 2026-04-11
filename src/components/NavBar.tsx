@@ -23,6 +23,7 @@ import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import BusinessIcon from '@mui/icons-material/Business';
 import LogoutIcon from '@mui/icons-material/Logout';
+import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -78,7 +79,7 @@ const NavBar: React.FC = () => {
               <ListItemText primary="거래처 관리" />
             </ListItem>
             <ListItem button component={RouterLink} to="/admin/schedule">
-              <ListItemIcon><AssessmentIcon /></ListItemIcon>
+              <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
               <ListItemText primary="일정 관리" />
             </ListItem>
             <ListItem button onClick={handleLogout}>

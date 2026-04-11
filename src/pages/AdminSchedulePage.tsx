@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
   DialogContent, TextField, DialogActions, MenuItem, Select, FormControl, 
-  InputLabel, CircularProgress, Alert, Divider, Stack, Chip, useMediaQuery, useTheme
+  InputLabel, CircularProgress, Alert, Divider, Stack, Chip, useMediaQuery, useTheme,
+  Checkbox, FormControlLabel
 } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -16,7 +17,9 @@ import {
   CalendarMonth as CalendarMonthIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
-  Notes as NotesIcon
+  Notes as NotesIcon,
+  Edit as EditIcon,
+  AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
@@ -43,11 +46,15 @@ const AdminSchedulePage: React.FC = () => {
 
   // 폼 데이터 상태
   const [formData, setFormData] = useState({
+    id: null as string | null,
     title: '',
     content: '',
     assignee: null as Staff | null,
     customer: null as Customer | null,
-    date: ''
+    date: '',
+    allDay: true,
+    startTime: '09:00',
+    endTime: '10:00'
   });
 
   // 1. 데이터 로드
@@ -58,20 +65,31 @@ const AdminSchedulePage: React.FC = () => {
     ]);
     if (staffRes.data) {
       setStaffList(staffRes.data);
-      if (staffRes.data.length > 0) setFormData(prev => ({ ...prev, assignee: staffRes.data[0] }));
     }
     if (customerRes.data) setCustomerList(customerRes.data);
   }, []);
 
   const fetchSchedules = useCallback(async () => {
-    const { data } = await supabase.from('schedules').select('*');
+    const { data, error } = await supabase.from('schedules').select('*');
+    if (error) {
+      console.error('Fetch Schedules Error:', error);
+      return;
+    }
     if (data) {
-      const formatted = data.map(item => ({
-        id: item.id,
-        title: isMobile ? item.title : `[${item.customer_name || '일반'}] ${item.title}`,
-        start: item.start_time,
-        extendedProps: { ...item }
-      }));
+      const formatted = data.map(item => {
+        // FullCalendar는 allDay: true일 때 'YYYY-MM-DD' 형식을 선호함
+        const startStr = item.all_day ? (item.start_time?.includes('T') ? item.start_time.split('T')[0] : item.start_time) : item.start_time;
+        const endStr = item.all_day ? undefined : item.end_time;
+        
+        return {
+          id: item.id,
+          title: isMobile ? item.title : `[${item.customer_name || '일반'}] ${item.title}`,
+          start: startStr,
+          end: endStr,
+          allDay: item.all_day,
+          extendedProps: { ...item }
+        };
+      });
       setEvents(formatted);
     }
   }, [isMobile]);
@@ -82,13 +100,42 @@ const AdminSchedulePage: React.FC = () => {
   }, [fetchData, fetchSchedules]);
 
   const handleDateClick = (arg: any) => {
-    setFormData(prev => ({ ...prev, date: arg.dateStr, title: '', content: '' }));
+    setFormData({
+      id: null,
+      date: arg.dateStr,
+      title: '',
+      content: '',
+      assignee: staffList.length > 0 ? staffList[0] : null,
+      customer: null,
+      allDay: true,
+      startTime: '09:00',
+      endTime: '10:00'
+    });
     setOpen(true);
   };
 
   const handleEventClick = (info: any) => {
     setSelectedEvent(info.event.extendedProps);
     setDetailOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!selectedEvent) return;
+    
+    setFormData({
+      id: selectedEvent.id,
+      title: selectedEvent.title,
+      content: selectedEvent.content,
+      assignee: staffList.find(s => s.id === selectedEvent.staff_id) || null,
+      customer: customerList.find(c => c.id === selectedEvent.customer_id) || null,
+      date: selectedEvent.start_time.split('T')[0],
+      allDay: selectedEvent.all_day ?? true,
+      startTime: !selectedEvent.all_day && selectedEvent.start_time.includes('T') ? selectedEvent.start_time.split('T')[1].substring(0, 5) : '09:00',
+      endTime: !selectedEvent.all_day && selectedEvent.end_time?.includes('T') ? selectedEvent.end_time.split('T')[1].substring(0, 5) : '10:00'
+    });
+    
+    setDetailOpen(false);
+    setOpen(true);
   };
 
   const handleSTT = () => {
@@ -114,24 +161,32 @@ const AdminSchedulePage: React.FC = () => {
   const handleSave = async () => {
     if (!formData.title || !formData.date || !formData.assignee) return alert('제목, 날짜, 담당자는 필수입니다.');
     setLoading(true);
+    setError(null);
     try {
+      const startTimeStr = formData.allDay ? `${formData.date}T00:00:00` : `${formData.date}T${formData.startTime}:00`;
+      const endTimeStr = formData.allDay ? `${formData.date}T23:59:59` : `${formData.date}T${formData.endTime}:00`;
+
+      // 구글 캘린더 동기화
+      const syncPayload = {
+        method: formData.id ? 'PATCH' : 'POST',
+        googleEventId: selectedEvent?.google_event_id,
+        title: `[${formData.customer?.name || '업무'}] ${formData.title}`,
+        description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}`,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        allDay: formData.allDay,
+        assigneeEmail: formData.assignee.email
+      };
+
       const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
-        body: {
-          title: `[${formData.customer?.name || '업무'}] ${formData.title}`,
-          description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}`,
-          startTime: `${formData.date}T09:00:00`,
-          assigneeEmail: formData.assignee.email
-        }
+        body: syncPayload
       });
+
       if (syncError) {
-        let msg = syncError.message;
-        if (syncError.context) {
-          const body = await syncError.context.json();
-          if (body.error) msg = `${body.error} (단계: ${body.step})`;
-        }
-        throw new Error(msg);
+        console.warn('Google Calendar Sync Error:', syncError.message);
       }
-      await supabase.from('schedules').insert([{
+
+      const scheduleData = {
         title: formData.title,
         content: formData.content,
         staff_id: formData.assignee.id,
@@ -139,14 +194,27 @@ const AdminSchedulePage: React.FC = () => {
         assignee_email: formData.assignee.email,
         customer_id: formData.customer?.id,
         customer_name: formData.customer?.name,
-        start_time: formData.date,
-        google_event_id: syncData?.googleEventId
-      }]);
-      alert('일정이 등록되었습니다.');
+        start_time: startTimeStr,
+        end_time: endTimeStr,
+        all_day: formData.allDay,
+        google_event_id: syncData?.googleEventId || selectedEvent?.google_event_id
+      };
+
+      if (formData.id) {
+        const { error: updateError } = await supabase.from('schedules').update(scheduleData).eq('id', formData.id);
+        if (updateError) throw updateError;
+        alert('일정이 수정되었습니다.');
+      } else {
+        const { error: insertError } = await supabase.from('schedules').insert([scheduleData]);
+        if (insertError) throw insertError;
+        alert('일정이 등록되었습니다.');
+      }
+
+      await fetchSchedules();
       setOpen(false);
-      fetchSchedules();
     } catch (err: any) {
-      setError(err.message);
+      console.error('Save Schedule Error:', err);
+      setError(err.message || '일정 저장 중 오류가 발생했습니다.');
     } finally { setLoading(false); }
   };
 
@@ -236,9 +304,42 @@ const AdminSchedulePage: React.FC = () => {
 
       {/* 등록 팝업 */}
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>{formData.date} 일정 등록</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 'bold' }}>
+          {formData.id ? '일정 수정' : `${formData.date} 일정 등록`}
+        </DialogTitle>
         <DialogContent dividers>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox 
+                  checked={formData.allDay} 
+                  onChange={(e) => setFormData({...formData, allDay: e.target.checked})} 
+                />
+              }
+              label="하루종일"
+            />
+            
+            {!formData.allDay && (
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TextField
+                  label="시작시간"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+                <TextField
+                  label="종료시간"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+              </Box>
+            )}
+
             <FormControl fullWidth>
               <InputLabel>거래처 선택</InputLabel>
               <Select
@@ -279,7 +380,7 @@ const AdminSchedulePage: React.FC = () => {
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setOpen(false)}>취소</Button>
           <Button variant="contained" onClick={handleSave} disabled={loading} startIcon={loading ? <CircularProgress size={20} /> : <EventIcon />}>
-            저장 및 알림 발송
+            {formData.id ? '수정 사항 저장' : '저장 및 알림 발송'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -290,7 +391,12 @@ const AdminSchedulePage: React.FC = () => {
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               일정 상세
-              <Chip label={selectedEvent.start_time} size="small" color="primary" variant="outlined" />
+              <Chip 
+                label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} 
+                size="small" 
+                color="primary" 
+                variant="outlined" 
+              />
             </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2} sx={{ pt: 1 }}>
@@ -310,6 +416,26 @@ const AdminSchedulePage: React.FC = () => {
                   </Box>
                 </Box>
                 <Divider />
+                {selectedEvent.all_day ? (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <AccessTimeIcon color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">시간</Typography>
+                      <Typography variant="body1">하루종일</Typography>
+                    </Box>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <AccessTimeIcon color="action" />
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">시간</Typography>
+                      <Typography variant="body1">
+                        {selectedEvent.start_time.split('T')[1].substring(0, 5)} ~ {selectedEvent.end_time?.split('T')[1].substring(0, 5)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
+                <Divider />
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                   <NotesIcon color="action" sx={{ mt: 0.5 }} />
                   <Box>
@@ -328,7 +454,10 @@ const AdminSchedulePage: React.FC = () => {
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-              <Button color="error" startIcon={<DeleteIcon />} onClick={() => handleDelete(selectedEvent.id)}>삭제</Button>
+              <Box>
+                <Button color="error" startIcon={<DeleteIcon />} onClick={() => handleDelete(selectedEvent.id)}>삭제</Button>
+                <Button color="primary" startIcon={<EditIcon />} onClick={handleEdit} sx={{ ml: 1 }}>수정</Button>
+              </Box>
               <Button variant="outlined" onClick={() => setDetailOpen(false)}>닫기</Button>
             </DialogActions>
           </>
