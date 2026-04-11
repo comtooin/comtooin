@@ -5,8 +5,7 @@ import {
   Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Stack
 } from '@mui/material';
 import { 
-  CheckCircle as CheckCircleIcon,
-  Assignment as AssignmentIcon
+  CheckCircle as CheckCircleIcon
 } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
