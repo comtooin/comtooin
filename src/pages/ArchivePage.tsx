@@ -14,7 +14,7 @@ const ArchivePage: React.FC = () => {
   const embedUrl = `https://drive.google.com/embeddedfolderview?id=${FOLDER_ID}#list`;
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
       <Helmet>
         <title>통합 자료실 - 컴투인</title>
       </Helmet>
@@ -42,7 +42,9 @@ const ArchivePage: React.FC = () => {
           overflow: 'hidden', 
           borderRadius: 3,
           bgcolor: 'background.paper',
-          boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)'
+          boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)',
+          maxWidth: '100%',
+          position: 'relative'
         }}
       >
         <iframe
@@ -50,7 +52,7 @@ const ArchivePage: React.FC = () => {
           width="100%"
           height="750px"
           frameBorder="0"
-          style={{ border: 0, display: 'block' }}
+          style={{ border: 0, display: 'block', maxWidth: '100%', width: '100%' }}
           title="Google Drive Archive"
         ></iframe>
       </Paper>
