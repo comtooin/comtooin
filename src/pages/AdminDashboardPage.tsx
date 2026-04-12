@@ -5,7 +5,12 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
   ButtonBase, TextField, Stack, Container
 } from '@mui/material';
-import { Dashboard as DashboardIcon, Category as CategoryIcon, Sync as SyncIcon, CheckCircle as CheckCircleIcon } from '@mui/icons-material';
+import { 
+  Dashboard as DashboardIcon, 
+  CheckCircle as CheckCircleIcon,
+  Assignment as AssignmentIcon,
+  AccessTime as AccessTimeIcon
+} from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
 
@@ -169,32 +174,35 @@ const AdminDashboardPage: React.FC = () => {
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {[
-          { label: '총 업무 기록', count: summaryData.total, icon: <CategoryIcon />, color: '#607d8b', filter: null },
-          { label: '처리 중', count: summaryData.processing, icon: <SyncIcon />, color: '#ed6c02', filter: 'processing' },
-          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon />, color: '#2e7d32', filter: 'completed' },
+          { label: '총 업무 기록', count: summaryData.total, icon: <AssignmentIcon color="primary" />, color: '#607d8b', filter: null },
+          { label: '처리 중', count: summaryData.processing, icon: <AccessTimeIcon color="warning" />, color: '#ed6c02', filter: 'processing' },
+          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon color="success" />, color: '#2e7d32', filter: 'completed' },
         ].map((item, idx) => (
           <Grid item xs={12} sm={4} key={idx}>
-            <ButtonBase sx={{ width: '100%', borderRadius: 3, overflow: 'hidden' }} onClick={() => setFilterStatus(item.filter)}>
+            <ButtonBase 
+              sx={{ width: '100%', textAlign: 'left', borderRadius: 3, display: 'block' }} 
+              onClick={() => setFilterStatus(item.filter)}
+            >
               <Paper 
                 variant="outlined" 
                 sx={{ 
                   p: 3, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  width: '100%', 
                   borderLeft: `6px solid ${item.color}`, 
+                  borderRadius: 3,
                   bgcolor: filterStatus === item.filter ? 'action.selected' : 'background.paper',
                   transition: 'all 0.2s',
                   '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }
                 }}
               >
-                <Box sx={{ color: item.color, mr: 2.5, display: 'flex' }}>
-                  {React.cloneElement(item.icon as React.ReactElement, { sx: { fontSize: '2.5rem' } })}
-                </Box>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="body2" color="text.secondary" fontWeight="medium">{item.label}</Typography>
-                  <Typography variant="h4" fontWeight="bold">{item.count}</Typography>
-                </Box>
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  {item.icon}
+                  <Typography variant="overline" fontWeight="bold" color="text.secondary">
+                    {item.label}
+                  </Typography>
+                </Stack>
+                <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>
+                  {item.count}
+                </Typography>
               </Paper>
             </ButtonBase>
           </Grid>
