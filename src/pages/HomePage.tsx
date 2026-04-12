@@ -216,28 +216,32 @@ const HomePage: React.FC = () => {
                 <Typography variant="h6" fontWeight="bold">접수내용 (필수)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={isListening === 'content' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
-                      onClick={() => handleVoiceInput('content')}
-                      disabled={isListening !== null || isPolishing !== null}
-                      color={isListening === 'content' ? "secondary" : "primary"}
-                    >
-                      {isListening === 'content' ? "인식 중..." : "음성 입력"}
-                    </Button>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={isListening === 'content' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                        onClick={() => handleVoiceInput('content')}
+                        disabled={isListening !== null || isPolishing !== null}
+                        color={isListening === 'content' ? "secondary" : "primary"}
+                      >
+                        {isListening === 'content' ? "인식 중..." : "음성 입력"}
+                      </Button>
+                    </span>
                   </Tooltip>
                   <Tooltip title="AI가 내용을 전문적인 문체로 다듬어줍니다">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={isPolishing === 'content' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
-                      onClick={() => handlePolishText('content')}
-                      disabled={isPolishing !== null || isListening !== null || !content.trim()}
-                      color="success"
-                    >
-                      {isPolishing === 'content' ? "정돈 중..." : "AI 정돈"}
-                    </Button>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={isPolishing === 'content' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                        onClick={() => handlePolishText('content')}
+                        disabled={isPolishing !== null || isListening !== null || !content.trim()}
+                        color="success"
+                      >
+                        {isPolishing === 'content' ? "정돈 중..." : "AI 정돈"}
+                      </Button>
+                    </span>
                   </Tooltip>
                 </Box>
               </Box>
@@ -262,28 +266,32 @@ const HomePage: React.FC = () => {
                 <Typography variant="h6" fontWeight="bold">처리내용 (선택)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={isListening === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
-                      onClick={() => handleVoiceInput('processingContent')}
-                      disabled={isListening !== null || isPolishing !== null}
-                      color={isListening === 'processingContent' ? "secondary" : "primary"}
-                    >
-                      {isListening === 'processingContent' ? "인식 중..." : "음성 입력"}
-                    </Button>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={isListening === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                        onClick={() => handleVoiceInput('processingContent')}
+                        disabled={isListening !== null || isPolishing !== null}
+                        color={isListening === 'processingContent' ? "secondary" : "primary"}
+                      >
+                        {isListening === 'processingContent' ? "인식 중..." : "음성 입력"}
+                      </Button>
+                    </span>
                   </Tooltip>
                   <Tooltip title="AI가 내용을 전문적인 문체로 다듬어줍니다">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={isPolishing === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
-                      onClick={() => handlePolishText('processingContent')}
-                      disabled={isPolishing !== null || isListening !== null || !processingContent.trim()}
-                      color="success"
-                    >
-                      {isPolishing === 'processingContent' ? "정돈 중..." : "AI 정돈"}
-                    </Button>
+                    <span>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={isPolishing === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                        onClick={() => handlePolishText('processingContent')}
+                        disabled={isPolishing !== null || isListening !== null || !processingContent.trim()}
+                        color="success"
+                      >
+                        {isPolishing === 'processingContent' ? "정돈 중..." : "AI 정돈"}
+                      </Button>
+                    </span>
                   </Tooltip>
                 </Box>
               </Box>
