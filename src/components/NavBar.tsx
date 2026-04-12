@@ -143,7 +143,7 @@ const NavBar: React.FC = () => {
           {isMobile ? (
             <IconButton
               color="inherit"
-              edge="start"
+              edge="end"
               onClick={handleDrawerToggle}
             >
               <MenuIcon />
@@ -168,7 +168,7 @@ const NavBar: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        anchor="left"
+        anchor="right"
         open={drawerOpen}
         onClose={handleDrawerToggle}
       >
