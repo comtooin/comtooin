@@ -46,7 +46,6 @@ const getStatusLabel = (status: string): string => {
 };
 
 const AdminDashboardPage: React.FC = () => {
-  const navigate = useNavigate();
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
