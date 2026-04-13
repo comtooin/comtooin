@@ -192,10 +192,10 @@ const HomePage: React.FC = () => {
       <Divider sx={{ mb: 4 }} />
       
       <Box component="form" onSubmit={handleSubmit}>
-        <Stack spacing={4}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보</Typography>
-            <Grid container spacing={3}>
+        <Stack spacing={2}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 1.5 }}>기본 정보</Typography>
+            <Grid container spacing={2}>
               <Grid item xs={12} md={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} md={4}>
                 <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading}>
@@ -210,20 +210,21 @@ const HomePage: React.FC = () => {
             </Grid>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
-            <Stack spacing={3}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Stack spacing={2}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="h6" fontWeight="bold">접수내용 (필수)</Typography>
+                <Typography variant="subtitle1" fontWeight="bold">접수내용 (필수)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
                     <span>
                       <Button
                         variant="outlined"
                         size="small"
-                        startIcon={isListening === 'content' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                        startIcon={isListening === 'content' ? <CircularProgress size={14} color="inherit" /> : <MicIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handleVoiceInput('content')}
                         disabled={isListening !== null || isPolishing !== null}
                         color={isListening === 'content' ? "secondary" : "primary"}
+                        sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
                         {isListening === 'content' ? "인식 중..." : "음성 입력"}
                       </Button>
@@ -234,10 +235,11 @@ const HomePage: React.FC = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        startIcon={isPolishing === 'content' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                        startIcon={isPolishing === 'content' ? <CircularProgress size={14} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handlePolishText('content')}
                         disabled={isPolishing !== null || isListening !== null || !content.trim()}
                         color="success"
+                        sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
                         {isPolishing === 'content' ? "정돈 중..." : "AI 정돈"}
                       </Button>
@@ -252,7 +254,7 @@ const HomePage: React.FC = () => {
               />
               <TextField
                 label="상세 접수내용"
-                multiline rows={6} fullWidth variant="outlined"
+                multiline rows={5} fullWidth variant="outlined"
                 value={content} onChange={(e) => setContent(e.target.value)}
                 spellCheck={false}
                 InputProps={{ style: { fontSize: '16px' } }}
@@ -260,20 +262,21 @@ const HomePage: React.FC = () => {
             </Stack>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
-            <Stack spacing={3}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Stack spacing={2}>
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 1 }}>
-                <Typography variant="h6" fontWeight="bold">처리내용 (선택)</Typography>
+                <Typography variant="subtitle1" fontWeight="bold">처리내용 (선택)</Typography>
                 <Box sx={{ display: "flex", gap: 1 }}>
                   <Tooltip title="음성으로 내용을 입력합니다">
                     <span>
                       <Button
                         variant="outlined"
                         size="small"
-                        startIcon={isListening === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <MicIcon />}
+                        startIcon={isListening === 'processingContent' ? <CircularProgress size={14} color="inherit" /> : <MicIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handleVoiceInput('processingContent')}
                         disabled={isListening !== null || isPolishing !== null}
                         color={isListening === 'processingContent' ? "secondary" : "primary"}
+                        sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
                         {isListening === 'processingContent' ? "인식 중..." : "음성 입력"}
                       </Button>
@@ -284,10 +287,11 @@ const HomePage: React.FC = () => {
                       <Button
                         variant="outlined"
                         size="small"
-                        startIcon={isPolishing === 'processingContent' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+                        startIcon={isPolishing === 'processingContent' ? <CircularProgress size={14} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handlePolishText('processingContent')}
                         disabled={isPolishing !== null || isListening !== null || !processingContent.trim()}
                         color="success"
+                        sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
                         {isPolishing === 'processingContent' ? "정돈 중..." : "AI 정돈"}
                       </Button>
@@ -297,7 +301,7 @@ const HomePage: React.FC = () => {
               </Box>
               <TextField
                 label="처리내용"
-                multiline rows={6} fullWidth variant="outlined"
+                multiline rows={5} fullWidth variant="outlined"
                 value={processingContent} onChange={(e) => setProcessingContent(e.target.value)}
                 spellCheck={false}
                 InputProps={{ style: { fontSize: '16px' } }}
@@ -305,26 +309,28 @@ const HomePage: React.FC = () => {
             </Stack>
           </Paper>
 
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>이미지 첨부</Typography>
-            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 2, borderStyle: 'dashed' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 1.5 }}>이미지 첨부</Typography>
+            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 1.5, borderStyle: 'dashed', fontSize: '0.875rem' }}>
               파일 선택 (이미지 파일)
               <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
             </Button>
-            <Grid container spacing={2} sx={{ mt: 2 }}>
-              {images.map((image, index) => (
-                <Grid item key={index}>
-                  <Box sx={{ position: 'relative' }}>
-                    <img src={URL.createObjectURL(image)} alt="preview" style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 8 }} />
-                    <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: -10, right: -10, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}><Delete fontSize="small" /></IconButton>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
+            {images.length > 0 && (
+              <Grid container spacing={1.5} sx={{ mt: 1 }}>
+                {images.map((image, index) => (
+                  <Grid item key={index}>
+                    <Box sx={{ position: 'relative' }}>
+                      <img src={URL.createObjectURL(image)} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+                      <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}><Delete fontSize="small" /></IconButton>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </Paper>
 
           {error && <Alert severity="error">{error}</Alert>}
-          <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.5, fontSize: '1.1rem', fontWeight: 'bold' }}>저장하기</Button>
+          <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.2, fontSize: '1rem', fontWeight: 'bold', mt: 1 }}>저장하기</Button>
         </Stack>
       </Box>
     </Container>
