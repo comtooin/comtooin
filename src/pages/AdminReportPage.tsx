@@ -251,6 +251,107 @@ const AdminReportPage: React.FC = () => {
     }
   };
 
+  const handleDownloadSampleCsv = () => {
+    const headers = ['ID', '업무일시', '거래처명', '요청자', '작성자', '상태', '접수내용', '처리내용'];
+    const sampleData = ['', '2026-04-13 14:30', '샘플거래처', '홍길동', '관리자', '처리완료', '샘플 접수 내용입니다.', '샘플 처리 결과입니다.'];
+    
+    // 엑셀에서 한글 깨짐 방지를 위해 BOM 추가
+    const csvContent = "\uFEFF" + [headers.join(','), sampleData.join(',')].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '유지보수_업로드_양식.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleImportCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!window.confirm('선택한 파일의 데이터를 대량 등록하시겠습니까?\n기존 형식과 일치해야 합니다.')) return;
+
+    setLoading(true);
+    setError('');
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split('\n');
+        
+        // 데이터 추출 (헤더: ID, 업무일시, 거래처명, 요청자, 작성자, 상태, 접수내용, 처리내용)
+        const requestsToInsert: any[] = [];
+        const processNotes: string[] = []; // 처리내용 임시 보관
+
+        lines.slice(1).forEach(line => {
+          if (!line.trim()) return;
+          const values = line.split(',');
+          
+          if (values[2]) { // 거래처명이 있는 경우만 처리
+            requestsToInsert.push({
+              created_at: values[1] ? new Date(values[1]).toISOString() : new Date().toISOString(),
+              customer_name: values[2]?.trim(),
+              requester_name: values[3]?.trim(),
+              user_name: values[4]?.trim() || '관리자',
+              status: values[5]?.trim() === '처리완료' ? 'completed' : 'processing',
+              content: values[6]?.trim() || '엑셀 업로드 데이터',
+            });
+            processNotes.push(values[7]?.trim() || '');
+          }
+        });
+
+        if (requestsToInsert.length === 0) {
+          throw new Error('등록할 유효한 데이터가 없습니다.');
+        }
+
+        // 1. Requests 삽입
+        const { data: insertedRequests, error: insertError } = await supabase
+          .from('requests')
+          .insert(requestsToInsert)
+          .select();
+
+        if (insertError) throw insertError;
+
+        // 2. 처리내용(Comments) 삽입
+        if (insertedRequests && insertedRequests.length > 0) {
+          const commentsToInsert: any[] = [];
+          const { data: { session } } = await supabase.auth.getSession();
+
+          insertedRequests.forEach((req, index) => {
+            const note = processNotes[index];
+            if (note) {
+              commentsToInsert.push({
+                request_id: req.id,
+                comment: note,
+                user_id: session?.user?.id,
+              });
+            }
+          });
+
+          if (commentsToInsert.length > 0) {
+            await supabase.from('comments').insert(commentsToInsert);
+          }
+        }
+
+        alert(`${requestsToInsert.length}건의 업무 기록이 성공적으로 등록되었습니다.`);
+        applyFilters(); 
+      } catch (err: any) {
+        console.error("CSV Import Error:", err);
+        alert(`업로드 실패: ${err.message}`);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+        if (e.target) e.target.value = '';
+      }
+    };
+    
+    // 인코딩 감지 시도 (기본적으로 UTF-8로 읽고 실패하면 EUC-KR 고려)
+    reader.readAsText(file); 
+  };
+
   const statusPieData = {
     labels: (statusData || []).filter(d => d.status !== 'pending').map(d => getStatusLabel(d.status)), 
     datasets: [{
@@ -338,29 +439,36 @@ const AdminReportPage: React.FC = () => {
       {/* 필터 섹션 */}
       <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: 'background.paper' }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2.5}>
             <TextField select label="거래처 선택" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
                 <MenuItem value="all"><em>전체 거래처</em></MenuItem>
                 {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={6} md={2.5}>
             <TextField select label="기간(월)" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
                 <MenuItem value="all"><em>전체 기간</em></MenuItem>
                 {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
-              <MenuItem value="all"><em>전체 상태</em></MenuItem>
-              <MenuItem value="processing">처리중</MenuItem>
-              <MenuItem value="completed">처리완료</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid item xs={12} sm={12} md={3}>
             <Stack direction="row" spacing={1}>
-              <Button variant="contained" onClick={applyFilters} fullWidth sx={{ fontWeight: 'bold' }}>조회</Button>
-              <Button variant="outlined" color="secondary" onClick={handleExportExcel} fullWidth sx={{ fontWeight: 'bold' }}>Excel</Button>
+              <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
+                <MenuItem value="all"><em>전체 상태</em></MenuItem>
+                <MenuItem value="processing">처리중</MenuItem>
+                <MenuItem value="completed">처리완료</MenuItem>
+              </TextField>
+              <Button variant="contained" onClick={applyFilters} sx={{ fontWeight: 'bold', minWidth: '70px' }}>조회</Button>
+            </Stack>
+          </Grid>
+          <Grid item xs={12} sm={12} md={4}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'stretch', md: 'flex-end' } }}>
+              <Button variant="outlined" color="secondary" onClick={handleExportExcel} sx={{ fontWeight: 'bold', minWidth: '90px', flexGrow: { xs: 1, md: 0 } }}>내보내기</Button>
+              <Button variant="outlined" color="info" onClick={handleDownloadSampleCsv} sx={{ fontWeight: 'bold', minWidth: '100px', flexGrow: { xs: 1, md: 0 } }}>업로드샘플</Button>
+              <Button variant="outlined" color="primary" component="label" sx={{ fontWeight: 'bold', minWidth: '80px', flexGrow: { xs: 1, md: 0 } }}>
+                업로드
+                <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
+              </Button>
             </Stack>
           </Grid>
         </Grid>
@@ -380,38 +488,55 @@ const AdminReportPage: React.FC = () => {
           {tabValue === 0 && (
             <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
               <TableContainer>
-                <Table stickyHeader>
-                  <TableHead sx={{ bgcolor: 'grey.50' }}>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>작성자</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold' }}>접수내용 요약</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {filteredRequests.length > 0 ? filteredRequests.map((request) => (
-                      <TableRow key={request.id} hover>
-                        <TableCell><Typography variant="body2">{formatMobileDateTime(request.created_at)}</Typography></TableCell>
-                        <TableCell><Typography variant="body2" fontWeight="medium">{request.customer_name}</Typography></TableCell>
-                        <TableCell><Typography variant="body2">{request.requester_name}</Typography></TableCell>
-                        <TableCell><Typography variant="body2">{request.user_name}</Typography></TableCell>
-                        <TableCell>
-                          <Chip label={getStatusLabel(request.status)} color={getStatusChipColor(request.status)} size="small" variant="outlined" sx={{ fontWeight: 'bold' }} />
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="caption" color="text.secondary">
-                            {stripHtmlTags(request.content).substring(0, 40)}...
-                          </Typography>
-                        </TableCell>
-                      </TableRow>
-                    )) : (
-                      <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                    <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 850 }}>
+                      <TableHead sx={{ bgcolor: 'grey.50' }}>
+                        <TableRow>
+                          <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '140px' }}>업무일자</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '110px' }}>거래처명</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '100px' }}>요청자</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '95px' }}>작성자</TableCell>
+                          <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
+                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {filteredRequests.length > 0 ? filteredRequests.map((request) => (
+                          <TableRow key={request.id} hover>
+                            <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              {(() => {
+                                const d = new Date(request.created_at);
+                                return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                              })()}
+                            </TableCell>
+                            <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              {request.customer_name}
+                            </TableCell>
+                            <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              {request.requester_name}
+                            </TableCell>
+                            <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              {request.user_name}
+                            </TableCell>
+                            <TableCell align="center" sx={{ py: 2, px: 1 }}>
+                              <Chip 
+                                label={getStatusLabel(request.status)} 
+                                color={getStatusChipColor(request.status)} 
+                                size="small" 
+                                variant="outlined" 
+                                sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
+                              />
+                            </TableCell>
+                            <TableCell sx={{ py: 2, px: 1 }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {stripHtmlTags(request.content)}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
               </TableContainer>
             </Paper>
           )}

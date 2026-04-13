@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button,
@@ -9,7 +10,8 @@ import {
   Dashboard as DashboardIcon, 
   CheckCircle as CheckCircleIcon,
   Assignment as AssignmentIcon,
-  AccessTime as AccessTimeIcon
+  AccessTime as AccessTimeIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
@@ -44,15 +46,37 @@ const getStatusLabel = (status: string): string => {
 };
 
 const AdminDashboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [selectedRequest, setSelectedRequest] = useState<IRequest | null>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
+  
+  // 편집 모드 관련 상태
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    customer_name: '',
+    requester_name: '',
+    content: ''
+  });
+
   const [newStatus, setNewStatus] = useState('');
   const [newComment, setNewComment] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const handleOpenDetail = (req: IRequest) => {
+    setSelectedRequest(req);
+    setNewStatus(req.status);
+    setEditForm({
+      customer_name: req.customer_name,
+      requester_name: req.requester_name || '',
+      content: req.content
+    });
+    setIsEditing(false);
+    setOpenDetailModal(true);
+  };
 
   const [summaryData, setSummaryData] = useState({
     total: 0,
@@ -117,9 +141,18 @@ const AdminDashboardPage: React.FC = () => {
     if (!selectedRequest) return;
     setSaving(true);
     try {
+      // 기본 정보 및 상태 업데이트
+      const updateData: any = { 
+        status: newStatus, 
+        updated_at: new Date().toISOString(),
+        customer_name: editForm.customer_name,
+        requester_name: editForm.requester_name,
+        content: editForm.content
+      };
+
       const { error: updateError } = await supabase
         .from('requests')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update(updateData)
         .eq('id', selectedRequest.id);
       if (updateError) throw updateError;
 
@@ -133,9 +166,10 @@ const AdminDashboardPage: React.FC = () => {
       }
       fetchRequests();
       setOpenDetailModal(false);
-      alert('성공적으로 업데이트되었습니다.');
+      setNewComment('');
+      alert('성공적으로 저장되었습니다.');
     } catch (err: any) {
-      alert(err.message || '업데이트 중 오류가 발생했습니다.');
+      alert(err.message || '저장 중 오류가 발생했습니다.');
     } finally {
       setSaving(false);
     }
@@ -210,31 +244,49 @@ const AdminDashboardPage: React.FC = () => {
       </Grid>
 
       <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' }}>
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table size="small" sx={{ minWidth: 400, tableLayout: 'fixed' }}>
             <TableHead sx={{ bgcolor: 'grey.50' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>업무일시</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>거래처명</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>요청자</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>상태</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold' }}>액션</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 0.5, width: '125px' }}>업무일자</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '120px' }}>거래처명</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '85px' }}>요청자</TableCell>
+                <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '85px' }}>상태</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {requests.length > 0 ? requests.map((req) => (
-                <TableRow key={req.id} hover>
-                  <TableCell>{new Date(req.created_at).toLocaleString()}</TableCell>
-                  <TableCell sx={{ fontWeight: 'medium' }}>{req.customer_name}</TableCell>
-                  <TableCell>{req.requester_name}</TableCell>
-                  <TableCell><Chip label={getStatusLabel(req.status)} color={getStatusChipColor(req.status)} size="small" variant="outlined" sx={{ fontWeight: 'bold' }} /></TableCell>
-                  <TableCell align="right">
-                    <Button size="small" variant="outlined" onClick={() => { setSelectedRequest(req); setNewStatus(req.status); setOpenDetailModal(true); }}>상세보기</Button>
+                <TableRow 
+                  key={req.id} 
+                  hover 
+                  onClick={() => handleOpenDetail(req)}
+                  sx={{ cursor: 'pointer', '&:active': { bgcolor: 'action.selected' } }}
+                >
+                  <TableCell sx={{ py: 2, pl: 3, pr: 0.5, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {(() => {
+                      const d = new Date(req.created_at);
+                      return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                    })()}
+                  </TableCell>
+                  <TableCell sx={{ py: 2, px: 0.5, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                    {req.customer_name}
+                  </TableCell>
+                  <TableCell sx={{ py: 2, px: 0.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                    {req.requester_name}
+                  </TableCell>
+                  <TableCell align="center" sx={{ py: 2, px: 0.5 }}>
+                    <Chip 
+                      label={getStatusLabel(req.status)} 
+                      color={getStatusChipColor(req.status)} 
+                      size="small" 
+                      variant="outlined" 
+                      sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '64px', letterSpacing: '-0.01em' }} 
+                    />
                   </TableCell>
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                     <Typography color="text.secondary">표시할 데이터가 없습니다.</Typography>
                   </TableCell>
                 </TableRow>
@@ -247,15 +299,57 @@ const AdminDashboardPage: React.FC = () => {
       <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
         {selectedRequest && (
           <>
-            <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 (번호: {selectedRequest.id})</DialogTitle>
+            <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 2 }}>
+              <Typography variant="h6" fontWeight="bold">업무 상세 (번호: {selectedRequest.id})</Typography>
+              <Button 
+                startIcon={<EditIcon />} 
+                variant={isEditing ? "outlined" : "contained"} 
+                color="secondary" 
+                size="small"
+                onClick={() => setIsEditing(!isEditing)}
+                sx={{ fontWeight: 'bold' }}
+              >
+                {isEditing ? '편집 취소' : '내용 수정'}
+              </Button>
+            </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2.5}>
                 <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 2 }}>
-                  <Typography variant="body2"><b>거래처:</b> {selectedRequest.customer_name} / <b>요청자:</b> {selectedRequest.requester_name}</Typography>
+                  {isEditing ? (
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="거래처명"
+                          fullWidth size="small"
+                          value={editForm.customer_name}
+                          onChange={(e) => setEditForm({ ...editForm, customer_name: e.target.value })}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="요청자명"
+                          fullWidth size="small"
+                          value={editForm.requester_name}
+                          onChange={(e) => setEditForm({ ...editForm, requester_name: e.target.value })}
+                        />
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Typography variant="body2"><b>거래처:</b> {selectedRequest.customer_name} / <b>요청자:</b> {selectedRequest.requester_name}</Typography>
+                  )}
                 </Box>
                 
                 <Typography variant="h6" fontWeight="bold">접수내용</Typography>
-                <Paper variant="outlined" sx={{ p: 2, bgcolor: 'white' }} dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
+                {isEditing ? (
+                  <TextField
+                    multiline rows={6} fullWidth
+                    value={editForm.content}
+                    onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
+                    placeholder="접수 내용을 수정하세요."
+                  />
+                ) : (
+                  <Paper variant="outlined" sx={{ p: 2, bgcolor: 'white' }} dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
+                )}
                 
                 <Typography variant="h6" fontWeight="bold">처리내용 기록</Typography>
                 <Stack spacing={1}>
