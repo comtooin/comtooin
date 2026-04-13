@@ -310,14 +310,18 @@ const AdminReportPage: React.FC = () => {
           if (!line.trim()) return;
           const values = line.split(',');
           
-          if (values[2]) { // 거래처명이 있는 경우만 처리
+          const customerName = values[2]?.trim();
+          const content = values[6]?.trim();
+
+          // 거래처명(2)과 접수내용(6)이 모두 있는 경우만 진짜 데이터로 인정
+          if (customerName && content) {
             requestsToInsert.push({
               created_at: values[1] ? new Date(values[1]).toISOString() : new Date().toISOString(),
-              customer_name: values[2]?.trim(),
+              customer_name: customerName,
               requester_name: values[3]?.trim(),
               user_name: values[4]?.trim() || '관리자',
               status: values[5]?.trim() === '처리완료' ? 'completed' : 'processing',
-              content: values[6]?.trim() || '엑셀 업로드 데이터',
+              content: content,
             });
             processNotes.push(values[7]?.trim() || '');
           }
