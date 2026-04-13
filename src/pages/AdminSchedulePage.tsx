@@ -49,7 +49,7 @@ const AdminSchedulePage: React.FC = () => {
     id: null as string | null,
     title: '',
     content: '',
-    assignee: null as Staff | null,
+    assignees: [] as Staff[],
     customer: null as Customer | null,
     date: '',
     allDay: true,
@@ -57,16 +57,34 @@ const AdminSchedulePage: React.FC = () => {
     endTime: '10:00'
   });
 
+  const [staffSearch, setStaffSearch] = useState('');
+  const [recentStaffIds, setRecentStaffIds] = useState<string[]>([]);
+
   // 1. 데이터 로드
   const fetchData = useCallback(async () => {
-    const [staffRes, customerRes] = await Promise.all([
+    const [staffRes, customerRes, recentSchedulesRes] = await Promise.all([
       supabase.from('staff').select('id, name, email').order('name'),
-      supabase.from('customers').select('id, name').order('name')
+      supabase.from('customers').select('id, name').order('name'),
+      supabase.from('schedules').select('staff_id, staff_ids').order('id', { ascending: false }).limit(20)
     ]);
+
     if (staffRes.data) {
       setStaffList(staffRes.data);
     }
     if (customerRes.data) setCustomerList(customerRes.data);
+
+    // 최근 담당자 5명 추출
+    if (recentSchedulesRes.data) {
+      const ids: string[] = [];
+      recentSchedulesRes.data.forEach(item => {
+        if (item.staff_ids && Array.isArray(item.staff_ids)) {
+          item.staff_ids.forEach(id => { if (id && !ids.includes(id)) ids.push(id); });
+        } else if (item.staff_id && !ids.includes(item.staff_id)) {
+          ids.push(item.staff_id);
+        }
+      });
+      setRecentStaffIds(ids.slice(0, 5));
+    }
   }, []);
 
   const fetchSchedules = useCallback(async () => {
@@ -105,7 +123,7 @@ const AdminSchedulePage: React.FC = () => {
       date: arg.dateStr,
       title: '',
       content: '',
-      assignee: staffList.length > 0 ? staffList[0] : null,
+      assignees: staffList.length > 0 ? [staffList[0]] : [],
       customer: null,
       allDay: true,
       startTime: '09:00',
@@ -122,11 +140,20 @@ const AdminSchedulePage: React.FC = () => {
   const handleEdit = () => {
     if (!selectedEvent) return;
     
+    // staff_ids 가 있으면 그것을 사용, 없으면 기존 staff_id 사용
+    let selectedAssignees: Staff[] = [];
+    if (selectedEvent.staff_ids && selectedEvent.staff_ids.length > 0) {
+      selectedAssignees = staffList.filter(s => selectedEvent.staff_ids.includes(s.id));
+    } else if (selectedEvent.staff_id) {
+      const single = staffList.find(s => s.id === selectedEvent.staff_id);
+      if (single) selectedAssignees = [single];
+    }
+
     setFormData({
       id: selectedEvent.id,
       title: selectedEvent.title,
       content: selectedEvent.content,
-      assignee: staffList.find(s => s.id === selectedEvent.staff_id) || null,
+      assignees: selectedAssignees,
       customer: customerList.find(c => c.id === selectedEvent.customer_id) || null,
       date: selectedEvent.start_time.split('T')[0],
       allDay: selectedEvent.all_day ?? true,
@@ -159,23 +186,28 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.date || !formData.assignee) return alert('제목, 날짜, 담당자는 필수입니다.');
+    if (!formData.title || !formData.date || formData.assignees.length === 0) return alert('제목, 날짜, 담당자는 필수입니다.');
     setLoading(true);
     setError(null);
     try {
       const startTimeStr = formData.allDay ? `${formData.date}T00:00:00` : `${formData.date}T${formData.startTime}:00`;
       const endTimeStr = formData.allDay ? `${formData.date}T23:59:59` : `${formData.date}T${formData.endTime}:00`;
 
+      // 담당자 정보 합치기
+      const assigneeNames = formData.assignees.map(s => s.name).join(', ');
+      const assigneeEmails = formData.assignees.map(s => s.email).join(', ');
+      const staffIds = formData.assignees.map(s => s.id);
+
       // 구글 캘린더 동기화
       const syncPayload = {
         method: formData.id ? 'PATCH' : 'POST',
         googleEventId: selectedEvent?.google_event_id,
         title: `[${formData.customer?.name || '업무'}] ${formData.title}`,
-        description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}`,
+        description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}\n담당자: ${assigneeNames}`,
         startTime: startTimeStr,
         endTime: endTimeStr,
         allDay: formData.allDay,
-        assigneeEmail: formData.assignee.email
+        assigneeEmail: assigneeEmails // Edge Function에서 콤마로 구분하여 처리하도록 수정 예정
       };
 
       const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
@@ -189,9 +221,10 @@ const AdminSchedulePage: React.FC = () => {
       const scheduleData = {
         title: formData.title,
         content: formData.content,
-        staff_id: formData.assignee.id,
-        assignee_name: formData.assignee.name,
-        assignee_email: formData.assignee.email,
+        staff_id: staffIds[0], // 하위 호환성을 위해 첫 번째 담당자 ID 저장
+        staff_ids: staffIds,
+        assignee_name: assigneeNames,
+        assignee_email: assigneeEmails,
         customer_id: formData.customer?.id,
         customer_name: formData.customer?.name,
         start_time: startTimeStr,
@@ -371,19 +404,73 @@ const AdminSchedulePage: React.FC = () => {
                 <IconButton color="primary" onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton>
               </Box>
             </Box>
-            <FormControl fullWidth>
-              <InputLabel>담당자 지정 (Staff)</InputLabel>
-              <Select
-                value={formData.assignee?.id || ''}
-                label="담당자 지정 (Staff)"
-                onChange={(e) => {
-                  const staff = staffList.find(s => s.id === e.target.value);
-                  setFormData({...formData, assignee: staff || null});
-                }}
-              >
-                {staffList.map(s => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
-              </Select>
-            </FormControl>
+            <Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block', fontWeight: 'bold' }}>
+                담당자 지정
+              </Typography>
+              
+              {/* 선택된 담당자 (상단 고정) */}
+              {formData.assignees.length > 0 && (
+                <Box sx={{ mb: 2, p: 1, bgcolor: '#e3f2fd', borderRadius: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {formData.assignees.map(s => (
+                    <Chip 
+                      key={s.id} 
+                      label={s.name} 
+                      color="primary" 
+                      onDelete={() => setFormData({ ...formData, assignees: formData.assignees.filter(as => as.id !== s.id) })}
+                    />
+                  ))}
+                </Box>
+              )}
+
+              {/* 필터링된 전체 명단 */}
+              <Box sx={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: 1, 
+                p: 1.5, 
+                border: '1px solid #e0e0e0', 
+                borderRadius: 1, 
+                bgcolor: '#f9f9f9',
+                maxHeight: '200px',
+                overflowY: 'auto',
+                mb: 1
+              }}>
+                {staffList
+                  .filter(s => {
+                    const matchSearch = s.name.toLowerCase().includes(staffSearch.toLowerCase());
+                    if (staffSearch.trim() === '') {
+                      // 검색어가 없을 때는 최근 담당자 5명만 표시
+                      return recentStaffIds.includes(s.id);
+                    }
+                    return matchSearch;
+                  })
+                  .map(s => {
+                    const isSelected = formData.assignees.some(as => as.id === s.id);
+                    if (isSelected) return null; // 선택된 사람은 위에서 보여주므로 아래에선 제외
+                    return (
+                      <Chip
+                        key={s.id}
+                        label={s.name}
+                        onClick={() => setFormData({ ...formData, assignees: [...formData.assignees, s] })}
+                        variant="outlined"
+                        sx={{ transition: 'all 0.2s', '&:hover': { bgcolor: '#eceff1' } }}
+                      />
+                    );
+                  })}
+              </Box>
+
+              {/* 검색 도구 */}
+              <Box>
+                <TextField 
+                  size="small" 
+                  placeholder="담당자 이름 검색..." 
+                  value={staffSearch} 
+                  onChange={(e) => setStaffSearch(e.target.value)}
+                  fullWidth
+                />
+              </Box>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
