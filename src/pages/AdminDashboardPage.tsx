@@ -255,35 +255,38 @@ const AdminDashboardPage: React.FC = () => {
 
       <Divider sx={{ mb: 4 }} />
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { label: '총 업무 기록', count: summaryData.total, icon: <AssignmentIcon color="primary" />, color: '#607d8b', filter: null },
-          { label: '처리 중', count: summaryData.processing, icon: <AccessTimeIcon color="warning" />, color: '#ed6c02', filter: 'processing' },
-          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon color="success" />, color: '#2e7d32', filter: 'completed' },
+          { label: '총 업무 기록', count: summaryData.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b', filter: null },
+          { label: '처리 중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" color="warning" />, color: '#ed6c02', filter: 'processing' },
+          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" color="success" />, color: '#2e7d32', filter: 'completed' },
         ].map((item, idx) => (
-          <Grid item xs={12} sm={4} key={idx}>
+          <Grid item xs={4} sm={4} key={idx}>
             <ButtonBase 
-              sx={{ width: '100%', textAlign: 'left', borderRadius: 3, display: 'block' }} 
+              sx={{ width: '100%', textAlign: 'left', borderRadius: 2, display: 'block' }} 
               onClick={() => setFilterStatus(item.filter)}
             >
               <Paper 
                 variant="outlined" 
                 sx={{ 
-                  p: 3, 
-                  borderLeft: `6px solid ${item.color}`, 
-                  borderRadius: 3,
+                  p: { xs: 1.5, sm: 2 }, 
+                  borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
+                  borderRadius: 2,
                   bgcolor: filterStatus === item.filter ? 'action.selected' : 'background.paper',
                   transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }
+                  '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)' }
                 }}
               >
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                <Stack direction="row" spacing={1} alignItems="center">
                   {item.icon}
-                  <Typography variant="overline" fontWeight="bold" color="text.secondary">
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                     {item.label}
                   </Typography>
+                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.65rem' }}>
+                    {item.label.replace(' 업무 기록', '').replace(' ', '')}
+                  </Typography>
                 </Stack>
-                <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>
+                <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
                   {item.count}
                 </Typography>
               </Paper>
@@ -293,7 +296,7 @@ const AdminDashboardPage: React.FC = () => {
       </Grid>
 
       {/* 필터 섹션 - 카드 아래로 이동 */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 4, borderRadius: 3, bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6}>
             <TextField 
@@ -303,9 +306,11 @@ const AdminDashboardPage: React.FC = () => {
               value={selectedCustomer} 
               onChange={(e) => setSelectedCustomer(e.target.value)} 
               size="small"
+              InputProps={{ sx: { fontSize: '0.8125rem' } }}
+              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
             >
-                <MenuItem value="all"><em>전체 거래처</em></MenuItem>
-                {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
+                {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6}>
@@ -316,9 +321,11 @@ const AdminDashboardPage: React.FC = () => {
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)} 
               size="small"
+              InputProps={{ sx: { fontSize: '0.8125rem' } }}
+              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
             >
-                <MenuItem value="all"><em>전체 기간</em></MenuItem>
-                {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+                {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
             </TextField>
           </Grid>
         </Grid>

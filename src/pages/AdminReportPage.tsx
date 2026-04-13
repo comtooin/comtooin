@@ -414,66 +414,96 @@ const AdminReportPage: React.FC = () => {
       )}
 
       {/* 요약 위젯 */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={4}>
-          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #607d8b', borderRadius: 3 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <AssignmentIcon color="primary" />
-              <Typography variant="overline" fontWeight="bold">총 업무 기록</Typography>
-            </Stack>
-            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.total}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={4}>
-          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #ed6c02', borderRadius: 3 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <AccessTimeIcon color="warning" />
-              <Typography variant="overline" fontWeight="bold">처리중</Typography>
-            </Stack>
-            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.processing}</Typography>
-          </Paper>
-        </Grid>
-        <Grid item xs={6} sm={4}>
-          <Paper variant="outlined" sx={{ p: 3, borderLeft: '6px solid #2e7d32', borderRadius: 3 }}>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <CheckCircleIcon color="success" />
-              <Typography variant="overline" fontWeight="bold">처리완료</Typography>
-            </Stack>
-            <Typography variant="h4" fontWeight="bold" sx={{ mt: 1 }}>{summaryStats.completed}</Typography>
-          </Paper>
-        </Grid>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        {[
+          { label: '총 업무 기록', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b' },
+          { label: '처리 중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" color="warning" />, color: '#ed6c02' },
+          { label: '처리 완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" color="success" />, color: '#2e7d32' },
+        ].map((item, idx) => (
+          <Grid item xs={4} sm={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
+                borderRadius: 2,
+                height: '100%'
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                {item.icon}
+                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {item.label}
+                </Typography>
+                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.65rem' }}>
+                  {item.label.replace(' 업무 기록', '').replace(' ', '')}
+                </Typography>
+              </Stack>
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
+                {item.count}
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
       </Grid>
 
       {/* 필터 섹션 */}
-      <Paper variant="outlined" sx={{ p: 3, mb: 4, borderRadius: 3, bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} sm={6} md={2.5}>
-            <TextField select label="거래처 선택" fullWidth value={selectedCustomer} onChange={(e) => setSelectedCustomer(e.target.value)} size="small">
-                <MenuItem value="all"><em>전체 거래처</em></MenuItem>
-                {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+            <TextField 
+              select 
+              label="거래처 선택" 
+              fullWidth 
+              value={selectedCustomer} 
+              onChange={(e) => setSelectedCustomer(e.target.value)} 
+              size="small"
+              InputProps={{ sx: { fontSize: '0.8125rem' } }}
+              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
+            >
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
+                {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6} md={2.5}>
-            <TextField select label="기간(월)" fullWidth value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} size="small">
-                <MenuItem value="all"><em>전체 기간</em></MenuItem>
-                {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+            <TextField 
+              select 
+              label="기간(월)" 
+              fullWidth 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
+              size="small"
+              InputProps={{ sx: { fontSize: '0.8125rem' } }}
+              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
+            >
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+                {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={12} md={3}>
             <Stack direction="row" spacing={1}>
-              <TextField select label="상태" fullWidth value={status} onChange={(e) => setStatus(e.target.value)} size="small">
-                <MenuItem value="all"><em>전체 상태</em></MenuItem>
-                <MenuItem value="processing">처리중</MenuItem>
-                <MenuItem value="completed">처리완료</MenuItem>
+              <TextField 
+                select 
+                label="상태" 
+                fullWidth 
+                value={status} 
+                onChange={(e) => setStatus(e.target.value)} 
+                size="small"
+                InputProps={{ sx: { fontSize: '0.8125rem' } }}
+                InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
+              >
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 상태</em></MenuItem>
+                <MenuItem value="processing" sx={{ fontSize: '0.8125rem' }}>처리중</MenuItem>
+                <MenuItem value="completed" sx={{ fontSize: '0.8125rem' }}>처리완료</MenuItem>
               </TextField>
-              <Button variant="contained" onClick={applyFilters} sx={{ fontWeight: 'bold', minWidth: '70px' }}>조회</Button>
+              <Button variant="contained" onClick={applyFilters} sx={{ fontWeight: 'bold', minWidth: '70px', fontSize: '0.8125rem' }}>조회</Button>
             </Stack>
           </Grid>
           <Grid item xs={12} sm={12} md={4}>
             <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'stretch', md: 'flex-end' } }}>
-              <Button variant="outlined" color="secondary" onClick={handleExportExcel} sx={{ fontWeight: 'bold', minWidth: '90px', flexGrow: { xs: 1, md: 0 } }}>내보내기</Button>
-              <Button variant="outlined" color="info" onClick={handleDownloadSampleCsv} sx={{ fontWeight: 'bold', minWidth: '100px', flexGrow: { xs: 1, md: 0 } }}>업로드샘플</Button>
-              <Button variant="outlined" color="primary" component="label" sx={{ fontWeight: 'bold', minWidth: '80px', flexGrow: { xs: 1, md: 0 } }}>
+              <Button variant="outlined" color="secondary" onClick={handleExportExcel} sx={{ fontWeight: 'bold', minWidth: '90px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>내보내기</Button>
+              <Button variant="outlined" color="info" onClick={handleDownloadSampleCsv} sx={{ fontWeight: 'bold', minWidth: '100px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>업로드샘플</Button>
+              <Button variant="outlined" color="primary" component="label" sx={{ fontWeight: 'bold', minWidth: '80px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>
                 업로드
                 <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
               </Button>
