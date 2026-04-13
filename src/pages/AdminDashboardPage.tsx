@@ -64,6 +64,13 @@ const AdminDashboardPage: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // 필터 관련 상태 추가
+  const [customers, setCustomers] = useState<string[]>([]);
+  const [allMonths, setAllMonths] = useState<string[]>([]);
+  const [selectedCustomer, setSelectedCustomer] = useState('all');
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+
   const handleOpenDetail = (req: IRequest) => {
     setSelectedRequest(req);
     setNewStatus(req.status);
@@ -82,7 +89,23 @@ const AdminDashboardPage: React.FC = () => {
     processing: 0,
     completed: 0,
   });
-  const [filterStatus, setFilterStatus] = useState<string | null>(null);
+
+  const fetchInitialData = useCallback(async () => {
+    try {
+      const { data: customerData } = await supabase.from('customers').select('name').order('name', { ascending: true });
+      if (customerData) setCustomers(customerData.map(c => c.name));
+
+      const currentYear = new Date().getFullYear();
+      const { data: summaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
+      if (summaryData) setAllMonths(summaryData.map((m: any) => m.month));
+    } catch (err: any) {
+      console.error("Initial data fetch error", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const fetchRequests = useCallback(async () => {
     setLoading(true);
@@ -93,29 +116,43 @@ const AdminDashboardPage: React.FC = () => {
         .select('*, comments(*)')
         .order('created_at', { ascending: false });
 
-      if (filterStatus) {
-        query = query.eq('status', filterStatus);
+      if (selectedCustomer !== 'all') {
+        query = query.eq('customer_name', selectedCustomer);
+      }
+      
+      if (selectedMonth !== 'all') {
+        const year = selectedMonth.split('-')[0];
+        const month = selectedMonth.split('-')[1];
+        const startDate = `${year}-${month}-01T00:00:00.000Z`;
+        const endDate = `${year}-${month}-${new Date(Number(year), Number(month), 0).getDate()}T23:59:59.999Z`;
+        query = query.gte('created_at', startDate).lte('created_at', endDate);
       }
 
       const { data, error: fetchError } = await query;
       if (fetchError) throw fetchError;
-      setRequests(data || []);
+      
+      const allFiltered = data || [];
+      
+      // 요약 데이터 업데이트 (현재 선택된 거래처/기간 기준)
+      setSummaryData({
+        total: allFiltered.length,
+        pending: allFiltered.filter(req => req.status === 'pending').length,
+        processing: allFiltered.filter(req => req.status === 'processing').length,
+        completed: allFiltered.filter(req => req.status === 'completed').length,
+      });
 
-      const { data: allRequests } = await supabase.from('requests').select('status');
-      if (allRequests) {
-        setSummaryData({
-          total: allRequests.length,
-          pending: allRequests.filter(req => req.status === 'pending').length,
-          processing: allRequests.filter(req => req.status === 'processing').length,
-          completed: allRequests.filter(req => req.status === 'completed').length,
-        });
+      // 리스트 데이터 업데이트 (상태 필터 적용)
+      if (filterStatus) {
+        setRequests(allFiltered.filter(req => req.status === filterStatus));
+      } else {
+        setRequests(allFiltered);
       }
     } catch (err: any) {
       setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, selectedCustomer, selectedMonth]);
 
   useEffect(() => {
     fetchRequests();
@@ -240,6 +277,38 @@ const AdminDashboardPage: React.FC = () => {
           </Grid>
         ))}
       </Grid>
+
+      {/* 필터 섹션 - 카드 아래로 이동 */}
+      <Paper variant="outlined" sx={{ p: 2, mb: 4, borderRadius: 3, bgcolor: 'background.paper' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} sm={6}>
+            <TextField 
+              select 
+              label="거래처 필터" 
+              fullWidth 
+              value={selectedCustomer} 
+              onChange={(e) => setSelectedCustomer(e.target.value)} 
+              size="small"
+            >
+                <MenuItem value="all"><em>전체 거래처</em></MenuItem>
+                {customers.map((name: string) => <MenuItem key={name} value={name}>{name}</MenuItem>)}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField 
+              select 
+              label="기간(월) 필터" 
+              fullWidth 
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
+              size="small"
+            >
+                <MenuItem value="all"><em>전체 기간</em></MenuItem>
+                {allMonths.map(month => <MenuItem key={month} value={month}>{month}</MenuItem>)}
+            </TextField>
+          </Grid>
+        </Grid>
+      </Paper>
 
       <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' }}>
         <TableContainer sx={{ overflowX: 'auto' }}>
