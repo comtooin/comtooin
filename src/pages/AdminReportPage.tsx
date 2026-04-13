@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -52,6 +52,8 @@ const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' | 'd
   }
 };
 
+const ITEMS_PER_PAGE = 10;
+
 // --- TYPE DEFINITIONS ---
 interface IComment {
   id: number;
@@ -89,6 +91,9 @@ const AdminReportPage: React.FC = () => {
   const [statusData, setStatusData] = useState<any[]>([]);
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
 
+  // 페이지네이션 상태
+  const [page, setPage] = useState(1);
+
   const currentYear = new Date().getFullYear();
 
   const summaryStats = useMemo(() => {
@@ -110,6 +115,7 @@ const AdminReportPage: React.FC = () => {
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
+    setPage(1); // 탭 변경 시 페이지 리셋
   };
 
   const fetchInitialData = useCallback(async () => {
@@ -157,6 +163,7 @@ const AdminReportPage: React.FC = () => {
       const { data: requestsData, error: requestsError } = await requestsQuery;
       if (requestsError) throw requestsError;
       setFilteredRequests(requestsData || []);
+      setPage(1); // 필터 적용 시 페이지 리셋
 
       const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
       setStatusData(statusSummaryData || []);
@@ -175,6 +182,12 @@ const AdminReportPage: React.FC = () => {
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+  };
+
+  const paginatedRequests = filteredRequests.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handleExportExcel = async () => {
     try {
@@ -481,59 +494,73 @@ const AdminReportPage: React.FC = () => {
       ) : (
         <Box sx={{ pt: 1 }}>
           {tabValue === 0 && (
-            <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-              <TableContainer>
-                    <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 850 }}>
-                      <TableHead sx={{ bgcolor: 'grey.50' }}>
-                        <TableRow>
-                          <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '140px' }}>업무일자</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '110px' }}>거래처명</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '100px' }}>요청자</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '95px' }}>작성자</TableCell>
-                          <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
-                          <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredRequests.length > 0 ? filteredRequests.map((request) => (
-                          <TableRow key={request.id} hover>
-                            <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                              {(() => {
-                                const d = new Date(request.created_at);
-                                return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
-                              })()}
-                            </TableCell>
-                            <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                              {request.customer_name}
-                            </TableCell>
-                            <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                              {request.requester_name}
-                            </TableCell>
-                            <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                              {request.user_name}
-                            </TableCell>
-                            <TableCell align="center" sx={{ py: 2, px: 1 }}>
-                              <Chip 
-                                label={getStatusLabel(request.status)} 
-                                color={getStatusChipColor(request.status)} 
-                                size="small" 
-                                variant="outlined" 
-                                sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
-                              />
-                            </TableCell>
-                            <TableCell sx={{ py: 2, px: 1 }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {stripHtmlTags(request.content)}
-                              </Typography>
-                            </TableCell>
+            <>
+              <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', mb: 2 }}>
+                <TableContainer>
+                      <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 850 }}>
+                        <TableHead sx={{ bgcolor: 'grey.50' }}>
+                          <TableRow>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '140px' }}>업무일자</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '110px' }}>거래처명</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '100px' }}>요청자</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '95px' }}>작성자</TableCell>
+                            <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
                           </TableRow>
-                        )) : (
-                          <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-              </TableContainer>
-            </Paper>
+                        </TableHead>
+                        <TableBody>
+                          {paginatedRequests.length > 0 ? paginatedRequests.map((request) => (
+                            <TableRow key={request.id} hover>
+                              <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                {(() => {
+                                  const d = new Date(request.created_at);
+                                  return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                                })()}
+                              </TableCell>
+                              <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                {request.customer_name}
+                              </TableCell>
+                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                {request.requester_name}
+                              </TableCell>
+                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                {request.user_name}
+                              </TableCell>
+                              <TableCell align="center" sx={{ py: 2, px: 1 }}>
+                                <Chip 
+                                  label={getStatusLabel(request.status)} 
+                                  color={getStatusChipColor(request.status)} 
+                                  size="small" 
+                                  variant="outlined" 
+                                  sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
+                                />
+                              </TableCell>
+                              <TableCell sx={{ py: 2, px: 1 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {stripHtmlTags(request.content)}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          )) : (
+                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                </TableContainer>
+              </Paper>
+              {/* 페이지네이션 추가 */}
+              {filteredRequests.length > ITEMS_PER_PAGE && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                  <Pagination 
+                    count={Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)} 
+                    page={page} 
+                    onChange={handlePageChange} 
+                    color="primary"
+                    size="medium"
+                  />
+                </Box>
+              )}
+            </>
           )}
 
           {tabValue === 1 && (

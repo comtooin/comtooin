@@ -3,7 +3,7 @@ import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  ButtonBase, TextField, Stack, Container
+  ButtonBase, TextField, Stack, Container, Pagination
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon, 
@@ -44,6 +44,8 @@ const getStatusLabel = (status: string): string => {
   }
 };
 
+const ITEMS_PER_PAGE = 10;
+
 const AdminDashboardPage: React.FC = () => {
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,9 @@ const AdminDashboardPage: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
+
+  // 페이지네이션 상태
+  const [page, setPage] = useState(1);
 
   const handleOpenDetail = (req: IRequest) => {
     setSelectedRequest(req);
@@ -147,6 +152,8 @@ const AdminDashboardPage: React.FC = () => {
       } else {
         setRequests(allFiltered);
       }
+      // 필터가 바뀌면 페이지를 1로 리셋
+      setPage(1);
     } catch (err: any) {
       setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
     } finally {
@@ -218,6 +225,13 @@ const AdminDashboardPage: React.FC = () => {
       default: return 'default';
     }
   };
+
+  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+    setPage(value);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const paginatedRequests = requests.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
   if (error) return <Container maxWidth="lg" sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>;
@@ -310,7 +324,7 @@ const AdminDashboardPage: React.FC = () => {
         </Grid>
       </Paper>
 
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', bgcolor: 'background.paper', mb: 2 }}>
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table size="small" sx={{ minWidth: 400, tableLayout: 'fixed' }}>
             <TableHead sx={{ bgcolor: 'grey.50' }}>
@@ -322,7 +336,7 @@ const AdminDashboardPage: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {requests.length > 0 ? requests.map((req) => (
+              {paginatedRequests.length > 0 ? paginatedRequests.map((req) => (
                 <TableRow 
                   key={req.id} 
                   hover 
@@ -362,6 +376,19 @@ const AdminDashboardPage: React.FC = () => {
           </Table>
         </TableContainer>
       </Paper>
+
+      {/* 페이지네이션 추가 */}
+      {requests.length > ITEMS_PER_PAGE && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+          <Pagination 
+            count={Math.ceil(requests.length / ITEMS_PER_PAGE)} 
+            page={page} 
+            onChange={handlePageChange} 
+            color="primary"
+            size="medium"
+          />
+        </Box>
+      )}
 
       <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
         {selectedRequest && (
