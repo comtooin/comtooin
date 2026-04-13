@@ -10,7 +10,12 @@ import {
   CheckCircle as CheckCircleIcon,
   Business as BusinessIcon,
   PieChart as PieChartIcon,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  AutoAwesome as AiIcon,
+  FileDownload as FileDownloadIcon,
+  FileUpload as FileUploadIcon,
+  Description as DescriptionIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { supabase } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -18,6 +23,7 @@ import { Pie, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title
 } from 'chart.js';
+import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -93,6 +99,12 @@ const AdminReportPage: React.FC = () => {
 
   // 페이지네이션 상태
   const [page, setPage] = useState(1);
+
+  // AI 리포트 관련 상태
+  const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [aiReportContent, setAiReportContent] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const currentYear = new Date().getFullYear();
 
@@ -360,6 +372,82 @@ const AdminReportPage: React.FC = () => {
     reader.readAsText(file); 
   };
 
+  const handleGenerateAiReport = async () => {
+    if (filteredRequests.length === 0) {
+      alert('분석할 데이터가 없습니다.');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setError('');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      if (!accessToken) throw new Error("인증 세션이 만료되었습니다.");
+
+      const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/generate-ai-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          customerName: selectedCustomer,
+          month: selectedMonth,
+          status: status,
+          action: 'preview'
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      setAiReportContent(data.report);
+      setAiModalOpen(true);
+    } catch (err: any) {
+      console.error("AI Report Generation Error:", err);
+      setError(`AI 리포트 생성 실패: ${err.message}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveAiReport = async () => {
+    try {
+      setIsSaving(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/generate-ai-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          customerName: selectedCustomer,
+          month: selectedMonth,
+          action: 'save',
+          content: aiReportContent
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      alert('리포트가 자료실에 성공적으로 저장되었습니다.');
+      setAiModalOpen(false);
+    } catch (err: any) {
+      console.error("AI Report Save Error:", err);
+      alert(`저장 실패: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const statusPieData = {
     labels: (statusData || []).filter(d => d.status !== 'pending').map(d => getStatusLabel(d.status)), 
     datasets: [{
@@ -447,71 +535,124 @@ const AdminReportPage: React.FC = () => {
         ))}
       </Grid>
 
-      {/* 필터 섹션 */}
+      {/* 필터 및 액션 섹션 */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={6} md={2.5}>
-            <TextField 
-              select 
-              label="거래처 선택" 
-              fullWidth 
-              value={selectedCustomer} 
-              onChange={(e) => setSelectedCustomer(e.target.value)} 
-              size="small"
-              InputProps={{ sx: { fontSize: '0.8125rem' } }}
-              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
-            >
+        <Stack spacing={2}>
+          {/* 첫 번째 줄: 필터 및 조회 버튼 */}
+          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, width: '100%' }}>
+              <TextField 
+                select 
+                label="거래처" 
+                size="small"
+                fullWidth
+                value={selectedCustomer} 
+                onChange={(e) => setSelectedCustomer(e.target.value)} 
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
+              >
                 <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
                 {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6} md={2.5}>
-            <TextField 
-              select 
-              label="기간(월)" 
-              fullWidth 
-              value={selectedMonth} 
-              onChange={(e) => setSelectedMonth(e.target.value)} 
-              size="small"
-              InputProps={{ sx: { fontSize: '0.8125rem' } }}
-              InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
-            >
+              </TextField>
+              <TextField 
+                select 
+                label="기간" 
+                size="small"
+                fullWidth
+                value={selectedMonth} 
+                onChange={(e) => setSelectedMonth(e.target.value)} 
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
+              >
                 <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
                 {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={12} md={3}>
-            <Stack direction="row" spacing={1}>
+              </TextField>
               <TextField 
                 select 
                 label="상태" 
-                fullWidth 
+                size="small"
+                fullWidth
                 value={status} 
                 onChange={(e) => setStatus(e.target.value)} 
-                size="small"
-                InputProps={{ sx: { fontSize: '0.8125rem' } }}
-                InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
+                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
               >
                 <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 상태</em></MenuItem>
                 <MenuItem value="processing" sx={{ fontSize: '0.8125rem' }}>처리중</MenuItem>
                 <MenuItem value="completed" sx={{ fontSize: '0.8125rem' }}>처리완료</MenuItem>
               </TextField>
-              <Button variant="contained" onClick={applyFilters} sx={{ fontWeight: 'bold', minWidth: '70px', fontSize: '0.8125rem' }}>조회</Button>
+            </Box>
+            <Button 
+              variant="contained" 
+              onClick={applyFilters} 
+              startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
+              sx={{ 
+                fontWeight: 'bold', height: '36px', fontSize: '0.75rem', 
+                minWidth: '90px', borderRadius: 2, width: { xs: '100%', md: 'auto' } 
+              }}
+            >
+              조회
+            </Button>
+          </Box>
+
+          <Divider />
+
+          {/* 두 번째 줄: 액션 버튼들 (우측 정렬) */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            {/* 리포트 그룹 */}
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
+                onClick={handleGenerateAiReport}
+                disabled={isGenerating || filteredRequests.length === 0}
+                sx={{ 
+                  fontWeight: 'bold', minWidth: '140px', fontSize: '0.75rem', height: '36px',
+                  color: '#673ab7', borderColor: '#673ab7', 
+                  '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
+                  borderRadius: 2
+                }}
+              >
+                AI 분석 리포트
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="secondary" 
+                startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
+                onClick={handleExportExcel}
+                sx={{ fontWeight: 'bold', minWidth: '100px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+              >
+                내보내기
+              </Button>
             </Stack>
-          </Grid>
-          <Grid item xs={12} sm={12} md={4}>
-            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ justifyContent: { xs: 'stretch', md: 'flex-end' } }}>
-              <Button variant="outlined" color="secondary" onClick={handleExportExcel} sx={{ fontWeight: 'bold', minWidth: '90px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>내보내기</Button>
-              <Button variant="outlined" color="info" onClick={handleDownloadSampleCsv} sx={{ fontWeight: 'bold', minWidth: '100px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>업로드샘플</Button>
-              <Button variant="outlined" color="primary" component="label" sx={{ fontWeight: 'bold', minWidth: '80px', flexGrow: { xs: 1, md: 0 }, fontSize: '0.8125rem' }}>
+
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 24, my: 'auto', display: { xs: 'none', sm: 'block' } }} />
+
+            {/* 데이터 그룹 */}
+            <Stack direction="row" spacing={1}>
+              <Button 
+                variant="outlined" 
+                color="info" 
+                startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
+                onClick={handleDownloadSampleCsv}
+                sx={{ fontWeight: 'bold', minWidth: '110px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+              >
+                샘플
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
+                component="label"
+                sx={{ fontWeight: 'bold', minWidth: '90px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+              >
                 업로드
                 <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
               </Button>
             </Stack>
-          </Grid>
-        </Grid>
+          </Box>
+        </Stack>
       </Paper>
 
+      {/* 탭 섹션 */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
         <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
           <Tab label="업무 상세 리스트" sx={{ fontWeight: 'bold' }} />
@@ -634,6 +775,48 @@ const AdminReportPage: React.FC = () => {
           )}
         </Box>
       )}
+
+      {/* AI 리포트 미리보기 모달 */}
+      <Dialog 
+        open={aiModalOpen} 
+        onClose={() => !isSaving && setAiModalOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
+          <AiIcon color="secondary" />
+          AI 분석 리포트 초안 (미리보기)
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
+            * AI가 생성한 내용입니다. 필요시 내용을 수정한 후 저장하세요. 자료실(Google Drive)에 Google Doc 형식으로 저장됩니다.
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={15}
+            value={aiReportContent}
+            onChange={(e) => setAiReportContent(e.target.value)}
+            variant="outlined"
+            sx={{ 
+              '& .MuiOutlinedInput-root': { fontSize: '0.9rem', lineHeight: 1.6, fontFamily: 'monospace' }
+            }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setAiModalOpen(false)} disabled={isSaving}>취소</Button>
+          <Button 
+            variant="contained" 
+            color="secondary" 
+            onClick={handleSaveAiReport}
+            disabled={isSaving}
+            startIcon={isSaving && <CircularProgress size={16} color="inherit" />}
+            sx={{ fontWeight: 'bold', px: 3, bgcolor: '#673ab7', '&:hover': { bgcolor: '#512da8' } }}
+          >
+            {isSaving ? '저장 중...' : '자료실에 저장'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
