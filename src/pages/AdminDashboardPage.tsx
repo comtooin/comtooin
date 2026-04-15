@@ -238,14 +238,14 @@ const AdminDashboardPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>관리자 대시보드</title></Helmet>
+      <Helmet><title>대시보드</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <DashboardIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            관리자 대시보드
+            대시보드
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">

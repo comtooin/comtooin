@@ -75,16 +75,14 @@ const AdminCustomerPage: React.FC = () => {
 
   return (
     <Container maxWidth="md">
-      <Helmet>
-        <title>거래처 관리 - 컴투인</title>
-      </Helmet>
-
+      <Helmet><title>거래처</title></Helmet>
+      
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <BusinessIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            거래처 관리
+            거래처
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">

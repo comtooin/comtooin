@@ -61,7 +61,7 @@ const NavBar: React.FC = () => {
             <ListItem button component={RouterLink} to="/">
               <ListItemIcon><EditNoteIcon /></ListItemIcon>
               <ListItemText
-                primary="유지보수 업무기록"
+                primary="업무 기록"
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
@@ -79,6 +79,13 @@ const NavBar: React.FC = () => {
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
+            <ListItem button component={RouterLink} to="/admin/schedule">
+              <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
+              <ListItemText
+                primary="스케줄"
+                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+              />
+            </ListItem>
             <ListItem button component={RouterLink} to="/admin/archive">
               <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
               <ListItemText
@@ -89,14 +96,7 @@ const NavBar: React.FC = () => {
             <ListItem button component={RouterLink} to="/admin/customers">
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText
-                primary="거래처 관리"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            <ListItem button component={RouterLink} to="/admin/schedule">
-              <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
-              <ListItemText
-                primary="일정 관리"
+                primary="거래처"
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
@@ -112,7 +112,7 @@ const NavBar: React.FC = () => {
           <ListItem button component={RouterLink} to="/admin/login">
             <ListItemIcon><AdminPanelSettingsIcon /></ListItemIcon>
             <ListItemText
-              primary="관리자 로그인"
+              primary="로그인"
               primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
             />
           </ListItem>
@@ -133,12 +133,58 @@ const NavBar: React.FC = () => {
               flexGrow: 1,
               color: 'inherit',
               textDecoration: 'none',
-              fontWeight: 800,
-              letterSpacing: '0.5px',
-              fontSize: { xs: '1.2rem', sm: '1.4rem' }
+              display: 'flex',
+              alignItems: 'center',
             }}
           >
-            COMTOOIN
+            {/* 세련된 포인트 바 */}
+            <Box 
+              sx={{ 
+                width: 4, 
+                height: 20, 
+                bgcolor: '#4db6ac', // 차분한 민트 포인트
+                borderRadius: 1,
+                mr: 1.5,
+                boxShadow: '0px 0px 8px rgba(77, 182, 172, 0.4)'
+              }} 
+            />
+            
+            <Box 
+              component="span" 
+              sx={{ 
+                fontWeight: 900, 
+                letterSpacing: '-0.01em', 
+                fontSize: { xs: '1.25rem', sm: '1.45rem' },
+                color: '#ffffff',
+              }}
+            >
+              COMTOOIN
+            </Box>
+            <Box 
+              component="span" 
+              sx={{ 
+                fontWeight: 500, 
+                color: 'rgba(255, 255, 255, 0.85)', 
+                fontSize: { xs: '1.05rem', sm: '1.15rem' }, 
+                ml: 1,
+                mt: 0.2 
+              }}
+            >
+              ITSM
+            </Box>
+            <Box 
+              component="span" 
+              sx={{ 
+                fontWeight: 300, 
+                color: 'rgba(255, 255, 255, 0.6)', 
+                fontSize: '0.8rem', 
+                ml: 0.8, 
+                mt: 0.5,
+                display: { xs: 'none', md: 'inline' } 
+              }}
+            >
+              (IT Service Management)
+            </Box>
           </Typography>
           {isMobile ? (
             <IconButton
@@ -152,16 +198,16 @@ const NavBar: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 1 }}>
               {isAdminLoggedIn ? (
                 <>
-                  <Button color="inherit" component={RouterLink} to="/" sx={{ px: 1.5 }}>유지보수 업무기록</Button>
+                  <Button color="inherit" component={RouterLink} to="/" sx={{ px: 1.5 }}>업무 기록</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/reports" sx={{ px: 1.5 }}>리포트</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처 관리</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>일정 관리</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
                   <Button color="inherit" onClick={handleLogout} sx={{ px: 1.5, ml: 1, bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>로그아웃</Button>
                 </>
               ) : (
-                <Button color="inherit" component={RouterLink} to="/admin/login">관리자 로그인</Button>
+                <Button color="inherit" component={RouterLink} to="/admin/login">로그인</Button>
               )}
             </Box>
           )}

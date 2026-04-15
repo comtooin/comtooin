@@ -266,7 +266,7 @@ const AdminSchedulePage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>일정 관리</title></Helmet>
+      <Helmet><title>스케줄</title></Helmet>
       
       <style>{`
         .fc-day-sun .fc-col-header-cell-cushion, 
@@ -306,7 +306,7 @@ const AdminSchedulePage: React.FC = () => {
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <CalendarMonthIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            일정 관리
+            스케줄
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">

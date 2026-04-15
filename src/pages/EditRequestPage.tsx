@@ -151,16 +151,17 @@ const EditRequestPage: React.FC = () => {
                 hashedPassword = hashed as string;
             }
 
-            const uploadedImageUrls: string[] = [];
-            for (const image of imageFiles) {
-                const compressedBlob = await compressImage(image);
-                
-                if (compressedBlob.size > 5 * 1024 * 1024) {
-                    throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
-                }
-
+            // 1. 이미지 처리 및 일괄 업로드
+            let uploadedImageUrls: string[] = [];
+            if (imageFiles.length > 0) {
                 const formDataUpload = new FormData();
-                formDataUpload.append('file', compressedBlob, image.name);
+                for (const image of imageFiles) {
+                    const compressedBlob = await compressImage(image);
+                    if (compressedBlob.size > 5 * 1024 * 1024) {
+                        throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
+                    }
+                    formDataUpload.append('files', compressedBlob, image.name);
+                }
                 formDataUpload.append('customerName', formData.customer_name);
                 formDataUpload.append('userName', formData.user_name);
 
@@ -169,8 +170,8 @@ const EditRequestPage: React.FC = () => {
                 });
 
                 if (uploadError) throw uploadError;
-                if (uploadData?.webViewLink) {
-                    uploadedImageUrls.push(uploadData.webViewLink);
+                if (uploadData?.urls) {
+                    uploadedImageUrls = uploadData.urls;
                 }
             }
 

@@ -9,8 +9,16 @@ const corsHeaders = {
 
 const ROOT_FOLDER_ID = '1YV2vEIhNU0rPSiyHUgyDV0pSuBcuOKfJ';
 
+// 메모리 캐싱
+let cachedAccessToken: string | null = null;
+let tokenExpiry = 0;
+
 async function getAccessToken(serviceAccount: any) {
   const now = Math.floor(Date.now() / 1000);
+  if (cachedAccessToken && now < tokenExpiry) {
+    return cachedAccessToken;
+  }
+
   const claim = {
     iss: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/drive.readonly",
@@ -20,7 +28,6 @@ async function getAccessToken(serviceAccount: any) {
   };
 
   const privateKey = serviceAccount.private_key;
-  // 더 견고한 PEM 파싱: 헤더/푸터 및 모든 공백(줄바꿈 포함) 제거
   const pemContents = privateKey
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
@@ -52,10 +59,10 @@ async function getAccessToken(serviceAccount: any) {
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    console.error('Google 인증 실패 상세:', data);
-    throw new Error(`Google 인증 실패: ${data.error_description || data.error}`);
-  }
+  if (!response.ok) throw new Error(`Google 인증 실패: ${data.error_description || data.error}`);
+  
+  cachedAccessToken = data.access_token;
+  tokenExpiry = now + 3500; // 3600초 중 100초 여유
   return data.access_token;
 }
 
@@ -67,60 +74,37 @@ serve(async (req) => {
     const folderId = url.searchParams.get('folderId') || ROOT_FOLDER_ID;
 
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-    if (!serviceAccountJson) throw new Error('서버 환경 변수(GOOGLE_SERVICE_ACCOUNT_JSON)가 설정되지 않았습니다.');
+    if (!serviceAccountJson) throw new Error('서버 환경 변수가 설정되지 않았습니다.');
 
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(serviceAccountJson);
-    } catch (e) {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT_JSON 파싱 실패: 형식이 올바른 JSON인지 확인하세요.');
-    }
-
+    const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
 
+    // 필드 최소화 및 쿼리 최적화 (modifiedTime 추가)
     const driveParams = new URLSearchParams({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, modifiedTime, webViewLink, webContentLink)',
+      fields: 'files(id, name, mimeType, size, webViewLink, modifiedTime)',
       orderBy: 'folder,name',
-      pageSize: '1000',
-      supportsAllDrives: 'true',
-      includeItemsFromAllDrives: 'true'
+      pageSize: '500', 
     });
 
-    const driveUrl = `https://www.googleapis.com/drive/v3/files?${driveParams.toString()}`;
-    const driveResponse = await fetch(driveUrl, {
+    const driveResponse = await fetch(`https://www.googleapis.com/drive/v3/files?${driveParams.toString()}`, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${accessToken}` },
     });
 
     const driveData = await driveResponse.json();
-    
-    // API 응답 상태 확인 추가 (핵심 오류 감지 지점)
-    if (!driveResponse.ok) {
-      console.error('Google Drive API 오류:', driveData);
-      throw new Error(`Drive API 오류 (${driveResponse.status}): ${driveData.error?.message || JSON.stringify(driveData)}`);
-    }
+    if (!driveResponse.ok) throw new Error(`Drive API 오류: ${driveData.error?.message}`);
 
     return new Response(JSON.stringify({ 
       success: true, 
-      files: driveData.files || [],
-      debug: {
-        folderId,
-        account: serviceAccount.client_email,
-        resultCount: driveData.files?.length || 0
-      }
+      files: driveData.files || []
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('Function error:', error.message);
-    return new Response(JSON.stringify({ 
-      error: error.message, 
-      success: false,
-      debug: { timestamp: new Date().toISOString() } 
-    }), {
+    return new Response(JSON.stringify({ error: error.message, success: false }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })

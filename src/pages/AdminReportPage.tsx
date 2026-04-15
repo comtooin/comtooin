@@ -481,14 +481,14 @@ const AdminReportPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>유지보수 분석 리포트</title></Helmet>
+      <Helmet><title>리포트</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <AssessmentIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            유지보수 분석 리포트
+            리포트
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">

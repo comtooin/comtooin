@@ -136,7 +136,7 @@ const ArchivePage: React.FC = () => {
 
   return (
     <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pb: 10 }}>
-      <Helmet><title>통합 자료실 - 컴투인</title></Helmet>
+      <Helmet><title>자료실</title></Helmet>
 
       {/* 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
@@ -144,7 +144,7 @@ const ArchivePage: React.FC = () => {
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <CloudDownloadIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
             <Typography variant="h5" component="h1" fontWeight="bold">
-              통합 자료실
+              자료실
             </Typography>
           </Stack>
           
@@ -158,7 +158,7 @@ const ArchivePage: React.FC = () => {
           </Button>
         </Stack>
         <Typography variant="body2" color="text.secondary">
-          우리 시스템 디자인으로 구글 드라이브 파일을 탐색합니다.
+          업무 매뉴얼 및 현장 자료를 안전하게 관리하고 공유합니다.
         </Typography>
       </Box>
       
@@ -221,7 +221,7 @@ const ArchivePage: React.FC = () => {
         {loading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12, gap: 2 }}>
             <CircularProgress size={32} />
-            <Typography variant="body2" color="text.secondary">서버 응답 대기 중...</Typography>
+            <Typography variant="body2" color="text.secondary">자료실 목록을 불러오는 중입니다...</Typography>
           </Box>
         ) : (
           <List sx={{ py: 0 }}>
@@ -282,9 +282,6 @@ const ArchivePage: React.FC = () => {
             )) : (
               <Box sx={{ py: 12, textAlign: 'center' }}>
                 <Typography color="text.secondary">표시할 파일이 없습니다.</Typography>
-                <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 1 }}>
-                  ID: {currentFolder.id}
-                </Typography>
               </Box>
             )}
           </List>

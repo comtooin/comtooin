@@ -172,23 +172,17 @@ const HomePage: React.FC = () => {
       const userEmail = session?.user?.email;
       const userId = session?.user?.id;
 
-      // 1. 이미지 처리 및 구글 드라이브 업로드
-      const uploadedImageUrls: string[] = [];
-      for (const image of images) {
-        // 서버측 5MB 제한에 대비한 프론트엔드 1차 검사 (압축 전 원본 기준)
-        if (image.size > 10 * 1024 * 1024) { // 원본이 너무 크면 압축 전에도 거를 수 있음 (예: 10MB)
-           console.warn(`이미지가 너무 커서 압축을 건너뜁니다: ${image.name}`);
-        }
-
-        const compressedBlob = await compressImage(image);
-        
-        // 압축 후 최종 5MB 검사
-        if (compressedBlob.size > 5 * 1024 * 1024) {
-          throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
-        }
-
+      // 1. 이미지 처리 및 일괄 업로드
+      let uploadedImageUrls: string[] = [];
+      if (images.length > 0) {
         const formData = new FormData();
-        formData.append('file', compressedBlob, image.name);
+        for (const image of images) {
+          const compressedBlob = await compressImage(image);
+          if (compressedBlob.size > 5 * 1024 * 1024) {
+            throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
+          }
+          formData.append('files', compressedBlob, image.name);
+        }
         formData.append('customerName', customerName);
         formData.append('userName', userName);
 
@@ -197,8 +191,8 @@ const HomePage: React.FC = () => {
         });
 
         if (uploadError) throw uploadError;
-        if (uploadData?.webViewLink) {
-          uploadedImageUrls.push(uploadData.webViewLink);
+        if (uploadData?.urls) {
+          uploadedImageUrls = uploadData.urls;
         }
       }
 
@@ -234,14 +228,14 @@ const HomePage: React.FC = () => {
 
   return (
     <Container maxWidth="md">
-      <Helmet><title>유지보수 업무내역작성</title></Helmet>
+      <Helmet><title>업무 기록 작성</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <EditNoteIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            유지보수 업무내역 작성
+            업무 기록 작성
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
