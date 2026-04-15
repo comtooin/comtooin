@@ -255,17 +255,29 @@ const CheckRequestPage: React.FC = () => {
                 <>
                   <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>첨부 이미지</Typography>
                   <Grid container spacing={1} sx={{ mb: 3 }}>
-                    {selectedRequest.images.map((image, index) => (
-                      <Grid item key={index} xs={6} sm={4}>
-                        <Paper 
-                          variant="outlined" 
-                          sx={{ overflow: 'hidden', borderRadius: 2, cursor: 'pointer' }}
-                          onClick={() => window.open(image, '_blank')}
-                        >
-                          <img src={image} alt={`attachment ${index}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
-                        </Paper>
-                      </Grid>
-                    ))}
+                    {selectedRequest.images.map((image, index) => {
+                      let imageUrl = image;
+                      if (!image.startsWith('http')) {
+                        imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                      } else if (image.includes('drive.google.com')) {
+                        const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                        if (fileId) {
+                          imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                        }
+                      }
+                      
+                      return (
+                        <Grid item key={index} xs={6} sm={4}>
+                          <Paper 
+                            variant="outlined" 
+                            sx={{ overflow: 'hidden', borderRadius: 2, cursor: 'pointer' }}
+                            onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}
+                          >
+                            <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
                   </Grid>
                 </>
               )}

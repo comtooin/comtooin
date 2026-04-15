@@ -26,12 +26,47 @@ const EditRequestPage: React.FC = () => {
     });
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
     const [imageFiles, setImageFiles] = useState<File[]>([]);
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const compressImage = (file: File): Promise<Blob> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+        reader.onload = () => {
+            const img = new Image();
+            img.src = reader.result as string;
+            img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    const MAX_WIDTH = 1200;
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        if (blob) resolve(blob);
+                        else reject(new Error('이미지 압축 중 오류가 발생했습니다.'));
+                    }, 'image/jpeg', 0.8);
+                };
+                img.onerror = () => reject(new Error('이미지 로드 중 오류가 발생했습니다.'));
+            };
+            reader.onerror = () => reject(new Error('파일 읽기 중 오류가 발생했습니다.'));
+        });
+    };
 
     useEffect(() => {
         const fetchRequest = async () => {
@@ -52,7 +87,10 @@ const EditRequestPage: React.FC = () => {
                     images: data.images || [],
                 });
                 if (data.images && data.images.length > 0) {
-                    setImagePreviews(data.images.map((img: string) => `${assetBaseURL}/uploads/${img}`))
+                    setImagePreviews(data.images.map((img: string) => {
+                        if (img.startsWith('http')) return img;
+                        return `${assetBaseURL}/uploads/${img}`;
+                    }))
                 }
             } catch (err: any) {
                 setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
@@ -78,7 +116,10 @@ const EditRequestPage: React.FC = () => {
             const newImageFiles = [...imageFiles, ...files].slice(0, 5);
             setImageFiles(newImageFiles);
             const previews = newImageFiles.map(file => URL.createObjectURL(file));
-            const existingImageUrls = formData.images.map(img => `${assetBaseURL}/uploads/${img}`);
+            const existingImageUrls = formData.images.map(img => {
+                if (img.startsWith('http')) return img;
+                return `${assetBaseURL}/uploads/${img}`;
+            });
             setImagePreviews([...existingImageUrls, ...previews].slice(0, 5));
         }
     };
@@ -100,7 +141,7 @@ const EditRequestPage: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+        setSubmitting(true);
         setError('');
         try {
             let hashedPassword = '';
@@ -112,12 +153,25 @@ const EditRequestPage: React.FC = () => {
 
             const uploadedImageUrls: string[] = [];
             for (const image of imageFiles) {
-                const fileExtension = image.name.split('.').pop();
-                const filePath = `${id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-                const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, image);
+                const compressedBlob = await compressImage(image);
+                
+                if (compressedBlob.size > 5 * 1024 * 1024) {
+                    throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
+                }
+
+                const formDataUpload = new FormData();
+                formDataUpload.append('file', compressedBlob, image.name);
+                formDataUpload.append('customerName', formData.customer_name);
+                formDataUpload.append('userName', formData.user_name);
+
+                const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-daily-log-image', {
+                    body: formDataUpload,
+                });
+
                 if (uploadError) throw uploadError;
-                const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(filePath);
-                if (publicUrlData?.publicUrl) uploadedImageUrls.push(publicUrlData.publicUrl);
+                if (uploadData?.webViewLink) {
+                    uploadedImageUrls.push(uploadData.webViewLink);
+                }
             }
 
             const updatePayload: any = {
@@ -137,7 +191,7 @@ const EditRequestPage: React.FC = () => {
         } catch (err: any) {
             setError(err.message || '수정 중 오류가 발생했습니다.');
         } finally {
-            setLoading(false);
+            setSubmitting(false);
         }
     };
 
@@ -167,13 +221,13 @@ const EditRequestPage: React.FC = () => {
                     <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보 수정</Typography>
                     <Grid container spacing={3}>
                         <Grid item xs={12} sm={6}>
-                            <TextField name="customer_name" label="거래처명" fullWidth required variant="outlined" size="small" value={formData.customer_name} onChange={handleInputChange} />
+                            <TextField name="customer_name" label="거래처명" fullWidth required variant="outlined" size="small" value={formData.customer_name} onChange={handleInputChange} disabled={submitting} />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                            <TextField name="user_name" label="작성자명" fullWidth required variant="outlined" size="small" value={formData.user_name} onChange={handleInputChange} />
+                            <TextField name="user_name" label="작성자명" fullWidth required variant="outlined" size="small" value={formData.user_name} onChange={handleInputChange} disabled={submitting} />
                         </Grid>
                         <Grid item xs={12}>
-                            <TextField name="email" label="이메일 주소" fullWidth variant="outlined" size="small" value={formData.email} onChange={handleInputChange} placeholder="example@email.com" />
+                            <TextField name="email" label="이메일 주소" fullWidth variant="outlined" size="small" value={formData.email} onChange={handleInputChange} placeholder="example@email.com" disabled={submitting} />
                         </Grid>
                     </Grid>
                     
@@ -184,12 +238,13 @@ const EditRequestPage: React.FC = () => {
                         value={formData.content}
                         onChange={(e) => handleContentChange(e.target.value)}
                         spellCheck={false}
+                        disabled={submitting}
                         InputProps={{ style: { fontSize: '16px' } }}
                     />
 
                     <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 4, mb: 2 }}>이미지 관리</Typography>
                     <Box sx={{ mb: 2 }}>
-                        <Button variant="outlined" component="label" fullWidth sx={{ py: 1.5, borderStyle: 'dashed' }}>
+                        <Button variant="outlined" component="label" fullWidth sx={{ py: 1.5, borderStyle: 'dashed' }} disabled={submitting}>
                             이미지 추가 첨부 (최대 5개)
                             <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
                         </Button>
@@ -206,6 +261,7 @@ const EditRequestPage: React.FC = () => {
                                         size="small" 
                                         onClick={() => handleRemoveImage(index)} 
                                         sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
+                                        disabled={submitting}
                                     >
                                         <Delete fontSize="small" color="error" />
                                     </IconButton>
@@ -229,6 +285,7 @@ const EditRequestPage: React.FC = () => {
                             onChange={(e) => setPassword(e.target.value)} 
                             placeholder="본인 확인을 위한 비밀번호 입력"
                             sx={{ bgcolor: 'white' }}
+                            disabled={submitting}
                         />
                     </Box>
 
@@ -242,6 +299,7 @@ const EditRequestPage: React.FC = () => {
                             size="large" 
                             onClick={() => navigate(`/admin/request/detail/${id}`)}
                             sx={{ py: 1.5, fontWeight: 'bold' }}
+                            disabled={submitting}
                         >
                             취소
                         </Button>
@@ -251,9 +309,9 @@ const EditRequestPage: React.FC = () => {
                             fullWidth 
                             size="large" 
                             sx={{ py: 1.5, fontWeight: 'bold' }}
-                            disabled={loading}
+                            disabled={submitting}
                         >
-                            {loading ? <CircularProgress size={24} /> : '수정 사항 저장'}
+                            {submitting ? <><CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> 저장 중...</> : '수정 사항 저장'}
                         </Button>
                     </Stack>
                 </Box>

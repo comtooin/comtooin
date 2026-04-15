@@ -400,18 +400,8 @@ const AdminDashboardPage: React.FC = () => {
       <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
         {selectedRequest && (
           <>
-            <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pr: 2 }}>
-              <Typography variant="h6" fontWeight="bold">업무 상세 (번호: {selectedRequest.id})</Typography>
-              <Button 
-                startIcon={<EditIcon />} 
-                variant={isEditing ? "outlined" : "contained"} 
-                color="secondary" 
-                size="small"
-                onClick={() => setIsEditing(!isEditing)}
-                sx={{ fontWeight: 'bold' }}
-              >
-                {isEditing ? '편집 취소' : '내용 수정'}
-              </Button>
+            <DialogTitle sx={{ fontWeight: 'bold' }}>
+              업무 상세 정보 (번호: {selectedRequest.id})
             </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2.5}>
@@ -465,6 +455,45 @@ const AdminDashboardPage: React.FC = () => {
                   )}
                 </Stack>
 
+                {selectedRequest.images && selectedRequest.images.length > 0 && (
+                  <>
+                    <Typography variant="h6" fontWeight="bold">첨부 이미지</Typography>
+                    <Grid container spacing={2}>
+                      {selectedRequest.images.map((image, index) => {
+                        let imageUrl = image;
+                        if (!image.startsWith('http')) {
+                          // 기존 Supabase 이미지 경로 처리 (ID 수정: szwiejswmfivultxxywb)
+                          imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                        } else if (image.includes('drive.google.com')) {
+                          // 구글 드라이브 링크를 안정적인 썸네일 직링으로 변환
+                          const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                          if (fileId) {
+                            imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                          }
+                        }
+                        
+                        return (
+                          <Grid item key={index} xs={6} sm={4}>
+                            <Paper 
+                              variant="outlined" 
+                              sx={{ 
+                                overflow: 'hidden', 
+                                borderRadius: 2, 
+                                cursor: 'pointer',
+                                transition: 'transform 0.2s',
+                                '&:hover': { transform: 'scale(1.02)', boxShadow: 2 }
+                              }}
+                              onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}
+                            >
+                              <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                            </Paper>
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </>
+                )}
+
                 <Divider sx={{ my: 1 }} />
                 
                 <FormControl fullWidth>
@@ -484,12 +513,46 @@ const AdminDashboardPage: React.FC = () => {
                 />
               </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: 2.5 }}>
-              <Button onClick={() => setOpenDetailModal(false)}>취소</Button>
-              <Button onClick={handleDeleteRequest} color="error" sx={{ ml: 'auto', mr: 1 }}>삭제</Button>
-              <Button onClick={handleSaveRequest} variant="contained" disabled={saving} sx={{ fontWeight: 'bold' }}>
-                {saving ? <CircularProgress size={24} color="inherit" /> : '변경사항 저장'}
+            <DialogActions sx={{ p: 2.5, justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+              <Button 
+                onClick={handleDeleteRequest} 
+                color="error" 
+                variant="outlined"
+                sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5 }}
+              >
+                삭제
               </Button>
+              
+              <Stack direction="row" spacing={1}>
+                <Button 
+                  onClick={() => setOpenDetailModal(false)}
+                  variant="outlined"
+                  color="inherit"
+                  sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5, bgcolor: 'white' }}
+                >
+                  닫기
+                </Button>
+                
+                <Button 
+                  startIcon={<EditIcon />} 
+                  variant="outlined" 
+                  color="primary" 
+                  onClick={() => setIsEditing(!isEditing)}
+                  sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5, bgcolor: 'white' }}
+                >
+                  {isEditing ? '수정 취소' : '수정'}
+                </Button>
+
+                <Button 
+                  onClick={handleSaveRequest} 
+                  variant="contained" 
+                  color="primary"
+                  disabled={saving} 
+                  sx={{ fontWeight: 'bold', px: 3, borderRadius: 1.5, minWidth: 80 }}
+                >
+                  {saving ? <CircularProgress size={20} color="inherit" /> : '저장'}
+                </Button>
+              </Stack>
             </DialogActions>
           </>
         )}

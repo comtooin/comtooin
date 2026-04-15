@@ -87,9 +87,12 @@ const SubmissionDetailPage: React.FC = () => {
     if (!id) return;
     try {
         setDeleteError('');
-        const imagesToRemove = request?.images?.map((url: string) => {
-            return url.split('/uploads/').pop();
-        }).filter(Boolean) as string[];
+        // Supabase Storage에 저장된 이미지인 경우만 경로를 추출 (구글 드라이브 등 외부 링크는 제외)
+        const imagesToRemove = request?.images
+            ?.filter(url => url.includes('/uploads/'))
+            .map((url: string) => {
+                return url.split('/uploads/').pop();
+            }).filter(Boolean) as string[];
 
         const { data: success, error: deleteError } = await supabase.rpc(
             'delete_request_with_password',
@@ -185,23 +188,35 @@ const SubmissionDetailPage: React.FC = () => {
             <Grid container spacing={2} sx={{ mb: 4 }}>
               {request.images
                 ?.filter(image => typeof image === 'string' && image.trim() !== '')
-                .map((image, index) => (
-                <Grid item key={index} xs={6} sm={4}>
-                  <Paper 
-                    variant="outlined" 
-                    sx={{ 
-                      overflow: 'hidden', 
-                      borderRadius: 2, 
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                      '&:hover': { transform: 'scale(1.02)', boxShadow: 2 }
-                    }}
-                    onClick={() => window.open(image, '_blank')}
-                  >
-                    <img src={image} alt={`attachment ${index}`} style={{ width: '100%', height: 150, objectFit: 'cover', display: 'block' }} />
-                  </Paper>
-                </Grid>
-              ))}
+                .map((image, index) => {
+                  let imageUrl = image;
+                  if (!image.startsWith('http')) {
+                    imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                  } else if (image.includes('drive.google.com')) {
+                    const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                    if (fileId) {
+                      imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+                    }
+                  }
+                  
+                  return (
+                    <Grid item key={index} xs={6} sm={4}>
+                      <Paper 
+                        variant="outlined" 
+                        sx={{ 
+                          overflow: 'hidden', 
+                          borderRadius: 2, 
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': { transform: 'scale(1.02)', boxShadow: 2 }
+                        }}
+                        onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}
+                      >
+                        <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 150, objectFit: 'cover', display: 'block' }} />
+                      </Paper>
+                    </Grid>
+                  );
+                })}
             </Grid>
           </>
         )}

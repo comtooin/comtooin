@@ -22,6 +22,41 @@ const HomePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
   const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          const MAX_WIDTH = 1200;
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('이미지 압축 중 오류가 발생했습니다.'));
+          }, 'image/jpeg', 0.8);
+        };
+        img.onerror = () => reject(new Error('이미지 로드 중 오류가 발생했습니다.'));
+      };
+      reader.onerror = () => reject(new Error('파일 읽기 중 오류가 발생했습니다.'));
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -131,11 +166,43 @@ const HomePage: React.FC = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const userEmail = session?.user?.email;
       const userId = session?.user?.id;
 
+      // 1. 이미지 처리 및 구글 드라이브 업로드
+      const uploadedImageUrls: string[] = [];
+      for (const image of images) {
+        // 서버측 5MB 제한에 대비한 프론트엔드 1차 검사 (압축 전 원본 기준)
+        if (image.size > 10 * 1024 * 1024) { // 원본이 너무 크면 압축 전에도 거를 수 있음 (예: 10MB)
+           console.warn(`이미지가 너무 커서 압축을 건너뜁니다: ${image.name}`);
+        }
+
+        const compressedBlob = await compressImage(image);
+        
+        // 압축 후 최종 5MB 검사
+        if (compressedBlob.size > 5 * 1024 * 1024) {
+          throw new Error(`이미지 용량이 압축 후에도 5MB를 초과합니다: ${image.name}`);
+        }
+
+        const formData = new FormData();
+        formData.append('file', compressedBlob, image.name);
+        formData.append('customerName', customerName);
+        formData.append('userName', userName);
+
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-daily-log-image', {
+          body: formData,
+        });
+
+        if (uploadError) throw uploadError;
+        if (uploadData?.webViewLink) {
+          uploadedImageUrls.push(uploadData.webViewLink);
+        }
+      }
+
+      // 2. 요청 저장
       const requestPayload = {
         customer_name: customerName,
         user_name: userName,
@@ -145,30 +212,23 @@ const HomePage: React.FC = () => {
         status: processingContent ? 'completed' : 'processing',
         created_at: new Date(workDate).toISOString(),
         user_email: userEmail,
+        images: uploadedImageUrls, // 이미지 URL 목록 포함
       };
 
       const { data: requestData, error: insertError } = await supabase.from('requests').insert([requestPayload]).select();
       if (insertError) throw insertError;
       const requestId = requestData?.[0]?.id;
 
+      // 3. 처리내용이 있으면 댓글로 추가
       if (processingContent.trim()) {
         await supabase.from('comments').insert({ request_id: requestId, comment: processingContent, user_id: userId });
       }
 
-      for (const image of images) {
-        const fileExtension = image.name.split('.').pop();
-        const filePath = `${requestId}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-        await supabase.storage.from('uploads').upload(filePath, image);
-        const { data: publicUrlData } = supabase.storage.from('uploads').getPublicUrl(filePath);
-        if (publicUrlData?.publicUrl) {
-          const { data: currentReq } = await supabase.from('requests').select('images').eq('id', requestId).single();
-          const newImages = [...(currentReq?.images || []), publicUrlData.publicUrl];
-          await supabase.from('requests').update({ images: newImages }).eq('id', requestId);
-        }
-      }
       navigate(`/admin/dashboard`);
     } catch (err: any) {
       setError(err.message || '저장 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -198,12 +258,12 @@ const HomePage: React.FC = () => {
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
               <Grid item xs={12} md={4}>
-                <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading}>
+                <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading || submitting}>
                   {customerOptions.map((option) => <MenuItem key={option} value={option}>{option}</MenuItem>)}
                 </TextField>
               </Grid>
               <Grid item xs={12} md={4}>
-                <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={loading}>
+                <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={loading || submitting}>
                   {staffOptions.map((option) => <MenuItem key={option} value={option}>{option}</MenuItem>)}
                 </TextField>
               </Grid>
@@ -222,7 +282,7 @@ const HomePage: React.FC = () => {
                         size="small"
                         startIcon={isListening === 'content' ? <CircularProgress size={14} color="inherit" /> : <MicIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handleVoiceInput('content')}
-                        disabled={isListening !== null || isPolishing !== null}
+                        disabled={isListening !== null || isPolishing !== null || submitting}
                         color={isListening === 'content' ? "secondary" : "primary"}
                         sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
@@ -237,7 +297,7 @@ const HomePage: React.FC = () => {
                         size="small"
                         startIcon={isPolishing === 'content' ? <CircularProgress size={14} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handlePolishText('content')}
-                        disabled={isPolishing !== null || isListening !== null || !content.trim()}
+                        disabled={isPolishing !== null || isListening !== null || !content.trim() || submitting}
                         color="success"
                         sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
@@ -251,12 +311,14 @@ const HomePage: React.FC = () => {
                 label="요청자 (고객 담당자)" 
                 fullWidth variant="outlined" size="small"
                 value={requesterName} onChange={(e) => setRequesterName(e.target.value)}
+                disabled={submitting}
               />
               <TextField
                 label="상세 접수내용"
                 multiline rows={5} fullWidth variant="outlined"
                 value={content} onChange={(e) => setContent(e.target.value)}
                 spellCheck={false}
+                disabled={submitting}
                 InputProps={{ style: { fontSize: '16px' } }}
               />
             </Stack>
@@ -274,7 +336,7 @@ const HomePage: React.FC = () => {
                         size="small"
                         startIcon={isListening === 'processingContent' ? <CircularProgress size={14} color="inherit" /> : <MicIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handleVoiceInput('processingContent')}
-                        disabled={isListening !== null || isPolishing !== null}
+                        disabled={isListening !== null || isPolishing !== null || submitting}
                         color={isListening === 'processingContent' ? "secondary" : "primary"}
                         sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
@@ -289,7 +351,7 @@ const HomePage: React.FC = () => {
                         size="small"
                         startIcon={isPolishing === 'processingContent' ? <CircularProgress size={14} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem' }} />}
                         onClick={() => handlePolishText('processingContent')}
-                        disabled={isPolishing !== null || isListening !== null || !processingContent.trim()}
+                        disabled={isPolishing !== null || isListening !== null || !processingContent.trim() || submitting}
                         color="success"
                         sx={{ fontSize: '0.75rem', py: 0.5 }}
                       >
@@ -304,6 +366,7 @@ const HomePage: React.FC = () => {
                 multiline rows={5} fullWidth variant="outlined"
                 value={processingContent} onChange={(e) => setProcessingContent(e.target.value)}
                 spellCheck={false}
+                disabled={submitting}
                 InputProps={{ style: { fontSize: '16px' } }}
               />
             </Stack>
@@ -311,7 +374,7 @@ const HomePage: React.FC = () => {
 
           <Paper variant="outlined" sx={{ p: { xs: 2, md: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
             <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 1.5 }}>이미지 첨부</Typography>
-            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 1.5, borderStyle: 'dashed', fontSize: '0.875rem' }}>
+            <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 1.5, borderStyle: 'dashed', fontSize: '0.875rem' }} disabled={submitting}>
               파일 선택 (이미지 파일)
               <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
             </Button>
@@ -321,7 +384,7 @@ const HomePage: React.FC = () => {
                   <Grid item key={index}>
                     <Box sx={{ position: 'relative' }}>
                       <img src={URL.createObjectURL(image)} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
-                      <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}><Delete fontSize="small" /></IconButton>
+                      <IconButton size="small" onClick={() => handleRemoveImage(index)} sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }} disabled={submitting}><Delete fontSize="small" /></IconButton>
                     </Box>
                   </Grid>
                 ))}
@@ -330,7 +393,9 @@ const HomePage: React.FC = () => {
           </Paper>
 
           {error && <Alert severity="error">{error}</Alert>}
-          <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.2, fontSize: '1rem', fontWeight: 'bold', mt: 1 }}>저장하기</Button>
+          <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.2, fontSize: '1rem', fontWeight: 'bold', mt: 1 }} disabled={submitting}>
+            {submitting ? <><CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> 저장 중...</> : "저장하기"}
+          </Button>
         </Stack>
       </Box>
     </Container>

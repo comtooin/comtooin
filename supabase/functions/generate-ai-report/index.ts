@@ -13,7 +13,7 @@ const supabaseAdmin = createClient(
 );
 
 const ROOT_FOLDER_ID = '1YV2vEIhNU0rPSiyHUgyDV0pSuBcuOKfJ';
-const TARGET_FOLDER_NAME = '거래처별 AI분석 리포트';
+const TARGET_FOLDER_NAME = '3. 거래처별 AI분석 리포트';
 
 const TRIALS = [
   "gemini-2.0-flash", 
