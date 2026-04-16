@@ -549,12 +549,65 @@ const AdminSchedulePage: React.FC = () => {
                 </Box>
               </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-              <Box>
-                <Button color="error" startIcon={<DeleteIcon />} onClick={() => handleDelete(selectedEvent.id)}>삭제</Button>
-                <Button color="primary" startIcon={<EditIcon />} onClick={handleEdit} sx={{ ml: 1 }}>수정</Button>
-              </Box>
-              <Button variant="outlined" onClick={() => setDetailOpen(false)}>닫기</Button>
+            <DialogActions 
+              sx={{ 
+                p: { xs: 1.5, sm: 2.5 }, 
+                bgcolor: 'grey.50',
+                justifyContent: 'space-between',
+                display: 'flex'
+              }}
+            >
+              <Button 
+                onClick={() => handleDelete(selectedEvent.id)}
+                color="error" 
+                variant="outlined"
+                sx={{ 
+                  fontWeight: 'bold', 
+                  borderRadius: 2,
+                  fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 1, sm: 0.8 },
+                  minWidth: 'auto'
+                }}
+              >
+                삭제
+              </Button>
+              
+              <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }}>
+                <Button 
+                  onClick={() => setDetailOpen(false)}
+                  variant="outlined"
+                  color="inherit"
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    borderRadius: 2, 
+                    bgcolor: 'white',
+                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                    px: { xs: 1.5, sm: 2 },
+                    py: { xs: 1, sm: 0.8 },
+                    minWidth: 'auto'
+                  }}
+                >
+                  닫기
+                </Button>
+                
+                <Button 
+                  startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />} 
+                  variant="contained" 
+                  color="primary" 
+                  onClick={handleEdit}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    borderRadius: 2, 
+                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 1, sm: 0.8 },
+                    minWidth: { xs: 'auto', sm: 80 }
+                  }}
+                >
+                  수정
+                </Button>
+              </Stack>
             </DialogActions>
           </>
         )}

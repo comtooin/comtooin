@@ -3,7 +3,7 @@ import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, Select, MenuItem, InputLabel, FormControl, Grid,
-  ButtonBase, TextField, Stack, Container, Pagination
+  ButtonBase, TextField, Stack, Container, Pagination, useMediaQuery, useTheme
 } from '@mui/material';
 import { 
   Dashboard as DashboardIcon, 
@@ -47,6 +47,8 @@ const getStatusLabel = (status: string): string => {
 const ITEMS_PER_PAGE = 10;
 
 const AdminDashboardPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [requests, setRequests] = useState<IRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -396,8 +398,14 @@ const AdminDashboardPage: React.FC = () => {
           />
         </Box>
       )}
-
-      <Dialog open={openDetailModal} onClose={() => setOpenDetailModal(false)} fullWidth maxWidth="md">
+{/* 상세 모달 */}
+<Dialog 
+  open={openDetailModal} 
+  onClose={() => setOpenDetailModal(false)} 
+  fullWidth 
+  maxWidth="md"
+  fullScreen={isMobile}
+>
         {selectedRequest && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold' }}>
@@ -426,7 +434,26 @@ const AdminDashboardPage: React.FC = () => {
                       </Grid>
                     </Grid>
                   ) : (
-                    <Typography variant="body2"><b>거래처:</b> {selectedRequest.customer_name} / <b>요청자:</b> {selectedRequest.requester_name}</Typography>
+                    <Stack spacing={1.5}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <DashboardIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>거래처</Typography>
+                          <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                            {selectedRequest.customer_name}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <AssignmentIcon sx={{ color: 'action.active', fontSize: 22 }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>요청자</Typography>
+                          <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>
+                            {selectedRequest.requester_name}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Stack>
                   )}
                 </Box>
                 
@@ -513,34 +540,64 @@ const AdminDashboardPage: React.FC = () => {
                 />
               </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: 2.5, justifyContent: 'space-between', bgcolor: 'grey.50' }}>
+            <DialogActions 
+              sx={{ 
+                p: { xs: 1.5, sm: 2.5 }, 
+                bgcolor: 'grey.50',
+                justifyContent: 'space-between',
+                display: 'flex'
+              }}
+            >
               <Button 
                 onClick={handleDeleteRequest} 
                 color="error" 
                 variant="outlined"
-                sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5 }}
+                sx={{ 
+                  fontWeight: 'bold', 
+                  borderRadius: 2,
+                  fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                  px: { xs: 1.5, sm: 2 },
+                  py: { xs: 1, sm: 0.8 },
+                  minWidth: 'auto'
+                }}
               >
                 삭제
               </Button>
               
-              <Stack direction="row" spacing={1}>
+              <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }}>
                 <Button 
                   onClick={() => setOpenDetailModal(false)}
                   variant="outlined"
                   color="inherit"
-                  sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5, bgcolor: 'white' }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    borderRadius: 2, 
+                    bgcolor: 'white',
+                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                    px: { xs: 1.5, sm: 2 },
+                    py: { xs: 1, sm: 0.8 },
+                    minWidth: 'auto'
+                  }}
                 >
                   닫기
                 </Button>
                 
                 <Button 
-                  startIcon={<EditIcon />} 
+                  startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />} 
                   variant="outlined" 
                   color="primary" 
                   onClick={() => setIsEditing(!isEditing)}
-                  sx={{ fontWeight: 'bold', px: 2, borderRadius: 1.5, bgcolor: 'white' }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    borderRadius: 2, 
+                    bgcolor: 'white',
+                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                    px: { xs: 1.5, sm: 2 },
+                    py: { xs: 1, sm: 0.8 },
+                    minWidth: 'auto'
+                  }}
                 >
-                  {isEditing ? '수정 취소' : '수정'}
+                  {isEditing ? '취소' : '수정'}
                 </Button>
 
                 <Button 
@@ -548,9 +605,16 @@ const AdminDashboardPage: React.FC = () => {
                   variant="contained" 
                   color="primary"
                   disabled={saving} 
-                  sx={{ fontWeight: 'bold', px: 3, borderRadius: 1.5, minWidth: 80 }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    borderRadius: 2, 
+                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                    px: { xs: 2, sm: 3 },
+                    py: { xs: 1, sm: 0.8 },
+                    minWidth: { xs: 'auto', sm: 80 }
+                  }}
                 >
-                  {saving ? <CircularProgress size={20} color="inherit" /> : '저장'}
+                  {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
                 </Button>
               </Stack>
             </DialogActions>
