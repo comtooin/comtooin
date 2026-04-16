@@ -13,7 +13,6 @@ import {
   Mic as MicIcon, 
   AutoFixHigh as AIPIcon, 
   Event as EventIcon,
-  Delete as DeleteIcon,
   CalendarMonth as CalendarMonthIcon,
   Person as PersonIcon,
   Business as BusinessIcon,
