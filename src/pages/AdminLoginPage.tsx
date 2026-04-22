@@ -46,7 +46,7 @@ const AdminLoginPage: React.FC = () => {
   return (
     <Container maxWidth="sm">
       <Helmet>
-        <title>관리자 로그인 - 컴투인</title>
+        <title>관리자 로그인 | COMTOOIN</title>
       </Helmet>
       
       {/* 브랜드 헤더 섹션 */}

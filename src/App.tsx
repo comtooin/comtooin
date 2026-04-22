@@ -7,6 +7,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminReportPage from './pages/AdminReportPage'; 
 import AdminCustomerPage from './pages/AdminCustomerPage';
+import AdminStaffPage from './pages/AdminStaffPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
 import ArchivePage from './pages/ArchivePage';
 import EditRequestPage from './pages/EditRequestPage';
@@ -116,6 +117,10 @@ function App() {
               <Route
                 path="/admin/customers"
                 element={<AdminRoute><AdminCustomerPage /></AdminRoute>}
+              />
+              <Route
+                path="/admin/staff"
+                element={<AdminRoute><AdminStaffPage /></AdminRoute>}
               />
               <Route
                 path="/admin/schedule"

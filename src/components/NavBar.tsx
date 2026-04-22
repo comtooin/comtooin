@@ -22,6 +22,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import BusinessIcon from '@mui/icons-material/Business';
+import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
@@ -97,6 +98,13 @@ const NavBar: React.FC = () => {
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText
                 primary="거래처"
+                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+              />
+            </ListItem>
+            <ListItem button component={RouterLink} to="/admin/staff">
+              <ListItemIcon><PeopleIcon /></ListItemIcon>
+              <ListItemText
+                primary="멤버"
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
@@ -204,6 +212,7 @@ const NavBar: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
                   <Button color="inherit" onClick={handleLogout} sx={{ px: 1.5, ml: 1, bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>로그아웃</Button>
                 </>
               ) : (

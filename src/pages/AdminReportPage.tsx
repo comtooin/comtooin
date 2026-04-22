@@ -675,10 +675,10 @@ const AdminReportPage: React.FC = () => {
                       <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 850 }}>
                         <TableHead sx={{ bgcolor: 'grey.50' }}>
                           <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '140px' }}>업무일자</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '110px' }}>거래처명</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '100px' }}>요청자</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '95px' }}>작성자</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '130px' }}>업무일자</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '120px' }}>거래처명</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>요청자</TableCell>
+                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>작성자</TableCell>
                             <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
                             <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
                           </TableRow>
@@ -695,10 +695,10 @@ const AdminReportPage: React.FC = () => {
                               <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
                                 {request.customer_name}
                               </TableCell>
-                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
                                 {request.requester_name}
                               </TableCell>
-                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
                                 {request.user_name}
                               </TableCell>
                               <TableCell align="center" sx={{ py: 2, px: 1 }}>

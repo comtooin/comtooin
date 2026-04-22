@@ -228,14 +228,14 @@ const HomePage: React.FC = () => {
 
   return (
     <Container maxWidth="md">
-      <Helmet><title>업무 기록 작성</title></Helmet>
+      <Helmet><title>업무 기록</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <EditNoteIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            업무 기록 작성
+            업무 기록
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
