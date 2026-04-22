@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
   DialogContent, TextField, DialogActions, MenuItem, Select, FormControl, 
   InputLabel, CircularProgress, Alert, Divider, Stack, Chip, useMediaQuery, useTheme,
-  Checkbox, FormControlLabel
+  Checkbox, FormControlLabel, Autocomplete, Grid, Tooltip
 } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -18,7 +18,8 @@ import {
   Business as BusinessIcon,
   Notes as NotesIcon,
   Edit as EditIcon,
-  AccessTime as AccessTimeIcon
+  AccessTime as AccessTimeIcon,
+  Today as TodayIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
@@ -56,34 +57,37 @@ const AdminSchedulePage: React.FC = () => {
     endTime: '10:00'
   });
 
-  const [staffSearch, setStaffSearch] = useState('');
-  const [recentStaffIds, setRecentStaffIds] = useState<string[]>([]);
+  // 통계 계산
+  const stats = useMemo(() => {
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const monthStr = todayStr.substring(0, 7);
+
+    return {
+      today: events.filter(e => {
+        const start = typeof e.start === 'string' ? e.start.split('T')[0] : '';
+        return start === todayStr;
+      }).length,
+      monthly: events.filter(e => {
+        const start = typeof e.start === 'string' ? e.start : '';
+        return start.startsWith(monthStr);
+      }).length,
+      upcoming: events.filter(e => {
+        const start = typeof e.start === 'string' ? e.start.split('T')[0] : '';
+        return start > todayStr;
+      }).length
+    };
+  }, [events]);
 
   // 1. 데이터 로드
   const fetchData = useCallback(async () => {
-    const [staffRes, customerRes, recentSchedulesRes] = await Promise.all([
+    const [staffRes, customerRes] = await Promise.all([
       supabase.from('staff').select('id, name, email').order('name'),
-      supabase.from('customers').select('id, name').order('name'),
-      supabase.from('schedules').select('staff_id, staff_ids').order('id', { ascending: false }).limit(20)
+      supabase.from('customers').select('id, name').order('name')
     ]);
 
-    if (staffRes.data) {
-      setStaffList(staffRes.data);
-    }
+    if (staffRes.data) setStaffList(staffRes.data);
     if (customerRes.data) setCustomerList(customerRes.data);
-
-    // 최근 담당자 5명 추출
-    if (recentSchedulesRes.data) {
-      const ids: string[] = [];
-      recentSchedulesRes.data.forEach(item => {
-        if (item.staff_ids && Array.isArray(item.staff_ids)) {
-          item.staff_ids.forEach(id => { if (id && !ids.includes(id)) ids.push(id); });
-        } else if (item.staff_id && !ids.includes(item.staff_id)) {
-          ids.push(item.staff_id);
-        }
-      });
-      setRecentStaffIds(ids.slice(0, 5));
-    }
   }, []);
 
   const fetchSchedules = useCallback(async () => {
@@ -94,7 +98,6 @@ const AdminSchedulePage: React.FC = () => {
     }
     if (data) {
       const formatted = data.map(item => {
-        // FullCalendar는 allDay: true일 때 'YYYY-MM-DD' 형식을 선호함
         const startStr = item.all_day ? (item.start_time?.includes('T') ? item.start_time.split('T')[0] : item.start_time) : item.start_time;
         const endStr = item.all_day ? undefined : item.end_time;
         
@@ -122,7 +125,7 @@ const AdminSchedulePage: React.FC = () => {
       date: arg.dateStr,
       title: '',
       content: '',
-      assignees: staffList.length > 0 ? [staffList[0]] : [],
+      assignees: [],
       customer: null,
       allDay: true,
       startTime: '09:00',
@@ -139,7 +142,6 @@ const AdminSchedulePage: React.FC = () => {
   const handleEdit = () => {
     if (!selectedEvent) return;
     
-    // staff_ids 가 있으면 그것을 사용, 없으면 기존 staff_id 사용
     let selectedAssignees: Staff[] = [];
     if (selectedEvent.staff_ids && selectedEvent.staff_ids.length > 0) {
       selectedAssignees = staffList.filter(s => selectedEvent.staff_ids.includes(s.id));
@@ -185,42 +187,38 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.date || formData.assignees.length === 0) return alert('제목, 날짜, 담당자는 필수입니다.');
+    if (!formData.title || !formData.date || formData.assignees.length === 0) return alert('제목, 날짜, 멤버는 필수입니다.');
     setLoading(true);
     setError(null);
     try {
       const startTimeStr = formData.allDay ? `${formData.date}T00:00:00` : `${formData.date}T${formData.startTime}:00`;
       const endTimeStr = formData.allDay ? `${formData.date}T23:59:59` : `${formData.date}T${formData.endTime}:00`;
 
-      // 담당자 정보 합치기
       const assigneeNames = formData.assignees.map(s => s.name).join(', ');
       const assigneeEmails = formData.assignees.map(s => s.email).join(', ');
       const staffIds = formData.assignees.map(s => s.id);
 
-      // 구글 캘린더 동기화
       const syncPayload = {
         method: formData.id ? 'PATCH' : 'POST',
         googleEventId: selectedEvent?.google_event_id,
         title: `[${formData.customer?.name || '업무'}] ${formData.title}`,
-        description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}\n담당자: ${assigneeNames}`,
+        description: `거래처: ${formData.customer?.name || '없음'}\n내용: ${formData.content}\n담당 멤버: ${assigneeNames}`,
         startTime: startTimeStr,
         endTime: endTimeStr,
         allDay: formData.allDay,
-        assigneeEmail: assigneeEmails // Edge Function에서 콤마로 구분하여 처리하도록 수정 예정
+        assigneeEmail: assigneeEmails
       };
 
       const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
         body: syncPayload
       });
 
-      if (syncError) {
-        console.warn('Google Calendar Sync Error:', syncError.message);
-      }
+      if (syncError) console.warn('Google Calendar Sync Error:', syncError.message);
 
       const scheduleData = {
         title: formData.title,
         content: formData.content,
-        staff_id: staffIds[0], // 하위 호환성을 위해 첫 번째 담당자 ID 저장
+        staff_id: staffIds[0],
         staff_ids: staffIds,
         assignee_name: assigneeNames,
         assignee_email: assigneeEmails,
@@ -265,7 +263,7 @@ const AdminSchedulePage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>스케줄</title></Helmet>
+      <Helmet><title>스케줄 | COMTOOIN</title></Helmet>
       
       <style>{`
         .fc-day-sun .fc-col-header-cell-cushion, 
@@ -275,27 +273,9 @@ const AdminSchedulePage: React.FC = () => {
         .fc-event { cursor: pointer; transition: transform 0.1s; }
         .fc-event:hover { transform: scale(1.02); }
         
-        /* 모바일 헤더 겹침 방지 및 줄바꿈 최적화 */
         @media (max-width: 600px) {
-          .fc .fc-toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center !important;
-            gap: 8px;
-            margin-bottom: 1em !important;
-          }
-          .fc .fc-toolbar-chunk {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-          }
-          /* 제목을 최상단 중앙에 배치 */
-          .fc .fc-toolbar-title { 
-            width: 100%; 
-            text-align: center; 
-            font-size: 1.15rem !important;
-            margin-bottom: 2px !important;
-          }
+          .fc .fc-toolbar { display: flex; flex-wrap: wrap; justify-content: center !important; gap: 8px; margin-bottom: 1em !important; }
+          .fc .fc-toolbar-title { width: 100%; text-align: center; font-size: 1.15rem !important; margin-bottom: 2px !important; }
           .fc .fc-button { padding: 4px 8px !important; font-size: 0.8rem !important; }
         }
       `}</style>
@@ -303,7 +283,7 @@ const AdminSchedulePage: React.FC = () => {
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <CalendarMonthIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <CalendarMonthIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
             스케줄
           </Typography>
@@ -317,21 +297,44 @@ const AdminSchedulePage: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 3, whiteSpace: 'pre-line' }}>{error}</Alert>}
 
+      {/* 상단 요약 위젯 섹션 */}
+      <Grid container spacing={2} sx={{ mb: 4 }}>
+        {[
+          { label: '오늘 일정', count: stats.today, icon: <TodayIcon color="primary" fontSize="small" />, color: '#607d8b' },
+          { label: '이번달 전체', count: stats.monthly, icon: <CalendarMonthIcon color="success" fontSize="small" />, color: '#2e7d32' },
+          { label: '예정된 업무', count: stats.upcoming, icon: <EventIcon color="info" fontSize="small" />, color: '#0288d1' },
+        ].map((item, idx) => (
+          <Grid item xs={4} sm={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: { xs: 1.5, sm: 2 }, 
+                borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
+                borderRadius: 2,
+                bgcolor: 'background.paper',
+                height: '100%'
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="center">
+                {item.icon}
+                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' } }}>
+                  {item.label}
+                </Typography>
+              </Stack>
+              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
+                {item.count}<Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'text.secondary', fontWeight: 'bold' }}>건</Typography>
+              </Typography>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+
       <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: 'dayGridMonth,timeGridWeek'
-          }}
-          buttonText={{
-            today: '오늘',
-            month: '월',
-            week: '주',
-            day: '일'
-          }}
+          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
+          buttonText={{ today: '오늘', month: '월', week: '주', day: '일' }}
           events={events}
           height={isMobile ? "auto" : "70vh"}
           aspectRatio={isMobile ? 0.85 : 1.35}
@@ -344,132 +347,63 @@ const AdminSchedulePage: React.FC = () => {
       </Paper>
 
       {/* 등록 팝업 */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>
           {formData.id ? '일정 수정' : `${formData.date} 일정 등록`}
         </DialogTitle>
         <DialogContent dividers>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
-            <FormControlLabel
-              control={
-                <Checkbox 
-                  checked={formData.allDay} 
-                  onChange={(e) => setFormData({...formData, allDay: e.target.checked})} 
-                />
-              }
-              label="하루종일"
-            />
-            
-            {!formData.allDay && (
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TextField
-                  label="시작시간"
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) => setFormData({...formData, startTime: e.target.value})}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-                <TextField
-                  label="종료시간"
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => setFormData({...formData, endTime: e.target.value})}
-                  InputLabelProps={{ shrink: true }}
-                  fullWidth
-                />
-              </Box>
-            )}
-
-            <FormControl fullWidth>
-              <InputLabel>거래처 선택</InputLabel>
-              <Select
-                value={formData.customer?.id || ''}
-                label="거래처 선택"
-                onChange={(e) => {
-                  const cust = customerList.find(c => c.id === e.target.value);
-                  setFormData({...formData, customer: cust || null});
-                }}
-              >
-                <MenuItem value="">거래처 없음</MenuItem>
-                {customerList.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <TextField fullWidth label="일정 제목" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <TextField fullWidth multiline rows={3} label="상세 메모" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} />
-              <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                <IconButton color={isSTTActive ? "secondary" : "default"} onClick={handleSTT}><MicIcon /></IconButton>
-                <IconButton color="primary" onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton>
-              </Box>
-            </Box>
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 1.5, display: 'block', fontWeight: 'bold' }}>
-                담당자 지정
-              </Typography>
-              
-              {/* 선택된 담당자 (상단 고정) */}
-              {formData.assignees.length > 0 && (
-                <Box sx={{ mb: 2, p: 1, bgcolor: '#e3f2fd', borderRadius: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {formData.assignees.map(s => (
-                    <Chip 
-                      key={s.id} 
-                      label={s.name} 
-                      color="primary" 
-                      onDelete={() => setFormData({ ...formData, assignees: formData.assignees.filter(as => as.id !== s.id) })}
-                    />
-                  ))}
+          <Box sx={{ pt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
+                <FormControlLabel control={<Checkbox checked={formData.allDay} onChange={(e) => setFormData({...formData, allDay: e.target.checked})} />} label="하루종일" />
+              </Grid>
+              <Grid item xs={12} md={8}>
+                {!formData.allDay && (
+                  <Stack direction="row" spacing={2}>
+                    <TextField label="시작시간" type="time" value={formData.startTime} onChange={(e) => setFormData({...formData, startTime: e.target.value})} InputLabelProps={{ shrink: true }} fullWidth size="small" />
+                    <TextField label="종료시간" type="time" value={formData.endTime} onChange={(e) => setFormData({...formData, endTime: e.target.value})} InputLabelProps={{ shrink: true }} fullWidth size="small" />
+                  </Stack>
+                )}
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>거래처 선택</InputLabel>
+                  <Select
+                    value={formData.customer?.id || ''}
+                    label="거래처 선택"
+                    onChange={(e) => {
+                      const cust = customerList.find(c => c.id === e.target.value);
+                      setFormData({...formData, customer: cust || null});
+                    }}
+                  >
+                    <MenuItem value="">거래처 없음</MenuItem>
+                    {customerList.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={8}>
+                <TextField fullWidth label="일정 제목" size="small" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+              </Grid>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <TextField fullWidth multiline rows={4} label="상세 메모" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} />
+                  <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <Tooltip title="음성 입력"><IconButton color={isSTTActive ? "secondary" : "default"} onClick={handleSTT}><MicIcon /></IconButton></Tooltip>
+                    <Tooltip title="AI 문장 정돈"><IconButton color="primary" onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton></Tooltip>
+                  </Box>
                 </Box>
-              )}
-
-              {/* 필터링된 전체 명단 */}
-              <Box sx={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: 1, 
-                p: 1.5, 
-                border: '1px solid #e0e0e0', 
-                borderRadius: 1, 
-                bgcolor: '#f9f9f9',
-                maxHeight: '200px',
-                overflowY: 'auto',
-                mb: 1
-              }}>
-                {staffList
-                  .filter(s => {
-                    const matchSearch = s.name.toLowerCase().includes(staffSearch.toLowerCase());
-                    if (staffSearch.trim() === '') {
-                      // 검색어가 없을 때는 최근 담당자 5명만 표시
-                      return recentStaffIds.includes(s.id);
-                    }
-                    return matchSearch;
-                  })
-                  .map(s => {
-                    const isSelected = formData.assignees.some(as => as.id === s.id);
-                    if (isSelected) return null; // 선택된 사람은 위에서 보여주므로 아래에선 제외
-                    return (
-                      <Chip
-                        key={s.id}
-                        label={s.name}
-                        onClick={() => setFormData({ ...formData, assignees: [...formData.assignees, s] })}
-                        variant="outlined"
-                        sx={{ transition: 'all 0.2s', '&:hover': { bgcolor: '#eceff1' } }}
-                      />
-                    );
-                  })}
-              </Box>
-
-              {/* 검색 도구 */}
-              <Box>
-                <TextField 
-                  size="small" 
-                  placeholder="담당자 이름 검색..." 
-                  value={staffSearch} 
-                  onChange={(e) => setStaffSearch(e.target.value)}
-                  fullWidth
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block', fontWeight: 'bold' }}>담당 멤버 지정</Typography>
+                <Autocomplete
+                  multiple id="staff-autocomplete" options={staffList} getOptionLabel={(option) => option.name} value={formData.assignees}
+                  onChange={(event, newValue) => setFormData({ ...formData, assignees: newValue })}
+                  isOptionEqualToValue={(option, value) => option.id === value.id} filterSelectedOptions
+                  renderInput={(params) => <TextField {...params} size="small" placeholder="멤버 이름 검색..." variant="outlined" />}
+                  renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option.name} size="small" color="primary" {...getTagProps({ index })} />)}
                 />
-              </Box>
-            </Box>
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
@@ -486,12 +420,7 @@ const AdminSchedulePage: React.FC = () => {
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               일정 상세
-              <Chip 
-                label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} 
-                size="small" 
-                color="primary" 
-                variant="outlined" 
-              />
+              <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" />
             </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2} sx={{ pt: 1 }}>
@@ -511,25 +440,13 @@ const AdminSchedulePage: React.FC = () => {
                   </Box>
                 </Box>
                 <Divider />
-                {selectedEvent.all_day ? (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <AccessTimeIcon color="action" />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">시간</Typography>
-                      <Typography variant="body1">하루종일</Typography>
-                    </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <AccessTimeIcon color="action" />
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">시간</Typography>
+                    <Typography variant="body1">{selectedEvent.all_day ? '하루종일' : `${selectedEvent.start_time.split('T')[1].substring(0, 5)} ~ ${selectedEvent.end_time?.split('T')[1].substring(0, 5)}`}</Typography>
                   </Box>
-                ) : (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <AccessTimeIcon color="action" />
-                    <Box>
-                      <Typography variant="caption" color="text.secondary">시간</Typography>
-                      <Typography variant="body1">
-                        {selectedEvent.start_time.split('T')[1].substring(0, 5)} ~ {selectedEvent.end_time?.split('T')[1].substring(0, 5)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
+                </Box>
                 <Divider />
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
                   <NotesIcon color="action" sx={{ mt: 0.5 }} />
@@ -542,70 +459,17 @@ const AdminSchedulePage: React.FC = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <PersonIcon color="action" />
                   <Box>
-                    <Typography variant="caption" color="text.secondary">담당자</Typography>
+                    <Typography variant="caption" color="text.secondary">담당 멤버</Typography>
                     <Typography variant="body1">{selectedEvent.assignee_name}</Typography>
                   </Box>
                 </Box>
               </Stack>
             </DialogContent>
-            <DialogActions 
-              sx={{ 
-                p: { xs: 1.5, sm: 2.5 }, 
-                bgcolor: 'grey.50',
-                justifyContent: 'space-between',
-                display: 'flex'
-              }}
-            >
-              <Button 
-                onClick={() => handleDelete(selectedEvent.id)}
-                color="error" 
-                variant="outlined"
-                sx={{ 
-                  fontWeight: 'bold', 
-                  borderRadius: 2,
-                  fontSize: { xs: '0.875rem', sm: '0.875rem' },
-                  px: { xs: 1.5, sm: 2 },
-                  py: { xs: 1, sm: 0.8 },
-                  minWidth: 'auto'
-                }}
-              >
-                삭제
-              </Button>
-              
-              <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }}>
-                <Button 
-                  onClick={() => setDetailOpen(false)}
-                  variant="outlined"
-                  color="inherit"
-                  sx={{ 
-                    fontWeight: 'bold', 
-                    borderRadius: 2, 
-                    bgcolor: 'white',
-                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
-                    px: { xs: 1.5, sm: 2 },
-                    py: { xs: 1, sm: 0.8 },
-                    minWidth: 'auto'
-                  }}
-                >
-                  닫기
-                </Button>
-                
-                <Button 
-                  startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />} 
-                  variant="contained" 
-                  color="primary" 
-                  onClick={handleEdit}
-                  sx={{ 
-                    fontWeight: 'bold', 
-                    borderRadius: 2, 
-                    fontSize: { xs: '0.875rem', sm: '0.875rem' },
-                    px: { xs: 2, sm: 3 },
-                    py: { xs: 1, sm: 0.8 },
-                    minWidth: { xs: 'auto', sm: 80 }
-                  }}
-                >
-                  수정
-                </Button>
+            <DialogActions sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex' }}>
+              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold', borderRadius: 2 }}>삭제</Button>
+              <Stack direction="row" spacing={1.5}>
+                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', borderRadius: 2, bgcolor: 'white' }}>닫기</Button>
+                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold', borderRadius: 2 }}>수정</Button>
               </Stack>
             </DialogActions>
           </>
