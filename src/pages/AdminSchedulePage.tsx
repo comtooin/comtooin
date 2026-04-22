@@ -17,7 +17,6 @@ import {
   Person as PersonIcon,
   Business as BusinessIcon,
   Notes as NotesIcon,
-  Edit as EditIcon,
   AccessTime as AccessTimeIcon,
   Today as TodayIcon
 } from '@mui/icons-material';

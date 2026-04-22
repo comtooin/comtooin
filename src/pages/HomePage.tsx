@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Tooltip, Container, List, ListItem, ListItemText, Chip
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip
 } from '@mui/material';
 import { 
   PhotoCamera, Delete, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon,
@@ -25,7 +25,6 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
-  const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
   // 최근 기록 상태
@@ -67,7 +66,6 @@ const HomePage: React.FC = () => {
       if (customerData) setCustomerOptions(customerData.map(c => c.name));
       if (staffData) setStaffOptions(staffData.map(s => s.name));
 
-      // 통계 및 최근 기록 로드
       const today = new Date().toISOString().split('T')[0];
       const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
       
@@ -113,7 +111,7 @@ const HomePage: React.FC = () => {
   const handlePolishText = async (target: 'content' | 'processingContent') => {
     const textToPolish = target === 'content' ? content : processingContent;
     if (!textToPolish.trim()) return setError("정돈할 내용이 없습니다.");
-    setIsPolishing(target);
+    setLoading(true);
     setError('');
     try {
       const { data, error: functionError } = await supabase.functions.invoke('polish-text', { body: { text: textToPolish } });
@@ -124,7 +122,7 @@ const HomePage: React.FC = () => {
       }
     } catch (err: any) {
       setError("AI 정돈 중 오류가 발생했습니다.");
-    } finally { setIsPolishing(null); }
+    } finally { setLoading(false); }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,7 +181,6 @@ const HomePage: React.FC = () => {
 
       <Divider sx={{ mb: 4 }} />
 
-      {/* 요약 위젯 */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
         {[
           { label: '오늘 등록', count: stats.today, icon: <TodayIcon color="primary" fontSize="small" />, color: '#607d8b' },
@@ -216,7 +213,6 @@ const HomePage: React.FC = () => {
       </Grid>
 
       <Grid container spacing={3}>
-        {/* 왼쪽: 입력 폼 */}
         <Grid item xs={12} md={8}>
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={3}>
@@ -278,7 +274,6 @@ const HomePage: React.FC = () => {
           </Box>
         </Grid>
 
-        {/* 오른쪽: 최근 기록 및 가이드 */}
         <Grid item xs={12} md={4}>
           <Stack spacing={3}>
             <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
