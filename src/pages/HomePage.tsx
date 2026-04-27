@@ -235,16 +235,84 @@ const HomePage: React.FC = () => {
 
               <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
                 <Stack spacing={2.5}>
-                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
-                    <Stack direction="row" spacing={1}>
-                      <Button variant="outlined" size="small" startIcon={<MicIcon />} onClick={() => handleVoiceInput('content')} sx={{ fontSize: '0.75rem' }}>음성</Button>
-                      <Button variant="outlined" size="small" color="success" startIcon={<AutoAwesomeIcon />} onClick={() => handlePolishText('content')} sx={{ fontSize: '0.75rem' }}>AI 정돈</Button>
-                    </Stack>
-                  </Box>
+                  <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
+                  
                   <TextField label="요청자 (고객 담당자)" fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
-                  <TextField label="상세 접수내용 (필수)" multiline rows={4} fullWidth variant="outlined" value={content} onChange={(e) => setContent(e.target.value)} required />
-                  <TextField label="처리내용 (선택)" multiline rows={4} fullWidth variant="outlined" value={processingContent} onChange={(e) => setProcessingContent(e.target.value)} placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." />
+                  
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary">상세 접수내용 (필수)</Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handleVoiceInput('content')} 
+                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1, borderColor: isListening === 'content' ? 'primary.main' : 'divider' }}
+                          color={isListening === 'content' ? 'primary' : 'inherit'}
+                        >
+                          {isListening === 'content' ? '인식 중...' : '음성'}
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          color="success" 
+                          startIcon={<AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handlePolishText('content')} 
+                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1 }}
+                        >
+                          AI 정돈
+                        </Button>
+                      </Stack>
+                    </Box>
+                    <TextField 
+                      multiline 
+                      rows={4} 
+                      fullWidth 
+                      variant="outlined" 
+                      value={content} 
+                      onChange={(e) => setContent(e.target.value)} 
+                      required 
+                      placeholder="업무 요청 내용을 상세히 입력해주세요."
+                    />
+                  </Box>
+
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary">처리내용 (선택)</Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handleVoiceInput('processingContent')} 
+                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1, borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' }}
+                          color={isListening === 'processingContent' ? 'primary' : 'inherit'}
+                        >
+                          {isListening === 'processingContent' ? '인식 중...' : '음성'}
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          color="success" 
+                          startIcon={<AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handlePolishText('processingContent')} 
+                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1 }}
+                        >
+                          AI 정돈
+                        </Button>
+                      </Stack>
+                    </Box>
+                    <TextField 
+                      multiline 
+                      rows={4} 
+                      fullWidth 
+                      variant="outlined" 
+                      value={processingContent} 
+                      onChange={(e) => setProcessingContent(e.target.value)} 
+                      placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." 
+                    />
+                  </Box>
                 </Stack>
               </Paper>
 
