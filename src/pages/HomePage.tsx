@@ -247,7 +247,7 @@ const HomePage: React.FC = () => {
                   
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="bold" color="text.secondary">상세 접수내용 (필수)</Typography>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary">접수내용 (필수)</Typography>
                       <Stack direction="row" spacing={1}>
                         <Button 
                           variant="outlined" 
