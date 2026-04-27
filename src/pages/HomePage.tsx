@@ -25,6 +25,7 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
+  const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
   
   // 최근 기록 상태
@@ -111,10 +112,13 @@ const HomePage: React.FC = () => {
   const handlePolishText = async (target: 'content' | 'processingContent') => {
     const textToPolish = target === 'content' ? content : processingContent;
     if (!textToPolish.trim()) return setError("정돈할 내용이 없습니다.");
-    setLoading(true);
+    
+    setIsPolishing(target);
     setError('');
     try {
-      const { data, error: functionError } = await supabase.functions.invoke('polish-text', { body: { text: textToPolish } });
+      const { data, error: functionError } = await supabase.functions.invoke('polish-text', { 
+        body: { text: textToPolish, type: target } 
+      });
       if (functionError) throw functionError;
       if (data?.polishedText) {
         if (target === 'content') setContent(data.polishedText);
@@ -122,7 +126,9 @@ const HomePage: React.FC = () => {
       }
     } catch (err: any) {
       setError("AI 정돈 중 오류가 발생했습니다.");
-    } finally { setLoading(false); }
+    } finally { 
+      setIsPolishing(null); 
+    }
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -248,8 +254,13 @@ const HomePage: React.FC = () => {
                           size="small" 
                           startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handleVoiceInput('content')} 
-                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1, borderColor: isListening === 'content' ? 'primary.main' : 'divider' }}
+                          sx={{ 
+                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            minWidth: '75px', whiteSpace: 'nowrap',
+                            borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
+                          }}
                           color={isListening === 'content' ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing}
                         >
                           {isListening === 'content' ? '인식 중...' : '음성'}
                         </Button>
@@ -257,11 +268,15 @@ const HomePage: React.FC = () => {
                           variant="outlined" 
                           size="small" 
                           color="success" 
-                          startIcon={<AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('content')} 
-                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1 }}
+                          sx={{ 
+                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            minWidth: '85px', whiteSpace: 'nowrap'
+                          }}
+                          disabled={!!isPolishing || !!isListening}
                         >
-                          AI 정돈
+                          {isPolishing === 'content' ? '정돈 중...' : 'AI 정돈'}
                         </Button>
                       </Stack>
                     </Box>
@@ -286,8 +301,13 @@ const HomePage: React.FC = () => {
                           size="small" 
                           startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handleVoiceInput('processingContent')} 
-                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1, borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' }}
+                          sx={{ 
+                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            minWidth: '75px', whiteSpace: 'nowrap',
+                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
+                          }}
                           color={isListening === 'processingContent' ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing}
                         >
                           {isListening === 'processingContent' ? '인식 중...' : '음성'}
                         </Button>
@@ -295,11 +315,15 @@ const HomePage: React.FC = () => {
                           variant="outlined" 
                           size="small" 
                           color="success" 
-                          startIcon={<AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('processingContent')} 
-                          sx={{ fontSize: '0.7rem', py: 0.2, minWidth: 'auto', px: 1 }}
+                          sx={{ 
+                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            minWidth: '85px', whiteSpace: 'nowrap'
+                          }}
+                          disabled={!!isPolishing || !!isListening}
                         >
-                          AI 정돈
+                          {isPolishing === 'processingContent' ? '정돈 중...' : 'AI 정돈'}
                         </Button>
                       </Stack>
                     </Box>
