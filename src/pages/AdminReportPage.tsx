@@ -704,7 +704,7 @@ const AdminReportPage: React.FC = () => {
                         <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {request.customer_name}
                         </Typography>
-                        <Typography variant="caption" fontWeight="bold" color="secondary.main" sx={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                        <Typography variant="caption" fontWeight="bold" color="primary.main" sx={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                           {request.user_name}
                         </Typography>
                       </Box>
