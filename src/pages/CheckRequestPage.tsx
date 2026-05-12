@@ -123,7 +123,7 @@ const CheckRequestPage: React.FC = () => {
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
-            <ReceiptLongIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+            <ReceiptLongIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
             <Typography variant="h5" component="h1" fontWeight="bold">
               {isLoggedIn ? `${userName}님의 접수 내역` : '내 접수 내역 확인'}
             </Typography>
@@ -140,7 +140,7 @@ const CheckRequestPage: React.FC = () => {
       <Divider sx={{ mb: 4 }} />
 
       {!isLoggedIn ? (
-        <Paper variant="outlined" sx={{ p: { xs: 3, md: 5 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+        <Paper variant="outlined" sx={{ p: { xs: 3, md: 5 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
           <Box component="form" onSubmit={handleLogin}>
             <Stack spacing={3}>
               <TextField 
@@ -172,7 +172,7 @@ const CheckRequestPage: React.FC = () => {
       ) : (
         <Box>
           {requests.length === 0 ? (
-            <Paper variant="outlined" sx={{ p: 8, textAlign: 'center', borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Paper variant="outlined" sx={{ p: 8, textAlign: 'center', borderRadius: 1, bgcolor: 'background.paper' }}>
               <SearchOffIcon sx={{ fontSize: '4rem', color: 'text.disabled', mb: 2 }} />
               <Typography variant="h6" color="text.secondary" gutterBottom fontWeight="bold">
                 접수된 내역이 없습니다.
@@ -185,7 +185,7 @@ const CheckRequestPage: React.FC = () => {
           ) : (
             <Stack spacing={2}>
               {requests.map(req => (
-                <Paper key={req.id} variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>
+                <Paper key={req.id} variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box>
                       <Typography variant="h6" fontWeight="bold">접수번호: {req.id}</Typography>
@@ -233,7 +233,7 @@ const CheckRequestPage: React.FC = () => {
               <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} size="small" />
             </DialogTitle>
             <DialogContent dividers>
-              <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.50', borderRadius: 2 }}>
+              <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.50', borderRadius: 1 }}>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="caption" color="text.secondary">고객사명</Typography>
@@ -270,7 +270,7 @@ const CheckRequestPage: React.FC = () => {
                         <Grid item key={index} xs={6} sm={4}>
                           <Paper 
                             variant="outlined" 
-                            sx={{ overflow: 'hidden', borderRadius: 2, cursor: 'pointer' }}
+                            sx={{ overflow: 'hidden', borderRadius: 1, cursor: 'pointer' }}
                             onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}
                           >
                             <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />

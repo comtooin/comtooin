@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -85,6 +85,8 @@ interface MonthlySummary {
 }
 
 const AdminReportPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
@@ -486,7 +488,7 @@ const AdminReportPage: React.FC = () => {
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <AssessmentIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <AssessmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
             리포트
           </Typography>
@@ -508,7 +510,7 @@ const AdminReportPage: React.FC = () => {
       {/* 요약 위젯 */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[
-          { label: '총 업무 기록', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b' },
+          { label: '전체 기록', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b' },
           { label: '처리 중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" color="warning" />, color: '#ed6c02' },
           { label: '처리 완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" color="success" />, color: '#2e7d32' },
         ].map((item, idx) => (
@@ -518,7 +520,7 @@ const AdminReportPage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 height: '100%'
               }}
             >
@@ -540,7 +542,7 @@ const AdminReportPage: React.FC = () => {
       </Grid>
 
       {/* 필터 및 액션 섹션 */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
         <Stack spacing={2}>
           {/* 첫 번째 줄: 필터 및 조회 버튼 */}
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1, alignItems: 'center' }}>
@@ -589,7 +591,7 @@ const AdminReportPage: React.FC = () => {
               startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
               sx={{ 
                 fontWeight: 'bold', height: '36px', fontSize: '0.75rem', 
-                minWidth: '90px', borderRadius: 2, width: { xs: '100%', md: 'auto' } 
+                minWidth: '90px', borderRadius: 1, width: { xs: '100%', md: 'auto' } 
               }}
             >
               조회
@@ -612,7 +614,7 @@ const AdminReportPage: React.FC = () => {
                   fontWeight: 'bold', minWidth: '140px', fontSize: '0.75rem', height: '36px',
                   color: '#673ab7', borderColor: '#673ab7', 
                   '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
-                  borderRadius: 2
+                  borderRadius: 1
                 }}
               >
                 AI 분석 리포트
@@ -622,7 +624,7 @@ const AdminReportPage: React.FC = () => {
                 color="secondary" 
                 startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
                 onClick={handleExportExcel}
-                sx={{ fontWeight: 'bold', minWidth: '100px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+                sx={{ fontWeight: 'bold', minWidth: '100px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 내보내기
               </Button>
@@ -637,7 +639,7 @@ const AdminReportPage: React.FC = () => {
                 color="info" 
                 startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
                 onClick={handleDownloadSampleCsv}
-                sx={{ fontWeight: 'bold', minWidth: '110px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+                sx={{ fontWeight: 'bold', minWidth: '110px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 샘플
               </Button>
@@ -646,7 +648,7 @@ const AdminReportPage: React.FC = () => {
                 color="primary" 
                 startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
                 component="label"
-                sx={{ fontWeight: 'bold', minWidth: '90px', fontSize: '0.75rem', height: '36px', borderRadius: 2 }}
+                sx={{ fontWeight: 'bold', minWidth: '90px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 업로드
                 <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
@@ -669,60 +671,115 @@ const AdminReportPage: React.FC = () => {
       ) : (
         <Box sx={{ pt: 1 }}>
           {tabValue === 0 && (
-            <>
-              <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', mb: 2 }}>
-                <TableContainer>
-                      <Table stickyHeader size="small" sx={{ tableLayout: 'fixed', minWidth: 850 }}>
-                        <TableHead sx={{ bgcolor: 'grey.50' }}>
-                          <TableRow>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '130px' }}>업무일자</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '120px' }}>거래처명</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>요청자</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>작성자</TableCell>
-                            <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
-                            <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {paginatedRequests.length > 0 ? paginatedRequests.map((request) => (
-                            <TableRow key={request.id} hover>
-                              <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                                {(() => {
-                                  const d = new Date(request.created_at);
-                                  return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
-                                })()}
-                              </TableCell>
-                              <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                                {request.customer_name}
-                              </TableCell>
-                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                                {request.requester_name}
-                              </TableCell>
-                              <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
-                                {request.user_name}
-                              </TableCell>
-                              <TableCell align="center" sx={{ py: 2, px: 1 }}>
-                                <Chip 
-                                  label={getStatusLabel(request.status)} 
-                                  color={getStatusChipColor(request.status)} 
-                                  size="small" 
-                                  variant="outlined" 
-                                  sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
-                                />
-                              </TableCell>
-                              <TableCell sx={{ py: 2, px: 1 }}>
-                                <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {stripHtmlTags(request.content)}
-                                </Typography>
-                              </TableCell>
+            <Box sx={{ minHeight: 400 }}>
+              {isMobile ? (
+                <Stack spacing={1.5} sx={{ mb: 2 }}>
+                  {paginatedRequests.length > 0 ? paginatedRequests.map((request) => (
+                    <Paper 
+                      key={request.id} 
+                      variant="outlined" 
+                      sx={{ 
+                        p: 1.5, 
+                        borderRadius: 1, 
+                        borderLeft: `4px solid ${getStatusChipColor(request.status) === 'success' ? '#2e7d32' : getStatusChipColor(request.status) === 'warning' ? '#ed6c02' : '#0288d1'}`
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'medium', fontSize: '0.7rem' }}>
+                          {(() => {
+                            const d = new Date(request.created_at);
+                            return `${d.getFullYear().toString().substring(2)}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getDate().toString().padStart(2, '0')}`;
+                          })()}
+                        </Typography>
+                        <Chip 
+                          label={getStatusLabel(request.status)} 
+                          color={getStatusChipColor(request.status)} 
+                          size="small" 
+                          variant="filled" 
+                          sx={{ fontWeight: 'bold', fontSize: '0.6rem', height: '18px' }} 
+                        />
+                      </Box>
+                      
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {request.customer_name}
+                        </Typography>
+                        <Typography variant="caption" fontWeight="bold" color="secondary.main" sx={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                          {request.user_name}
+                        </Typography>
+                      </Box>
+
+                      <Divider sx={{ my: 0.8, opacity: 0.5 }} />
+
+                      <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.75rem', lineHeight: 1.4 }}>
+                        {stripHtmlTags(request.content)}
+                      </Typography>
+                    </Paper>
+                  )) : (
+                    <Paper variant="outlined" sx={{ p: 8, textAlign: 'center', borderRadius: 1, bgcolor: 'background.paper' }}>
+                      <Typography color="text.secondary">표시할 데이터가 없습니다.</Typography>
+                    </Paper>
+                  )}
+                </Stack>
+              ) : (
+                <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden', mb: 2, bgcolor: 'background.paper' }}>
+                  <TableContainer>
+                        <Table stickyHeader size="small" sx={{ tableLayout: 'auto', minWidth: 850 }}>
+                          <TableHead sx={{ bgcolor: 'grey.50' }}>
+                            <TableRow>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '130px' }}>업무일자</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '120px' }}>거래처명</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>요청자</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>작성자</TableCell>
+                              {!isMobile && (
+                                <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
+                              )}
+                              <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
                             </TableRow>
-                          )) : (
-                            <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
-                          )}
-                        </TableBody>
-                      </Table>
-                </TableContainer>
-              </Paper>
+                          </TableHead>
+                          <TableBody>
+                            {paginatedRequests.length > 0 ? paginatedRequests.map((request) => (
+                              <TableRow key={request.id} hover>
+                                <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                  {(() => {
+                                    const d = new Date(request.created_at);
+                                    return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                                  })()}
+                                </TableCell>
+                                <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                  {request.customer_name}
+                                </TableCell>
+                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                  {request.requester_name}
+                                </TableCell>
+                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                  {request.user_name}
+                                </TableCell>
+                                {!isMobile && (
+                                  <TableCell sx={{ py: 2, px: 1 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {stripHtmlTags(request.content)}
+                                    </Typography>
+                                  </TableCell>
+                                )}
+                                <TableCell align="center" sx={{ py: 2, px: 1 }}>
+                                  <Chip 
+                                    label={getStatusLabel(request.status)} 
+                                    color={getStatusChipColor(request.status)} 
+                                    size="small" 
+                                    variant="outlined" 
+                                    sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            )) : (
+                              <TableRow><TableCell colSpan={6} align="center" sx={{ py: 10 }}><Typography color="text.secondary">데이터가 없습니다.</Typography></TableCell></TableRow>
+                            )}
+                          </TableBody>
+                        </Table>
+                  </TableContainer>
+                </Paper>
+              )}
               {/* 페이지네이션 추가 */}
               {filteredRequests.length > ITEMS_PER_PAGE && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
@@ -735,13 +792,13 @@ const AdminReportPage: React.FC = () => {
                   />
                 </Box>
               )}
-            </>
+            </Box>
           )}
 
           {tabValue === 1 && (
             <Grid container spacing={3}>
               <Grid item xs={12} md={4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <PieChartIcon color="action" fontSize="small" />
                     <Typography variant="subtitle2" fontWeight="bold">상태별 업무 비중</Typography>
@@ -753,7 +810,7 @@ const AdminReportPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <BusinessIcon color="action" fontSize="small" />
                     <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 점유율</Typography>
@@ -765,7 +822,7 @@ const AdminReportPage: React.FC = () => {
               </Grid>
 
               <Grid item xs={12} md={4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3, height: '100%' }}>
+                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <BarChartIcon color="action" fontSize="small" />
                     <Typography variant="subtitle2" fontWeight="bold">월별 업무 추이</Typography>

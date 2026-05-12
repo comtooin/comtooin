@@ -125,7 +125,7 @@ const AdminCustomerPage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '100%'
               }}
@@ -147,7 +147,7 @@ const AdminCustomerPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* 왼쪽: 등록 폼 */}
         <Grid item xs={12} md={5}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddCustomer}>
               <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AddIcon fontSize="small" /> 새 거래처 등록
@@ -169,7 +169,7 @@ const AdminCustomerPage: React.FC = () => {
                   variant="contained"
                   startIcon={<AddIcon />}
                   disabled={submitting || !newCustomerName.trim()}
-                  sx={{ py: 1, fontWeight: 'bold', borderRadius: 2 }}
+                  sx={{ py: 1, fontWeight: 'bold', borderRadius: 1 }}
                 >
                   거래처 추가하기
                 </Button>
@@ -180,7 +180,7 @@ const AdminCustomerPage: React.FC = () => {
 
         {/* 오른쪽: 목록 */}
         <Grid item xs={12} md={7}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', minHeight: '400px' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
             <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BusinessIcon fontSize="small" /> 등록된 거래처 목록
             </Typography>
@@ -190,7 +190,7 @@ const AdminCustomerPage: React.FC = () => {
             {loading ? (
               <Box sx={{ textAlign: 'center', py: 10 }}><CircularProgress /></Box>
             ) : (
-              <List sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 1 }}>
+              <List sx={{ bgcolor: 'grey.50', borderRadius: 1, p: 1 }}>
                 {customers.length === 0 ? (
                   <Typography color="text.secondary" align="center" sx={{ py: 10 }}>
                     등록된 거래처가 없습니다.

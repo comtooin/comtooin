@@ -205,7 +205,7 @@ const EditRequestPage: React.FC = () => {
             {/* 표준 헤더 섹션 */}
             <Box sx={{ mb: 4 }}>
                 <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-                    <EditNoteIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+                    <EditNoteIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
                     <Typography variant="h5" component="h1" fontWeight="bold">
                         접수 내용 수정
                     </Typography>
@@ -217,7 +217,7 @@ const EditRequestPage: React.FC = () => {
 
             <Divider sx={{ mb: 4 }} />
 
-            <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
                 <Box component="form" onSubmit={handleSubmit}>
                     <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보 수정</Typography>
                     <Grid container spacing={3}>
@@ -255,7 +255,7 @@ const EditRequestPage: React.FC = () => {
                         {imagePreviews.map((preview, index) => (
                             <Grid item key={index} xs={6} sm={4} md={3}>
                                 <Box sx={{ position: 'relative' }}>
-                                    <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 2, height: 100 }}>
+                                    <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 1, height: 100 }}>
                                         <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </Paper>
                                     <IconButton 
@@ -273,7 +273,7 @@ const EditRequestPage: React.FC = () => {
 
                     <Divider sx={{ my: 4 }} />
 
-                    <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 2, mb: 3 }}>
+                    <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 1, mb: 3 }}>
                         <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="primary">수정 권한 확인</Typography>
                         <TextField 
                             label="접수 비밀번호" 

@@ -127,7 +127,7 @@ const AdminStaffPage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '100%'
               }}
@@ -149,7 +149,7 @@ const AdminStaffPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* 왼쪽: 등록 폼 */}
         <Grid item xs={12} md={5}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddStaff}>
               <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PersonAddIcon fontSize="small" /> 새 멤버 등록
@@ -183,7 +183,7 @@ const AdminStaffPage: React.FC = () => {
                   variant="contained"
                   startIcon={<AddIcon />}
                   disabled={submitting || !newName.trim() || !newEmail.trim()}
-                  sx={{ py: 1, fontWeight: 'bold', borderRadius: 2 }}
+                  sx={{ py: 1, fontWeight: 'bold', borderRadius: 1 }}
                 >
                   멤버 추가하기
                 </Button>
@@ -194,7 +194,7 @@ const AdminStaffPage: React.FC = () => {
 
         {/* 오른쪽: 목록 */}
         <Grid item xs={12} md={7}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', minHeight: '400px' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
             <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BadgeIcon fontSize="small" /> 등록된 멤버 목록
             </Typography>
@@ -204,7 +204,7 @@ const AdminStaffPage: React.FC = () => {
             {loading ? (
               <Box sx={{ textAlign: 'center', py: 10 }}><CircularProgress /></Box>
             ) : (
-              <List sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 1 }}>
+              <List sx={{ bgcolor: 'grey.50', borderRadius: 1, p: 1 }}>
                 {staffs.length === 0 ? (
                   <Typography color="text.secondary" align="center" sx={{ py: 10 }}>
                     등록된 멤버가 없습니다.

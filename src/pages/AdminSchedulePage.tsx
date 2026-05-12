@@ -309,7 +309,7 @@ const AdminSchedulePage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '100%'
               }}
@@ -328,7 +328,7 @@ const AdminSchedulePage: React.FC = () => {
         ))}
       </Grid>
 
-      <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
@@ -465,10 +465,10 @@ const AdminSchedulePage: React.FC = () => {
               </Stack>
             </DialogContent>
             <DialogActions sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex' }}>
-              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold', borderRadius: 2 }}>삭제</Button>
+              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold', borderRadius: 1 }}>삭제</Button>
               <Stack direction="row" spacing={1.5}>
-                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', borderRadius: 2, bgcolor: 'white' }}>닫기</Button>
-                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold', borderRadius: 2 }}>수정</Button>
+                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', borderRadius: 1, bgcolor: 'white' }}>닫기</Button>
+                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold', borderRadius: 1 }}>수정</Button>
               </Stack>
             </DialogActions>
           </>

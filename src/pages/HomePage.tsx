@@ -199,7 +199,7 @@ const HomePage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '100%'
               }}
@@ -222,7 +222,7 @@ const HomePage: React.FC = () => {
         <Grid item xs={12} md={8}>
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={3}>
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2.5 }}>기본 정보</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
@@ -239,7 +239,7 @@ const HomePage: React.FC = () => {
                 </Grid>
               </Paper>
 
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Stack spacing={2.5}>
                   <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
                   
@@ -340,7 +340,7 @@ const HomePage: React.FC = () => {
                 </Stack>
               </Paper>
 
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
+              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>이미지 첨부</Typography>
                 <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 2, borderStyle: 'dashed' }}>
                   파일 선택 (최대 5개)
@@ -350,7 +350,7 @@ const HomePage: React.FC = () => {
                   <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
                     {images.map((img, i) => (
                       <Grid item key={i}><Box sx={{ position: 'relative' }}>
-                        <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8 }} />
+                        <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }} />
                         <IconButton size="small" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1 }}><Delete fontSize="small" /></IconButton>
                       </Box></Grid>
                     ))}
@@ -368,7 +368,7 @@ const HomePage: React.FC = () => {
 
         <Grid item xs={12} md={4}>
           <Stack spacing={3}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'background.paper' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <HistoryIcon color="action" /> 최근 등록 이력
               </Typography>
@@ -387,7 +387,7 @@ const HomePage: React.FC = () => {
               </List>
             </Paper>
 
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 3, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.secondary' }}>
                 <InfoIcon fontSize="small" /> 작성 가이드
               </Typography>

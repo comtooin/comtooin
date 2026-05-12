@@ -63,7 +63,7 @@ const AdminLoginPage: React.FC = () => {
         variant="outlined" 
         sx={{ 
           p: { xs: 3, md: 5 }, 
-          borderRadius: 3, 
+          borderRadius: 1, 
           bgcolor: 'background.paper', 
           boxShadow: '0 8px 32px 0 rgba(0,0,0,0.05)' 
         }}
@@ -95,7 +95,7 @@ const AdminLoginPage: React.FC = () => {
             />
             
             {error && (
-              <Alert severity="error" variant="outlined" sx={{ borderRadius: 2 }}>
+              <Alert severity="error" variant="outlined" sx={{ borderRadius: 1 }}>
                 {error}
               </Alert>
             )}

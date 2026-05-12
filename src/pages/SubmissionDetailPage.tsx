@@ -130,7 +130,7 @@ const SubmissionDetailPage: React.FC = () => {
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <AssignmentIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
+          <AssignmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
             업무 기록 상세 정보
           </Typography>
@@ -142,7 +142,7 @@ const SubmissionDetailPage: React.FC = () => {
 
       <Divider sx={{ mb: 4 }} />
 
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 3, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+      <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <CheckCircleIcon sx={{ mr: 1, color: 'success.main' }} />
@@ -156,7 +156,7 @@ const SubmissionDetailPage: React.FC = () => {
           />
         </Box>
 
-        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'grey.50', borderRadius: 2, mb: 4 }}>
+        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'grey.50', borderRadius: 1, mb: 4 }}>
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>고객사명</Typography>
@@ -178,7 +178,7 @@ const SubmissionDetailPage: React.FC = () => {
         </Paper>
         
         <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 'bold' }}>접수 내용</Typography>
-        <Paper variant="outlined" sx={{ p: 3, mb: 4, bgcolor: 'white', borderRadius: 2, minHeight: 100 }}>
+        <Paper variant="outlined" sx={{ p: 3, mb: 4, bgcolor: 'white', borderRadius: 1, minHeight: 100 }}>
           <div dangerouslySetInnerHTML={{ __html: request.content }} style={{ lineHeight: 1.6 }} />
         </Paper>
 
@@ -205,7 +205,7 @@ const SubmissionDetailPage: React.FC = () => {
                         variant="outlined" 
                         sx={{ 
                           overflow: 'hidden', 
-                          borderRadius: 2, 
+                          borderRadius: 1, 
                           cursor: 'pointer',
                           transition: 'transform 0.2s',
                           '&:hover': { transform: 'scale(1.02)', boxShadow: 2 }
@@ -230,7 +230,7 @@ const SubmissionDetailPage: React.FC = () => {
               <Paper
                 variant="outlined"
                 key={comment.id}
-                sx={{ p: 2.5, bgcolor: 'grey.50', borderRadius: 2, borderLeft: '6px solid #607d8b' }}
+                sx={{ p: 2.5, bgcolor: 'grey.50', borderRadius: 1, borderLeft: '6px solid #607d8b' }}
               >
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
                   {new Date(comment.created_at).toLocaleString()}
@@ -240,7 +240,7 @@ const SubmissionDetailPage: React.FC = () => {
             ))}
           </Stack>
         ) : (
-          <Paper variant="outlined" sx={{ p: 4, mb: 4, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 2 }}>
+          <Paper variant="outlined" sx={{ p: 4, mb: 4, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography color="text.secondary">등록된 처리 내용이 없습니다.</Typography>
           </Paper>
         )}
@@ -252,7 +252,7 @@ const SubmissionDetailPage: React.FC = () => {
               size="large"
               onClick={() => navigate(`/admin/request/edit/${id}`)} 
               disabled={request.status !== 'pending'}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 2 }}
+              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
             >
                 수정하기
             </Button>
@@ -262,7 +262,7 @@ const SubmissionDetailPage: React.FC = () => {
               size="large"
               onClick={() => setOpenDeleteDialog(true)} 
               disabled={request.status !== 'pending'}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 2 }}
+              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
             >
                 삭제하기
             </Button>
@@ -270,7 +270,7 @@ const SubmissionDetailPage: React.FC = () => {
               variant="outlined" 
               size="large"
               onClick={() => navigate('/')}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 2 }}
+              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
             >
                 목록으로
             </Button>

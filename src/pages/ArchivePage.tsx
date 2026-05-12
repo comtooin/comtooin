@@ -139,7 +139,7 @@ const ArchivePage: React.FC = () => {
             <CloudDownloadIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
             <Typography variant="h5" component="h1" fontWeight="bold">자료실</Typography>
           </Stack>
-          <Button variant="outlined" size="small" startIcon={<RefreshIcon />} onClick={() => fetchFiles(currentFolder.id)} disabled={loading} sx={{ fontWeight: 'bold', borderRadius: 2 }}>새로고침</Button>
+          <Button variant="outlined" size="small" startIcon={<RefreshIcon />} onClick={() => fetchFiles(currentFolder.id)} disabled={loading} sx={{ fontWeight: 'bold', borderRadius: 1 }}>새로고침</Button>
         </Stack>
         <Typography variant="body2" color="text.secondary">업무 매뉴얼 및 현장 자료를 안전하게 관리하고 공유합니다.</Typography>
       </Box>
@@ -158,7 +158,7 @@ const ArchivePage: React.FC = () => {
               sx={{ 
                 p: { xs: 1.5, sm: 2 }, 
                 borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 2,
+                borderRadius: 1,
                 bgcolor: 'background.paper',
                 height: '100%'
               }}
@@ -177,14 +177,14 @@ const ArchivePage: React.FC = () => {
         ))}
       </Grid>
 
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>{error}</Alert>}
 
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           {folderHistory.length > 1 && (
             <IconButton onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} size="small" sx={{ bgcolor: 'action.hover' }}><ArrowBackIcon fontSize="small" /></IconButton>
           )}
-          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ bgcolor: 'grey.50', p: '8px 16px', borderRadius: 2, border: '1px solid', borderColor: 'divider', flexGrow: 1 }}>
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ bgcolor: 'grey.50', p: '8px 16px', borderRadius: 1, border: '1px solid', borderColor: 'divider', flexGrow: 1 }}>
             {folderHistory.map((folder, index) => (
               <Link key={folder.id} underline="hover" color={index === folderHistory.length - 1 ? "primary" : "inherit"} onClick={() => handleBreadcrumbClick(index)} sx={{ cursor: 'pointer', fontWeight: index === folderHistory.length - 1 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
                 {index === 0 && <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} />}{folder.name}
@@ -192,10 +192,10 @@ const ArchivePage: React.FC = () => {
             ))}
           </Breadcrumbs>
         </Stack>
-        <TextField fullWidth placeholder="파일명 검색..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>), sx: { borderRadius: 2, bgcolor: 'background.paper' } }} />
+        <TextField fullWidth placeholder="파일명 검색..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>), sx: { borderRadius: 1, bgcolor: 'background.paper' } }} />
       </Stack>
 
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', minHeight: '300px' }}>
+      <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden', minHeight: '300px' }}>
         {loading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12, gap: 2 }}>
             <CircularProgress size={32} />
