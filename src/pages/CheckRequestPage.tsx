@@ -67,7 +67,12 @@ const CheckRequestPage: React.FC = () => {
         ...req,
         images: Array.isArray(req.images) ? req.images : (req.images && typeof req.images === 'string' && req.images.trim() !== '') ? JSON.parse(req.images) : [],
         comments: Array.isArray(req.comments) ? req.comments : [],
-      })).sort((a: any, b: any) => b.id - a.id);
+      })).sort((a: any, b: any) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        if (dateB !== dateA) return dateB - dateA; // 1순위: 날짜 내림차순
+        return b.id - a.id; // 2순위: ID 내림차순
+      });
       setRequests(parsedRequests);
       setIsLoggedIn(true);
       sessionStorage.setItem('comtooin_user', JSON.stringify({ name, pw }));

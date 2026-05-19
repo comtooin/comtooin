@@ -139,6 +139,7 @@ const AdminDashboardPage: React.FC = () => {
       let query = supabase
         .from('requests')
         .select('*, comments(*)')
+        .order('created_at', { ascending: false })
         .order('id', { ascending: false });
 
       if (selectedCustomer !== 'all') {
