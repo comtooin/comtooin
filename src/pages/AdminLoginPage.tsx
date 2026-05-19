@@ -28,8 +28,10 @@ const AdminLoginPage: React.FC = () => {
       }
 
       if (data?.session) {
-        // Store the access token (JWT) from Supabase session
+        // 2시간 뒤 만료 시간 설정
+        const expiresAt = new Date().getTime() + 2 * 60 * 60 * 1000;
         localStorage.setItem('adminToken', data.session.access_token);
+        localStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
         // Navigate to work record page (HomePage)
         navigate('/');
       } else {

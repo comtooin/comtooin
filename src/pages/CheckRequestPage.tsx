@@ -67,7 +67,7 @@ const CheckRequestPage: React.FC = () => {
         ...req,
         images: Array.isArray(req.images) ? req.images : (req.images && typeof req.images === 'string' && req.images.trim() !== '') ? JSON.parse(req.images) : [],
         comments: Array.isArray(req.comments) ? req.comments : [],
-      }));
+      })).sort((a: any, b: any) => b.id - a.id);
       setRequests(parsedRequests);
       setIsLoggedIn(true);
       sessionStorage.setItem('comtooin_user', JSON.stringify({ name, pw }));

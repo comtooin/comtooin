@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useCallback } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import HomePage from './pages/HomePage';
 import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
@@ -88,7 +88,45 @@ const theme = createTheme({
 // 로그인 상태에 따라 루트 경로를 분기해주는 컴포넌트
 const RootRoute = () => {
   const isAdminLoggedIn = !!localStorage.getItem('adminToken');
+  const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+  
+  // 세션 만료 체크 (만료 시 세션 정리)
+  if (expiresAt && new Date().getTime() > parseInt(expiresAt)) {
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminSessionExpiresAt');
+    return <Navigate to="/admin/login" replace />;
+  }
+
   return isAdminLoggedIn ? <HomePage /> : <Navigate to="/admin/login" replace />;
+};
+
+// 세션 만료를 감시하는 컴포넌트 (페이지 이동 및 타이머 기준)
+const SessionManager = () => {
+  const location = useLocation();
+  
+  const checkSession = useCallback(() => {
+    const token = localStorage.getItem('adminToken');
+    const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+    
+    if (token && expiresAt) {
+      if (new Date().getTime() > parseInt(expiresAt)) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminSessionExpiresAt');
+        window.location.href = '/admin/login';
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    checkSession();
+  }, [location, checkSession]);
+
+  useEffect(() => {
+    const interval = setInterval(checkSession, 60000); // 1분마다 주기적 체크
+    return () => clearInterval(interval);
+  }, [checkSession]);
+
+  return null;
 };
 
 function App() {
@@ -96,6 +134,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
+        <SessionManager />
         <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <NavBar />
           <Box component="main" sx={{ flexGrow: 1, py: { xs: 3, md: 5 } }}>

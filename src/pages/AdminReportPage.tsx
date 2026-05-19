@@ -172,7 +172,7 @@ const AdminReportPage: React.FC = () => {
         const endDate = `${year}-${month}-${new Date(Number(year), Number(month), 0).getDate()}T23:59:59.999Z`;
         requestsQuery = requestsQuery.gte('created_at', startDate).lte('created_at', endDate);
       }
-      requestsQuery = requestsQuery.order('created_at', { ascending: false });
+      requestsQuery = requestsQuery.order('id', { ascending: false });
 
       const { data: requestsData, error: requestsError } = await requestsQuery;
       if (requestsError) throw requestsError;

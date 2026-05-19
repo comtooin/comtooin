@@ -73,7 +73,7 @@ const HomePage: React.FC = () => {
       const [todayRes, monthlyRes, recentRes] = await Promise.all([
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', today + 'T00:00:00Z'),
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', firstDayOfMonth),
-        supabase.from('requests').select('*').order('created_at', { ascending: false }).limit(5)
+        supabase.from('requests').select('*').order('id', { ascending: false }).limit(5)
       ]);
 
       setStats({
