@@ -159,7 +159,7 @@ function App() {
               />
               <Route
                 path="/admin/staff"
-                element={<AdminRoute><AdminStaffPage /></AdminRoute>}
+                element={<AdminRoute requiredRole="admin"><AdminStaffPage /></AdminRoute>}
               />
               <Route
                 path="/admin/schedule"

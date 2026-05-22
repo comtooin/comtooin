@@ -5,6 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-version',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 }
 
 const ROOT_FOLDER_ID = '1YV2vEIhNU0rPSiyHUgyDV0pSuBcuOKfJ';
@@ -67,19 +68,23 @@ async function getAccessToken(serviceAccount: any) {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders, status: 200 })
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders, status: 200 })
+  }
 
   try {
     const url = new URL(req.url);
     const folderId = url.searchParams.get('folderId') || ROOT_FOLDER_ID;
 
     const serviceAccountJson = Deno.env.get('GOOGLE_SERVICE_ACCOUNT_JSON');
-    if (!serviceAccountJson) throw new Error('서버 환경 변수가 설정되지 않았습니다.');
+    if (!serviceAccountJson) {
+      console.error('Environment variable GOOGLE_SERVICE_ACCOUNT_JSON is missing');
+      throw new Error('서버 환경 변수(GOOGLE_SERVICE_ACCOUNT_JSON)가 설정되지 않았습니다.');
+    }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
 
-    // 필드 최소화 및 쿼리 최적화 (modifiedTime 추가)
     const driveParams = new URLSearchParams({
       q: `'${folderId}' in parents and trashed = false`,
       fields: 'files(id, name, mimeType, size, webViewLink, modifiedTime)',
@@ -93,7 +98,10 @@ serve(async (req) => {
     });
 
     const driveData = await driveResponse.json();
-    if (!driveResponse.ok) throw new Error(`Drive API 오류: ${driveData.error?.message}`);
+    if (!driveResponse.ok) {
+      console.error('Google Drive API Error:', driveData);
+      throw new Error(`Drive API 오류: ${driveData.error?.message || '알 수 없는 오류'}`);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -104,9 +112,10 @@ serve(async (req) => {
     });
 
   } catch (error) {
+    console.error('Edge Function Error:', error.message);
     return new Response(JSON.stringify({ error: error.message, success: false }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 200, // 프론트엔드에서 에러 메시지를 읽을 수 있도록 200으로 반환하고 success: false 처리
     })
   }
 })

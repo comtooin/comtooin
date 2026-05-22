@@ -296,7 +296,7 @@ const AdminDashboardPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>대시보드</title></Helmet>
+      <Helmet><title>대시보드 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>

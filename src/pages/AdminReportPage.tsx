@@ -483,7 +483,7 @@ const AdminReportPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>리포트</title></Helmet>
+      <Helmet><title>리포트 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 4 }}>

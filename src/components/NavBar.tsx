@@ -28,6 +28,8 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,12 +38,21 @@ const NavBar: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
+    const role = localStorage.getItem('adminRole');
+    const name = localStorage.getItem('adminName');
     setIsAdminLoggedIn(!!token);
+    setUserRole(role);
+    setUserName(name);
   }, [location]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminSessionExpiresAt');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('adminName');
     setIsAdminLoggedIn(false);
+    setUserRole(null);
+    setUserName(null);
     navigate('/admin/login');
   };
 
@@ -101,13 +112,15 @@ const NavBar: React.FC = () => {
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
-            <ListItem button component={RouterLink} to="/admin/staff">
-              <ListItemIcon><PeopleIcon /></ListItemIcon>
-              <ListItemText
-                primary="멤버"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
+            {userRole === 'admin' && (
+              <ListItem button component={RouterLink} to="/admin/staff">
+                <ListItemIcon><PeopleIcon /></ListItemIcon>
+                <ListItemText
+                  primary="멤버"
+                  primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                />
+              </ListItem>
+            )}
             <ListItem button onClick={handleLogout}>
               <ListItemIcon><LogoutIcon /></ListItemIcon>
               <ListItemText
@@ -212,8 +225,23 @@ const NavBar: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
-                  <Button color="inherit" onClick={handleLogout} sx={{ px: 1.5, ml: 1, bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}>로그아웃</Button>
+                  {userRole === 'admin' && (
+                    <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
+                  )}
+                  <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, pl: 1.5, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
+                    <Typography variant="body2" sx={{ mr: 1, fontWeight: 500 }}>
+                      {userName}님
+                    </Typography>
+                    <IconButton 
+                      color="inherit" 
+                      onClick={handleLogout} 
+                      size="small" 
+                      title="로그아웃"
+                      sx={{ bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+                    >
+                      <LogoutIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
                 </>
               ) : (
                 <Button color="inherit" component={RouterLink} to="/admin/login">로그인</Button>

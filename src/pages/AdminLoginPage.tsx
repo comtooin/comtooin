@@ -18,8 +18,24 @@ const AdminLoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
+      let loginEmail = id;
+
+      // 만약 입력값이 이메일 형식이 아니라면 (아이디 로그인 시도)
+      if (!id.includes('@')) {
+        const { data: staffData, error: staffError } = await supabase
+          .from('staff')
+          .select('email')
+          .eq('username', id)
+          .single();
+
+        if (staffError || !staffData) {
+          throw new Error('존재하지 않는 아이디입니다.');
+        }
+        loginEmail = staffData.email;
+      }
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: id, // Assuming 'id' is used as email for Supabase Auth
+        email: loginEmail,
         password: password,
       });
 
@@ -28,10 +44,27 @@ const AdminLoginPage: React.FC = () => {
       }
 
       if (data?.session) {
+        // 사용자 역할(role) 및 이름 조회
+        const { data: profile, error: profileError } = await supabase
+          .from('staff')
+          .select('role, name')
+          .eq('auth_user_id', data.session.user.id)
+          .single();
+
         // 2시간 뒤 만료 시간 설정
         const expiresAt = new Date().getTime() + 2 * 60 * 60 * 1000;
         localStorage.setItem('adminToken', data.session.access_token);
         localStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
+        
+        if (profile) {
+          localStorage.setItem('adminRole', profile.role);
+          localStorage.setItem('adminName', profile.name);
+        } else {
+          // 프로필이 없는 경우 기본값 'member' (또는 상황에 따라 처리)
+          localStorage.setItem('adminRole', 'member');
+          localStorage.setItem('adminName', data.session.user.user_metadata?.name || '관리자');
+        }
+
         // Navigate to work record page (HomePage)
         navigate('/');
       } else {
@@ -48,7 +81,7 @@ const AdminLoginPage: React.FC = () => {
   return (
     <Container maxWidth="sm">
       <Helmet>
-        <title>관리자 로그인 | COMTOOIN</title>
+        <title>로그인 | COMTOOIN</title>
       </Helmet>
       
       {/* 브랜드 헤더 섹션 */}
@@ -71,19 +104,19 @@ const AdminLoginPage: React.FC = () => {
         }}
       >
         <Typography variant="h5" align="center" fontWeight="bold" sx={{ mb: 4 }}>
-          관리자 로그인
+          시스템 로그인
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
           <Stack spacing={3}>
             <TextField
-              label="관리자 아이디 (이메일)"
+              label="아이디 (이메일)"
               fullWidth
               required
               variant="outlined"
               value={id}
               onChange={(e) => setId(e.target.value)}
-              placeholder="admin@example.com"
+              placeholder="user@example.com"
             />
             <TextField
               label="비밀번호"

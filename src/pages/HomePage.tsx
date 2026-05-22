@@ -91,6 +91,11 @@ const HomePage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    // 로그인한 사용자의 이름을 자동으로 설정
+    const storedName = localStorage.getItem('adminName');
+    if (storedName) {
+      setUserName(storedName);
+    }
   }, [fetchData]);
 
   const handleVoiceInput = (target: 'content' | 'processingContent') => {
