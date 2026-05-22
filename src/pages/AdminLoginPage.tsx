@@ -45,7 +45,7 @@ const AdminLoginPage: React.FC = () => {
 
       if (data?.session) {
         // 사용자 역할(role) 및 이름 조회
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile } = await supabase
           .from('staff')
           .select('role, name')
           .eq('auth_user_id', data.session.user.id)

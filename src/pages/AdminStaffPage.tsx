@@ -80,7 +80,7 @@ const AdminStaffPage: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      const { data, error: funcError } = await supabase.functions.invoke('manage-users', {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'create',
           userData: {
@@ -124,7 +124,7 @@ const AdminStaffPage: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      const { data, error: funcError } = await supabase.functions.invoke('manage-users', {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'update',
           userData: {
@@ -163,7 +163,7 @@ const AdminStaffPage: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      const { data, error: funcError } = await supabase.functions.invoke('manage-users', {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'reset-password',
           userData: {
@@ -199,7 +199,7 @@ const AdminStaffPage: React.FC = () => {
     setError('');
     setSuccess('');
     try {
-      const { data, error: funcError } = await supabase.functions.invoke('manage-users', {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
         body: {
           action: 'delete',
           userData: { 
