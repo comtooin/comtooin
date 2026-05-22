@@ -626,7 +626,7 @@ const AdminReportPage: React.FC = () => {
                 onClick={handleExportExcel}
                 sx={{ fontWeight: 'bold', minWidth: '100px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
-                내보내기
+                다운로드
               </Button>
             </Stack>
 
@@ -641,7 +641,7 @@ const AdminReportPage: React.FC = () => {
                 onClick={handleDownloadSampleCsv}
                 sx={{ fontWeight: 'bold', minWidth: '110px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
-                샘플
+                샘플양식
               </Button>
               <Button 
                 variant="outlined" 
