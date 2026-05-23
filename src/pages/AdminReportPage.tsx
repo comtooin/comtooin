@@ -600,18 +600,19 @@ const AdminReportPage: React.FC = () => {
 
           <Divider />
 
-          {/* 두 번째 줄: 액션 버튼들 (우측 정렬) */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+          {/* 두 번째 줄: 액션 버튼들 */}
+          <Grid container spacing={1} sx={{ justifyContent: { xs: 'center', sm: 'flex-end' } }}>
             {/* 리포트 그룹 */}
-            <Stack direction="row" spacing={1}>
+            <Grid item xs={6} sm="auto">
               <Button 
+                fullWidth
                 variant="outlined" 
                 color="secondary" 
                 startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
                 onClick={handleGenerateAiReport}
                 disabled={isGenerating || filteredRequests.length === 0}
                 sx={{ 
-                  fontWeight: 'bold', minWidth: '140px', fontSize: '0.75rem', height: '36px',
+                  fontWeight: 'bold', minWidth: { sm: '140px' }, fontSize: '0.75rem', height: '36px',
                   color: '#673ab7', borderColor: '#673ab7', 
                   '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
                   borderRadius: 1
@@ -619,42 +620,47 @@ const AdminReportPage: React.FC = () => {
               >
                 AI 분석 리포트
               </Button>
+            </Grid>
+            <Grid item xs={6} sm="auto">
               <Button 
+                fullWidth
                 variant="outlined" 
                 color="secondary" 
                 startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
                 onClick={handleExportExcel}
-                sx={{ fontWeight: 'bold', minWidth: '100px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+                sx={{ fontWeight: 'bold', minWidth: { sm: '100px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 다운로드
               </Button>
-            </Stack>
-
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.5, height: 24, my: 'auto', display: { xs: 'none', sm: 'block' } }} />
+            </Grid>
 
             {/* 데이터 그룹 */}
-            <Stack direction="row" spacing={1}>
+            <Grid item xs={6} sm="auto">
               <Button 
+                fullWidth
                 variant="outlined" 
                 color="info" 
                 startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
                 onClick={handleDownloadSampleCsv}
-                sx={{ fontWeight: 'bold', minWidth: '110px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+                sx={{ fontWeight: 'bold', minWidth: { sm: '110px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 샘플양식
               </Button>
+            </Grid>
+            <Grid item xs={6} sm="auto">
               <Button 
+                fullWidth
                 variant="outlined" 
                 color="primary" 
                 startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
                 component="label"
-                sx={{ fontWeight: 'bold', minWidth: '90px', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+                sx={{ fontWeight: 'bold', minWidth: { sm: '90px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
               >
                 업로드
                 <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
               </Button>
-            </Stack>
-          </Box>
+            </Grid>
+          </Grid>
         </Stack>
       </Paper>
 
