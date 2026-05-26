@@ -9,6 +9,7 @@ import AdminReportPage from './pages/AdminReportPage';
 import AdminCustomerPage from './pages/AdminCustomerPage';
 import AdminStaffPage from './pages/AdminStaffPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
+import AdminProfilePage from './pages/AdminProfilePage';
 import ArchivePage from './pages/ArchivePage';
 import EditRequestPage from './pages/EditRequestPage';
 import NavBar from './components/NavBar';
@@ -160,6 +161,10 @@ function App() {
               <Route
                 path="/admin/staff"
                 element={<AdminRoute requiredRole="admin"><AdminStaffPage /></AdminRoute>}
+              />
+              <Route
+                path="/admin/profile"
+                element={<AdminRoute><AdminProfilePage /></AdminRoute>}
               />
               <Route
                 path="/admin/schedule"

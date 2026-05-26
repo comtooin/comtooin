@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Divider,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
@@ -25,6 +26,7 @@ import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -70,6 +72,14 @@ const NavBar: React.FC = () => {
       <List>
         {isAdminLoggedIn ? (
           <>
+            <ListItem button component={RouterLink} to="/admin/profile">
+              <ListItemIcon><AccountCircleIcon /></ListItemIcon>
+              <ListItemText
+                primary={`${userName}님 (내 정보)`}
+                primaryTypographyProps={{ fontWeight: 600, fontSize: '1rem', color: 'primary.main' }}
+              />
+            </ListItem>
+            <Divider sx={{ my: 1 }} />
             <ListItem button component={RouterLink} to="/">
               <ListItemIcon><EditNoteIcon /></ListItemIcon>
               <ListItemText
@@ -229,7 +239,18 @@ const NavBar: React.FC = () => {
                     <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, pl: 1.5, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
-                    <Typography variant="body2" sx={{ mr: 1, fontWeight: 500 }}>
+                    <Typography 
+                      variant="body2" 
+                      component={RouterLink}
+                      to="/admin/profile"
+                      sx={{ 
+                        mr: 1, 
+                        fontWeight: 500, 
+                        color: 'inherit', 
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
                       {userName}님
                     </Typography>
                     <IconButton 

@@ -72,7 +72,25 @@ const AdminLoginPage: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Supabase Auth error:', err);
-      setError(err.message || '로그인 중 오류가 발생했습니다.');
+      
+      let errorMessage = '로그인 중 오류가 발생했습니다.';
+      const rawMessage = err.message || '';
+
+      if (rawMessage.includes('Invalid login credentials')) {
+        errorMessage = '아이디 또는 비밀번호가 일치하지 않습니다.';
+      } else if (rawMessage.includes('Email not confirmed')) {
+        errorMessage = '이메일 인증이 완료되지 않은 계정입니다.';
+      } else if (rawMessage.includes('User not found')) {
+        errorMessage = '존재하지 않는 사용자 계정입니다.';
+      } else if (rawMessage.includes('Too many requests')) {
+        errorMessage = '너무 많은 로그인 시도가 있었습니다. 잠시 후 다시 시도해 주세요.';
+      } else if (err.status === 400 || rawMessage.includes('bad request')) {
+        errorMessage = '로그인 정보가 올바르지 않습니다.';
+      } else {
+        errorMessage = rawMessage || errorMessage;
+      }
+
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
