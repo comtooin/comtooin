@@ -8,7 +8,7 @@ import {
   Today as TodayIcon, Assessment as AssessmentIcon, Business as BusinessIcon, History as HistoryIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
-import { supabase } from '../api';
+import { supabase, getCurrentStaffId } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 const HomePage: React.FC = () => {
@@ -171,8 +171,14 @@ const HomePage: React.FC = () => {
       };
       const { data: requestData, error: insertError } = await supabase.from('requests').insert([requestPayload]).select();
       if (insertError) throw insertError;
+      
       if (processingContent.trim()) {
-        await supabase.from('comments').insert({ request_id: requestData?.[0]?.id, comment: processingContent, user_id: session?.user?.id });
+        const staffId = await getCurrentStaffId();
+        await supabase.from('comments').insert({ 
+          request_id: requestData?.[0]?.id, 
+          comment: processingContent, 
+          user_id: staffId 
+        });
       }
       navigate(`/admin/dashboard`);
     } catch (err: any) { setError(err.message || '저장 중 오류가 발생했습니다.'); } finally { setSubmitting(false); }

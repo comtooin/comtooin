@@ -13,7 +13,7 @@ import {
   Edit as EditIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '../api';
+import { supabase, getCurrentStaffId } from '../api';
 
 interface IComment {
   id: number;
@@ -241,11 +241,11 @@ const AdminDashboardPage: React.FC = () => {
 
       // 3. 새로운 댓글 추가 (일반 모드에서 newComment가 있을 때)
       if (!isEditing && newComment.trim()) {
-        const { data: { session } } = await supabase.auth.getSession();
+        const staffId = await getCurrentStaffId();
         const { error: commentError } = await supabase.from('comments').insert({
           request_id: selectedRequest.id,
           comment: newComment.trim(),
-          user_id: session?.user?.id,
+          user_id: staffId,
         });
         if (commentError) throw commentError;
       }

@@ -44,10 +44,10 @@ const AdminLoginPage: React.FC = () => {
       }
 
       if (data?.session) {
-        // 사용자 역할(role) 및 이름 조회
+        // 사용자 역할(role) 및 이름, 그리고 staff 테이블의 고유 ID 조회
         const { data: profile } = await supabase
           .from('staff')
-          .select('role, name')
+          .select('id, role, name')
           .eq('auth_user_id', data.session.user.id)
           .single();
 
@@ -57,6 +57,7 @@ const AdminLoginPage: React.FC = () => {
         localStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
         
         if (profile) {
+          localStorage.setItem('adminStaffId', profile.id);
           localStorage.setItem('adminRole', profile.role);
           localStorage.setItem('adminName', profile.name);
         } else {

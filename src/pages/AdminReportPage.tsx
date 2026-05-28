@@ -17,7 +17,7 @@ import {
   Description as DescriptionIcon,
   Search as SearchIcon
 } from '@mui/icons-material';
-import { supabase } from '../api'; 
+import { supabase, getCurrentStaffId } from '../api'; 
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
@@ -344,7 +344,7 @@ const AdminReportPage: React.FC = () => {
         // 2. 처리내용(Comments) 삽입
         if (insertedRequests && insertedRequests.length > 0) {
           const commentsToInsert: any[] = [];
-          const { data: { session } } = await supabase.auth.getSession();
+          const staffId = await getCurrentStaffId();
 
           insertedRequests.forEach((req, index) => {
             const note = processNotes[index];
@@ -352,7 +352,7 @@ const AdminReportPage: React.FC = () => {
               commentsToInsert.push({
                 request_id: req.id,
                 comment: note,
-                user_id: session?.user?.id,
+                user_id: staffId,
               });
             }
           });

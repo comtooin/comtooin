@@ -21,3 +21,27 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
  * 실제 Storage URL은 'supabaseUrl/storage/v1/object/public' 형태입니다.
  */
 export const assetBaseURL = `${supabaseUrl}/storage/v1/object/public`;
+
+/**
+ * 현재 로그인한 사용자의 staff 테이블 고유 ID를 가져옵니다.
+ * localStorage에 저장된 값이 있으면 사용하고, 없으면 DB에서 조회하여 캐시합니다.
+ */
+export const getCurrentStaffId = async () => {
+  const cachedId = localStorage.getItem('adminStaffId');
+  if (cachedId) return cachedId;
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user?.id) return null;
+
+  const { data: profile } = await supabase
+    .from('staff')
+    .select('id')
+    .eq('auth_user_id', session.user.id)
+    .single();
+
+  if (profile) {
+    localStorage.setItem('adminStaffId', profile.id);
+    return profile.id;
+  }
+  return null;
+};
