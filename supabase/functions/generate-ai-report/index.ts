@@ -16,9 +16,8 @@ const ROOT_FOLDER_ID = '1YV2vEIhNU0rPSiyHUgyDV0pSuBcuOKfJ';
 const TARGET_FOLDER_NAME = '3. 거래처별 AI분석 리포트';
 
 const TRIALS = [
-  "gemini-2.0-flash", 
-  "gemini-flash-latest",
-  "gemini-1.5-flash"
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite"
 ];
 
 async function getGoogleAccessToken() {
@@ -191,7 +190,7 @@ serve(async (req) => {
 ${dataSummary}`;
     }
 
-    let lastError = "";
+    let errors: string[] = [];
     for (const model of TRIALS) {
       try {
         const aiResponse = await fetch(
@@ -211,13 +210,13 @@ ${dataSummary}`;
           });
         }
         
-        lastError = aiData.error?.message || "알 수 없는 오류";
+        errors.push(`[${model}] ${aiData.error?.message || "응답 내용 없음"}`);
       } catch (err: any) {
-        lastError = err.message;
+        errors.push(`[${model}] ${err.message}`);
       }
     }
 
-    throw new Error(`모든 AI 모델 시도 실패. 마지막 에러: ${lastError}`);
+    throw new Error(`AI 생성 실패 원인 파악 내역:\n${errors.join('\n')}`);
 
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {

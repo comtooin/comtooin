@@ -8,10 +8,8 @@ const corsHeaders = {
 
 // 확인된 사용 가능 모델 목록 반영
 const TRIALS = [
-  "gemini-2.0-flash", 
-  "gemini-flash-latest",
-  "gemini-2.5-flash",
-  "gemini-pro-latest"
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite"
 ];
 
 serve(async (req) => {
