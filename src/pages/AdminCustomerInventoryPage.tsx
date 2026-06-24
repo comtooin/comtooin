@@ -476,9 +476,9 @@ const AdminCustomerInventoryPage: React.FC = () => {
     <Container maxWidth="lg">
       <Helmet><title>{customer?.name} 인벤토리 | COMTOOIN</title></Helmet>
 
-      <Box sx={{ mb: 4, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'space-between' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <IconButton onClick={() => navigate('/admin/customers')} sx={{ bgcolor: 'white', boxShadow: 1 }}>
+      <Box sx={{ mb: 4, display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <IconButton onClick={() => navigate('/admin/customers')} sx={{ bgcolor: 'white', boxShadow: 1, mt: { xs: 0.5, md: 0 } }}>
             <ArrowBackIcon />
           </IconButton>
           <Box>
@@ -493,8 +493,9 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        <Stack direction="row" spacing={1}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', md: 'auto' } }}>
           <Button 
+            fullWidth
             variant="outlined" 
             color="secondary" 
             startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
@@ -505,6 +506,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             AI 자산 분석 리포트
           </Button>
           <Button 
+            fullWidth
             variant="contained" 
             color="primary" 
             startIcon={<FileDownloadIcon />} 
@@ -603,8 +605,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
       )}
 
       <Paper variant="outlined" sx={{ borderRadius: 1 }}>
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2 }}>
-          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} textColor="primary" indicatorColor="primary">
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 0, sm: 2 } }}>
+          <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} textColor="primary" indicatorColor="primary" variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
             <Tab label={`하드웨어 (${hardware.length})`} sx={{ fontWeight: 'bold' }} />
             <Tab label={`소프트웨어 (${groupedSoftware.length}대)`} sx={{ fontWeight: 'bold' }} />
           </Tabs>
@@ -614,8 +616,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {/* 하드웨어 탭 */}
           {tabValue === 0 && (
             <Box>
-              <Stack direction="row" spacing={2} mb={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: 'auto' }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
+                <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' } }}>
                   전체 초기화
                 </Button>
                 <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
@@ -683,8 +685,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {/* 소프트웨어 탭 (컴퓨터별 그룹화) */}
           {tabValue === 1 && (
             <Box>
-              <Stack direction="row" spacing={2} mb={2} justifyContent="flex-end">
-                <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: 'auto' }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
+                <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' } }}>
                   전체 초기화
                 </Button>
                 <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
@@ -852,11 +854,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
             {aiReportContent}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleSaveAiReport} variant="contained" disabled={isSaving} sx={{ borderRadius: 2 }}>
+        <DialogActions sx={{ p: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
+          <Button onClick={handleSaveAiReport} variant="contained" disabled={isSaving} sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}>
             {isSaving ? <CircularProgress size={20} color="inherit" /> : '자료실에 저장 (Google Docs)'}
           </Button>
-          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>닫기</Button>
           <Button 
             variant="contained" 
             color="secondary"
@@ -864,9 +865,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
               navigator.clipboard.writeText(aiReportContent);
               alert('리포트 내용이 클립보드에 복사되었습니다.');
             }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}
           >
             내용 복사
           </Button>
+          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>
