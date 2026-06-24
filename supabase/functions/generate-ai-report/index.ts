@@ -212,15 +212,8 @@ ${dataSummary}`;
         }
         
         lastError = aiData.error?.message || "알 수 없는 오류";
-        // 할당량(Quota) 초과 에러면 즉시 중단하고 사용자에게 알림
-        if (lastError.toLowerCase().includes("quota")) {
-          throw new Error(`구글 API 무료 할당량(Quota) 초과! 1분 뒤 다시 시도해주세요. (${model})`);
-        }
       } catch (err: any) {
         lastError = err.message;
-        if (lastError.toLowerCase().includes("quota")) {
-          throw new Error(`구글 API 무료 할당량(Quota) 초과! 1분 뒤 다시 시도해주세요. (${model})`);
-        }
       }
     }
 
