@@ -65,6 +65,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiReportContent, setAiReportContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // 정보 수정 모달 상태
   const [openModal, setOpenModal] = useState(false);
@@ -328,6 +329,40 @@ const AdminCustomerInventoryPage: React.FC = () => {
       setError(`AI 리포트 생성 실패: ${err.message}`);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleSaveAiReport = async () => {
+    try {
+      setIsSaving(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+
+      const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/generate-ai-report`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          customerName: customer?.name,
+          month: '자산현황', // 파일명 구분을 위해 사용
+          action: 'save',
+          content: aiReportContent
+        }),
+      });
+
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+
+      alert('자산 분석 리포트가 자료실에 성공적으로 저장되었습니다.');
+      setAiModalOpen(false);
+    } catch (err: any) {
+      console.error("AI Report Save Error:", err);
+      alert(`저장 실패: ${err.message}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -818,7 +853,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined">닫기</Button>
+          <Button onClick={handleSaveAiReport} variant="contained" disabled={isSaving} sx={{ borderRadius: 2 }}>
+            {isSaving ? <CircularProgress size={20} color="inherit" /> : '자료실에 저장 (Google Docs)'}
+          </Button>
+          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>닫기</Button>
           <Button 
             variant="contained" 
             color="secondary"
