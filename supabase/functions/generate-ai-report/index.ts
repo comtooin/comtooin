@@ -18,7 +18,7 @@ const TARGET_FOLDER_NAME = '3. 거래처별 AI분석 리포트';
 const TRIALS = [
   "gemini-2.0-flash", 
   "gemini-flash-latest",
-  "gemini-pro-latest"
+  "gemini-1.5-flash"
 ];
 
 async function getGoogleAccessToken() {
@@ -122,25 +122,33 @@ serve(async (req) => {
 
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
 
-    const { data: reportData, error: dbError } = await supabaseAdmin.rpc('get_admin_report_data', {
-      _customer_name: customerName || 'all',
-      _month: month || 'all',
-      _status: status || 'all'
-    });
+    let prompt = "";
 
-    if (dbError) throw dbError;
-    if (!reportData || reportData.length === 0) throw new Error("분석할 업무 데이터가 없습니다.");
+    // 🌟 추가된 로직: 프론트엔드에서 보낸 인벤토리 분석 프롬프트를 그대로 사용
+    if (action === 'inventory_preview') {
+      if (!reportContent) throw new Error("자산 현황 데이터가 전달되지 않았습니다.");
+      prompt = reportContent;
+    } 
+    // 기존 유지보수 리포트 분석 로직
+    else {
+      const { data: reportData, error: dbError } = await supabaseAdmin.rpc('get_admin_report_data', {
+        _customer_name: customerName || 'all',
+        _month: month || 'all',
+        _status: status || 'all'
+      });
 
-    // 데이터 요약 구성 (요청자 requester_name 강조)
-    const dataSummary = reportData.map((row: any) => {
-      const date = new Date(row.created_at).toLocaleDateString('ko-KR');
-      const content = String(row.content || "").replace(/<[^>]*>?/gm, '').trim();
-      const reply = String(row.reply_content || "").replace(/<[^>]*>?/gm, '').trim();
-      const requester = row.requester_name || "담당자";
-      return `[${date}] 거래처:${row.customer_name} / 요청자:${requester} / 접수:${content} / 처리:${reply}`;
-    }).join('\n');
+      if (dbError) throw dbError;
+      if (!reportData || reportData.length === 0) throw new Error("분석할 업무 데이터가 없습니다.");
 
-    const prompt = `# 역할: 전문 IT 인프라 유지보수 컨설턴트 및 PC 정비 전문가
+      const dataSummary = reportData.map((row: any) => {
+        const date = new Date(row.created_at).toLocaleDateString('ko-KR');
+        const content = String(row.content || "").replace(/<[^>]*>?/gm, '').trim();
+        const reply = String(row.reply_content || "").replace(/<[^>]*>?/gm, '').trim();
+        const requester = row.requester_name || "담당자";
+        return `[${date}] 거래처:${row.customer_name} / 요청자:${requester} / 접수:${content} / 처리:${reply}`;
+      }).join('\n');
+
+      prompt = `# 역할: 전문 IT 인프라 유지보수 컨설턴트 및 PC 정비 전문가
 
 # 배경: 
 제공된 [업무 기록 데이터]는 특정 거래처에서 발생한 PC 유지보수 및 네트워크 장애 처리 기록이다. 
@@ -162,7 +170,7 @@ serve(async (req) => {
    - 섹션 사이에는 반드시 '---' 또는 '━━━━━━━━━━━━━━━━'를 사용하여 단락을 명확히 분리할 것.
 
 3. 데이터 시각화 (무채색 기호 활용):
-   - 장애 유형 분포는 [████░░░░] 40% 와 같이 흑백 기호를 사용하여 막대그래프 느낌으로 시약화할 것.
+   - 장애 유형 분포는 [████░░░░] 40% 와 같이 흑백 기호를 사용하여 막대그래프 느낌으로 시각화할 것.
    - 색깔 있는 이모지 대신 '■', '□', '▶' 등의 단정한 기호만 사용할 것.
 
 4. 하드웨어 상태 등급표 (Markdown Table):
@@ -181,6 +189,7 @@ serve(async (req) => {
 
 # [업무 기록 데이터]
 ${dataSummary}`;
+    }
 
     let lastError = "";
     for (const model of TRIALS) {
@@ -201,15 +210,23 @@ ${dataSummary}`;
             headers: { ...corsHeaders, "Content-Type": "application/json" }
           });
         }
+        
         lastError = aiData.error?.message || "알 수 없는 오류";
-      } catch (err) {
+        // 할당량(Quota) 초과 에러면 즉시 중단하고 사용자에게 알림
+        if (lastError.toLowerCase().includes("quota")) {
+          throw new Error(`구글 API 무료 할당량(Quota) 초과! 1분 뒤 다시 시도해주세요. (${model})`);
+        }
+      } catch (err: any) {
         lastError = err.message;
+        if (lastError.toLowerCase().includes("quota")) {
+          throw new Error(`구글 API 무료 할당량(Quota) 초과! 1분 뒤 다시 시도해주세요. (${model})`);
+        }
       }
     }
 
     throw new Error(`모든 AI 모델 시도 실패. 마지막 에러: ${lastError}`);
 
-  } catch (error) {
+  } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

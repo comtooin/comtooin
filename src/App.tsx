@@ -7,6 +7,7 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AdminReportPage from './pages/AdminReportPage'; 
 import AdminCustomerPage from './pages/AdminCustomerPage';
+import AdminCustomerInventoryPage from './pages/AdminCustomerInventoryPage';
 import AdminStaffPage from './pages/AdminStaffPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
 import AdminProfilePage from './pages/AdminProfilePage';
@@ -157,6 +158,10 @@ function App() {
               <Route
                 path="/admin/customers"
                 element={<AdminRoute><AdminCustomerPage /></AdminRoute>}
+              />
+              <Route
+                path="/admin/customers/:id/inventory"
+                element={<AdminRoute><AdminCustomerInventoryPage /></AdminRoute>}
               />
               <Route
                 path="/admin/staff"

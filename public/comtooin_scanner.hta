@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8">
+    <title>COMTOOIN PC Asset Manager</title>
+    
+    <hta:application 
+        id="comtooinApp"
+        applicationname="ComtooinAssetManager"
+        border="thin"
+        caption="yes"
+        showintaskbar="yes"
+        singleinstance="yes"
+        sysmenu="yes"
+        windowstate="normal"
+    />
+    
+    <style>
+        body { 
+            font-family: 'Malgun Gothic', sans-serif; 
+            background-color: #f8fafc; 
+            color: #0f172a; 
+            margin: 0; 
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+        }
+        .container { 
+            background: #ffffff; 
+            padding: 35px; 
+            border-radius: 16px; 
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            width: 420px; 
+            border: 1px solid #e2e8f0;
+            text-align: center;
+            margin-top: 25px;
+        }
+        h1 { 
+            font-size: 20px; 
+            font-weight: 800;
+            color: #1e3a8a; 
+            margin: 0 0 10px 0;
+        }
+        p { 
+            font-size: 13px; 
+            color: #64748b; 
+            line-height: 1.6; 
+            margin: 0 0 25px 0; 
+        }
+        .status-box { 
+            background: #f1f5f9; 
+            border: 1px solid #e2e8f0; 
+            padding: 18px; 
+            border-radius: 10px; 
+            font-size: 13px;
+            font-weight: 700; 
+            color: #475569; 
+            margin-bottom: 25px; 
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-group { 
+            display: flex; 
+            justify-content: center; 
+            gap: 15px; 
+        }
+        button { 
+            width: 180px; 
+            height: 48px;
+            font-size: 13px; 
+            font-weight: 700; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            color: #ffffff; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s;
+        }
+        .btn-hw { 
+            background-color: #059669; 
+        }
+        .btn-hw:hover { 
+            background-color: #047857;
+        }
+        .btn-sw { 
+            background-color: #2563eb; 
+        }
+        .btn-sw:hover { 
+            background-color: #1d4ed8;
+        }
+        button:disabled { 
+            background-color: #cbd5e1 !important; 
+            color: #94a3b8 !important;
+            cursor: not-allowed; 
+            box-shadow: none !important;
+        }
+    </style>
+    
+    <script>
+        window.resizeTo(520, 430);
+
+        var shell = new ActiveXObject("WScript.Shell");
+        var fso = new ActiveXObject("Scripting.FileSystemObject");
+        var compName = shell.ExpandEnvironmentStrings("%COMPUTERNAME%");
+        var tempDir = shell.ExpandEnvironmentStrings("%TEMP%"); 
+
+        // 32비트 mshta.exe 환경에서도 64비트 PowerShell을 호출하여 64비트 소프트웨어(오피스 등)를 스캔할 수 있도록 강제
+        var sysnativePS = shell.ExpandEnvironmentStrings("%windir%\\sysnative\\WindowsPowerShell\\v1.0\\powershell.exe");
+        var psExe = fso.FileExists(sysnativePS) ? sysnativePS : "powershell";
+
+        function updateStatus(text, color) {
+            var box = document.getElementById("statusBox");
+            box.innerText = text;
+            if(color) box.style.color = color;
+        }
+
+        function toggleButtons(disabled) {
+            document.getElementById("btnHw").disabled = disabled;
+            document.getElementById("btnSw").disabled = disabled;
+        }
+
+        function runHardwareCheck() {
+            toggleButtons(true);
+            updateStatus("⚙️ 시스템 하드웨어 구성 분석 중...", "#d97706");
+            
+            setTimeout(function() {
+                try {
+                    var psPath = tempDir + "\\ct_hw.ps1";
+                    var file = fso.CreateTextFile(psPath, true);
+                    
+                    var code = 
+                        "$OS = Get-CimInstance Win32_OperatingSystem\r\n" +
+                        "$CPU = Get-CimInstance Win32_Processor\r\n" +
+                        "$CS = Get-CimInstance Win32_ComputerSystem\r\n" +
+                        "$Board = Get-CimInstance Win32_BaseBoard\r\n" +
+                        "$Disks = Get-CimInstance Win32_DiskDrive\r\n" +
+                        "$DiskList = @()\r\n" +
+                        "foreach ($d in $Disks) { if ($d.Size -gt 0) { $gb = [Math]::Round($d.Size / 1000000000); $DiskList += ($d.Model + ' (' + $gb + 'GB)') } }\r\n" +
+                        "$StorageStr = $DiskList -join ', '\r\n" +
+                        "$IP = (Get-NetRoute -DestinationPrefix '0.0.0.0/0' 2>$null | Get-NetIPInterface | Get-NetIPAddress -AddressFamily IPv4 | Select-Object -First 1).IPAddress\r\n" +
+                        "if (-not $IP) { $IP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127*' } | Select-Object -First 1).IPAddress }\r\n" +
+                        "$GPU = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name\r\n" +
+                        "\r\n" +
+                        "$MemChips = Get-CimInstance Win32_PhysicalMemory\r\n" +
+                        "$TypeNum = ($MemChips | Select-Object -First 1).SMBIOSMemoryType\r\n" +
+                        "$Speed = ($MemChips | Select-Object -First 1).Speed\r\n" +
+                        "$DDR = 'DDR'\r\n" +
+                        "if ($TypeNum -eq 24) { $DDR = 'DDR3' }\r\n" +
+                        "elseif ($TypeNum -eq 26) { $DDR = 'DDR4' }\r\n" +
+                        "elseif ($TypeNum -eq 34) { $DDR = 'DDR5' }\r\n" +
+                        "else {\r\n" +
+                        "    if ($Speed -ge 4800) { $DDR = 'DDR5' }\r\n" +
+                        "    elif ($Speed -ge 2133 -and $Speed -lt 4800) { $DDR = 'DDR4' }\r\n" +
+                        "    elif ($Speed -ge 800 -and $Speed -lt 2133) { $DDR = 'DDR3' }\r\n" +
+                        "    else { $DDR = 'DDR2' }\r\n" +
+                        "}\r\n" +
+                        "\r\n" +
+                        "$RAM_Total = [Math]::Round($CS.TotalPhysicalMemory / 1GB)\r\n" +
+                        "\r\n" +
+                        "$Obj = [PSCustomObject]@{\r\n" +
+                        "    '컴퓨터이름' = $env:COMPUTERNAME\r\n" +
+                        "    'IP주소' = $IP\r\n" +
+                        "    '운영체제' = ($OS.Caption + ' (' + $OS.OSArchitecture + ')')\r\n" +
+                        "    '프로세서' = $CPU.Name\r\n" +
+                        "    '메인보드' = ($Board.Manufacturer + ' ' + $Board.Product)\r\n" +
+                        "    '메모리' = ($DDR + ' ' + $RAM_Total.ToString() + 'GB')\r\n" + 
+                        "    '그래픽카드' = $GPU\r\n" +
+                        "    '저장장치' = $StorageStr\r\n" +
+                        "}\r\n" +
+                        "$Obj | Export-Csv -Path ('.\\PC_SPEC_' + $env:COMPUTERNAME + '.csv') -NoTypeInformation -Encoding Default\r\n";
+                        
+                    file.Write(code);
+                    file.Close();
+                    
+                    shell.Run(psExe + " -NoProfile -ExecutionPolicy Bypass -File \"" + psPath + "\"", 0, true);
+                    if (fso.FileExists(psPath)) fso.DeleteFile(psPath);
+
+                    updateStatus("✅ 하드웨어 사양 조사 완료!", "#059669");
+                    alert("하드웨어 자산 대장 생성 완료!\n파일명: PC_SPEC_" + compName + ".csv");
+                } catch(e) {
+                    updateStatus("❌ 조사 중 에러가 발생했습니다.", "#dc2626");
+                    alert("오류 내용: " + e.message);
+                } finally {
+                    toggleButtons(false);
+                }
+            }, 100);
+        }
+
+        function runSoftwareCheck() {
+            toggleButtons(true);
+            updateStatus("💿 설치 프로그램 스캔 및 중복 제거 중...", "#d97706");
+            
+            setTimeout(function() {
+                try {
+                    var psPath = tempDir + "\\ct_sw.ps1";
+                    var file = fso.CreateTextFile(psPath, true);
+                    
+                    var code = 
+                        "$R64 = 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'\r\n" +
+                        "$R32 = 'HKLM:\\Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'\r\n" +
+                        "$RUser = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'\r\n" +
+                        "$RC2R = 'HKLM:\\SOFTWARE\\Microsoft\\Office\\ClickToRun\\REGISTRY\\MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*'\r\n" +
+                        "$Apps = Get-ItemProperty -Path $R64, $R32, $RUser, $RC2R 2>$null | Where-Object { $_.DisplayName -and ( ($_.SystemComponent -ne 1 -and $_.ParentKeyName -eq $null) -or ($_.DisplayName -match '(?i)Office|365|Hancom|한컴') ) }\r\n" +
+                        "$Clean = $Apps | Where-Object {\r\n" +
+                        "    $_.DisplayName -notmatch 'Security Update|Update for|KB[0-9]{6}|KB [0-9]{6}' -and\r\n" +
+                        "    $_.DisplayName -notmatch 'Language Pack|Language Experience Pack' -and\r\n" +
+                        "    $_.DisplayName -notmatch 'Visual C\\+\\+' -and\r\n" +
+                        "    $_.DisplayName -notmatch 'Microsoft .NET|Targeting Pack' -and\r\n" +
+                        "    $_.DisplayName -notmatch 'AhnLab Safe Transaction|IPinside|AnySign|TouchEn|INCAInternet|VoiceEye'\r\n" +
+                        "} | Sort-Object DisplayName -Unique\r\n" + 
+                        "$Rows = @(foreach ($a in $Clean) {\r\n" +
+                        "    [PSCustomObject]@{\r\n" +
+                        "        '컴퓨터이름' = $env:COMPUTERNAME\r\n" +
+                        "        '프로그램명' = $a.DisplayName\r\n" +
+                        "        '프로그램버전' = $a.DisplayVersion\r\n" +
+                        "        '공급자' = $a.Publisher\r\n" +
+                        "    }\r\n" +
+                        "})\r\n" +
+                        "\r\n" +
+                        "# 명시적 C2R 설정 및 실행 파일 절대 경로 폴백(Fallback)\r\n" +
+                        "$WordPath = (Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\Winword.exe' -ErrorAction SilentlyContinue).'(default)'\r\n" +
+                        "if (-not $WordPath -or -not (Test-Path $WordPath)) { $WordPath = \"$env:ProgramFiles\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" }\r\n" +
+                        "if (Test-Path $WordPath) {\r\n" +
+                        "    if (-not ($Rows | Where-Object { $_.'프로그램명' -match '(?i)Office|365' })) {\r\n" +
+                        "        $Ver = (Get-Item $WordPath).VersionInfo.ProductVersion\r\n" +
+                        "        $Rows += [PSCustomObject]@{ '컴퓨터이름' = $env:COMPUTERNAME; '프로그램명' = 'Microsoft Office LTSC / 365 (Absolute)'; '프로그램버전' = $Ver; '공급자' = 'Microsoft Corporation' }\r\n" +
+                        "    }\r\n" +
+                        "}\r\n" +
+                        "\r\n" +
+                        "if ($Rows.Count -gt 0) {\r\n" +
+                        "    $Rows | Export-Csv -Path ('.\\SW_LIST_' + $env:COMPUTERNAME + '.csv') -NoTypeInformation -Encoding Default\r\n" +
+                        "} else {\r\n" +
+                        "    $Empty = [PSCustomObject]@{\r\n" +
+                        "        '컴퓨터이름' = $env:COMPUTERNAME\r\n" +
+                        "        '프로그램명' = '설치된 프로그램 없음'\r\n" +
+                        "        '프로그램버전' = ''\r\n" +
+                        "        '공급자' = ''\r\n" +
+                        "    }\r\n" +
+                        "    $Empty | Export-Csv -Path ('.\\SW_LIST_' + $env:COMPUTERNAME + '.csv') -NoTypeInformation -Encoding Default\r\n" +
+                        "}\r\n";
+                        
+                    file.Write(code);
+                    file.Close();
+                    
+                    shell.Run(psExe + " -NoProfile -ExecutionPolicy Bypass -File \"" + psPath + "\"", 0, true);
+                    if (fso.FileExists(psPath)) fso.DeleteFile(psPath);
+
+                    updateStatus("✅ 소프트웨어 정밀 전수 조사 완료!", "#059669");
+                    alert("소프트웨어 자산 대장 생성 완료!\n파일명: SW_LIST_" + compName + ".csv");
+                } catch(e) {
+                    updateStatus("❌ 조사 중 에러가 발생했습니다.", "#dc2626");
+                    alert("오류 내용: " + e.message);
+                } finally {
+                    toggleButtons(false);
+                }
+            }, 100);
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>💻 컴투인 PC 자산 조사 시스템</h1>
+        <p>사내 PC 자산 실사 및 관리를 위한 전용 자동화 프로그램입니다.<br>항목을 선택하시면 엑셀(CSV) 형태의 사양 대장이 즉시 생성됩니다.</p>
+        
+        <div class="status-box" id="statusBox">대기 중... (항목을 선택하세요)</div>
+        
+        <div class="btn-group">
+            <button id="btnHw" class="btn-hw" onclick="runHardwareCheck()">⚙️ 하드웨어 조사</button>
+            <button id="btnSw" class="btn-sw" onclick="runSoftwareCheck()">💿 소프트웨어 조사</button>
+        </div>
+    </div>
+</body>
+</html>

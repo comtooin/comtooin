@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem, ListItemText,
-  IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid
+  IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid, Tooltip
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -9,12 +9,15 @@ import {
   Business as BusinessIcon,
   Store as StoreIcon,
   FiberNew as NewIcon,
-  VerifiedUser as ActiveIcon
+  VerifiedUser as ActiveIcon,
+  Computer as ComputerIcon
 } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 const AdminCustomerPage: React.FC = () => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<{ id: string; name: string; created_at?: string }[]>([]);
   const [newCustomerName, setNewCustomerName] = useState('');
   const [loading, setLoading] = useState(true);
@@ -200,15 +203,41 @@ const AdminCustomerPage: React.FC = () => {
                     <React.Fragment key={customer.id}>
                       <ListItem
                         secondaryAction={
-                          <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
-                            <DeleteIcon color="action" fontSize="small" />
-                          </IconButton>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Button 
+                              variant="contained"
+                              size="small"
+                              startIcon={<ComputerIcon fontSize="small" />}
+                              onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
+                              sx={{ fontWeight: 'bold', px: 2, py: 0.5, boxShadow: 0 }}
+                            >
+                              자산 관리
+                            </Button>
+                            <Tooltip title="삭제">
+                              <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
+                                <DeleteIcon color="action" fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
                         }
-                        sx={{ transition: 'bgcolor 0.2s', '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}
+                        sx={{ transition: 'bgcolor 0.2s', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}
                       >
                         <ListItemText 
-                          primary={customer.name} 
-                          primaryTypographyProps={{ fontWeight: 'bold', color: 'text.primary' }}
+                          primary={
+                            <Typography 
+                              component="span" 
+                              variant="body1"
+                              sx={{ 
+                                fontWeight: 'bold', 
+                                color: 'primary.main', 
+                                cursor: 'pointer', 
+                                '&:hover': { textDecoration: 'underline' } 
+                              }}
+                              onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
+                            >
+                              {customer.name}
+                            </Typography>
+                          } 
                         />
                       </ListItem>
                       {index < customers.length - 1 && <Divider component="li" />}
