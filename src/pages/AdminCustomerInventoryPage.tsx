@@ -85,6 +85,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
   useEffect(() => {
     if (id) fetchInventoryData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchInventoryData = async () => {
