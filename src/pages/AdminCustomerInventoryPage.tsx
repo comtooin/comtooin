@@ -548,7 +548,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        <Stack direction={{ xs: 'row', sm: 'row' }} spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mt: { xs: 2, sm: 0 } }}>
           <Button 
             size="small"
             variant="outlined" 
