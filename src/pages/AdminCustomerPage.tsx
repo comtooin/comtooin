@@ -152,8 +152,11 @@ const AdminCustomerPage: React.FC = () => {
         <Grid item xs={12} md={5}>
           <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddCustomer}>
-              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AddIcon fontSize="small" /> 새 거래처 등록
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                새로운 유지보수 대상 고객사를 시스템에 등록합니다. 등록 후 우측 목록에서 인프라 자산을 관리할 수 있습니다.
               </Typography>
               <Stack spacing={2.5}>
                 <TextField
@@ -193,7 +196,7 @@ const AdminCustomerPage: React.FC = () => {
             {loading ? (
               <Box sx={{ textAlign: 'center', py: 10 }}><CircularProgress /></Box>
             ) : (
-              <List sx={{ bgcolor: 'grey.50', borderRadius: 1, p: 1 }}>
+              <List sx={{ bgcolor: 'transparent', p: 1, maxHeight: 500, overflowY: 'auto' }}>
                 {customers.length === 0 ? (
                   <Typography color="text.secondary" align="center" sx={{ py: 10 }}>
                     등록된 거래처가 없습니다.
@@ -202,43 +205,56 @@ const AdminCustomerPage: React.FC = () => {
                   customers.map((customer, index) => (
                     <React.Fragment key={customer.id}>
                       <ListItem
-                        secondaryAction={
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Button 
-                              variant="contained"
-                              size="small"
-                              startIcon={<ComputerIcon fontSize="small" />}
-                              onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
-                              sx={{ fontWeight: 'bold', px: 2, py: 0.5, boxShadow: 0 }}
-                            >
-                              자산 관리
-                            </Button>
-                            <Tooltip title="삭제">
-                              <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
-                                <DeleteIcon color="action" fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
-                        }
-                        sx={{ transition: 'bgcolor 0.2s', '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' } }}
+                        sx={{ 
+                          mb: 1,
+                          bgcolor: '#ffffff',
+                          borderRadius: 2,
+                          border: '1px solid #e2e8f0',
+                          transition: 'all 0.2s ease-in-out', 
+                          '&:hover': { 
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                            borderColor: 'primary.light',
+                            transform: 'translateY(-2px)'
+                          },
+                          display: 'flex',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'flex-start', sm: 'center' },
+                          justifyContent: 'space-between',
+                          gap: { xs: 1, sm: 1.5 },
+                          py: 1.5, px: 2
+                        }}
                       >
-                        <ListItemText 
-                          primary={
-                            <Typography 
-                              component="span" 
-                              variant="body1"
-                              sx={{ 
-                                fontWeight: 'bold', 
-                                color: 'primary.main', 
-                                cursor: 'pointer', 
-                                '&:hover': { textDecoration: 'underline' } 
-                              }}
-                              onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
-                            >
-                              {customer.name}
-                            </Typography>
-                          } 
-                        />
+                        <Box sx={{ flex: 1, wordBreak: 'break-all' }}>
+                          <Typography 
+                            component="span" 
+                            variant="body1"
+                            sx={{ 
+                              fontWeight: 'bold', 
+                              color: 'primary.main', 
+                              cursor: 'pointer', 
+                              '&:hover': { textDecoration: 'underline' } 
+                            }}
+                            onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
+                          >
+                            {customer.name}
+                          </Typography>
+                        </Box>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'flex-end', sm: 'flex-end' } }}>
+                          <Button 
+                            variant="contained"
+                            size="small"
+                            startIcon={<ComputerIcon fontSize="small" />}
+                            onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
+                            sx={{ fontWeight: 'bold', px: 2, py: 0.5, boxShadow: 0 }}
+                          >
+                            자산 관리
+                          </Button>
+                          <Tooltip title="삭제">
+                            <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
+                              <DeleteIcon color="action" fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </ListItem>
                       {index < customers.length - 1 && <Divider component="li" />}
                     </React.Fragment>

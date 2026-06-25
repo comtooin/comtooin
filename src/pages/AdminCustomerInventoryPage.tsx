@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, Stack, Button, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, TablePagination, Tooltip
+  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, TablePagination, Tooltip, TableSortLabel
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -78,6 +78,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const [swPage, setSwPage] = useState(0);
   const [swRowsPerPage, setSwRowsPerPage] = useState(15);
   
+  // 정렬 상태
+  const [hwSortConfig, setHwSortConfig] = useState<{ key: keyof Hardware, direction: 'asc' | 'desc' } | null>(null);
+  const [swSortConfig, setSwSortConfig] = useState<{ key: 'computer_name' | 'count', direction: 'asc' | 'desc' } | null>(null);
+
+  // 컨테이너 참조 (스크롤 초기화)
+  const hwTableRef = useRef<HTMLDivElement>(null);
+  const swTableRef = useRef<HTMLDivElement>(null);
+
   // 소프트웨어 상세보기 팝업 상태
   const [swDetailOpen, setSwDetailOpen] = useState(false);
   const [selectedComputer, setSelectedComputer] = useState<string>('');
@@ -105,8 +113,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       const { data: hwData, error: hwError } = await supabase
         .from('customer_hardware')
         .select('*')
-        .eq('customer_id', id)
-        .order('computer_name', { ascending: true });
+        .eq('customer_id', id);
       if (hwError) throw hwError;
       setHardware(hwData || []);
 
@@ -114,8 +121,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       const { data: swData, error: swError } = await supabase
         .from('customer_software')
         .select('*')
-        .eq('customer_id', id)
-        .order('computer_name', { ascending: true });
+        .eq('customer_id', id);
       if (swError) throw swError;
       setSoftware(swData || []);
 
@@ -462,13 +468,62 @@ const AdminCustomerInventoryPage: React.FC = () => {
       computer_name: name,
       count: groups[name].length,
       softwareList: groups[name]
-    })).sort((a, b) => a.computer_name.localeCompare(b.computer_name));
+    })).sort((a, b) => a.computer_name.localeCompare(b.computer_name, undefined, { numeric: true, sensitivity: 'base' }));
   }, [software]);
 
   // 팝업 내 렌더링될 현재 선택 PC의 소프트웨어 목록
   const currentComputerSoftware = useMemo(() => {
     return software.filter(s => s.computer_name === selectedComputer);
   }, [software, selectedComputer]);
+
+  const sortedHardware = useMemo(() => {
+    let sortable = [...hardware];
+    if (hwSortConfig !== null) {
+      sortable.sort((a, b) => {
+        const aVal = String(a[hwSortConfig.key] || '');
+        const bVal = String(b[hwSortConfig.key] || '');
+        const result = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+        return hwSortConfig.direction === 'asc' ? result : -result;
+      });
+    } else {
+      sortable.sort((a, b) => 
+        String(a.computer_name || '').localeCompare(String(b.computer_name || ''), undefined, { numeric: true, sensitivity: 'base' })
+      );
+    }
+    return sortable;
+  }, [hardware, hwSortConfig]);
+
+  const sortedGroupedSoftware = useMemo(() => {
+    let sortable = [...groupedSoftware];
+    if (swSortConfig !== null) {
+      sortable.sort((a, b) => {
+        if (swSortConfig.key === 'count') {
+          return swSortConfig.direction === 'asc' ? a.count - b.count : b.count - a.count;
+        }
+        const aVal = String(a.computer_name || '');
+        const bVal = String(b.computer_name || '');
+        const result = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
+        return swSortConfig.direction === 'asc' ? result : -result;
+      });
+    }
+    return sortable;
+  }, [groupedSoftware, swSortConfig]);
+
+  const handleHwSort = (key: keyof Hardware) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (hwSortConfig && hwSortConfig.key === key && hwSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setHwSortConfig({ key, direction });
+  };
+
+  const handleSwSort = (key: 'computer_name' | 'count') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (swSortConfig && swSortConfig.key === key && swSortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSwSortConfig({ key, direction });
+  };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
 
@@ -493,20 +548,20 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ width: { xs: '100%', md: 'auto' } }}>
+        <Stack direction={{ xs: 'row', sm: 'row' }} spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
           <Button 
-            fullWidth
+            size="small"
             variant="outlined" 
             color="secondary" 
             startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
             onClick={handleGenerateAiReport}
             disabled={isGenerating}
-            sx={{ fontWeight: 'bold', color: '#673ab7', borderColor: '#673ab7', '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' } }}
+            sx={{ fontWeight: 'bold', '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
           >
             AI 자산 분석 리포트
           </Button>
           <Button 
-            fullWidth
+            size="small"
             variant="contained" 
             color="primary" 
             startIcon={<FileDownloadIcon />} 
@@ -525,7 +580,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       {tabValue === 0 ? (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
                 등록된 PC 대수
               </Typography>
@@ -535,7 +590,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>메모리(RAM) 용량 분포</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -548,7 +603,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>CPU 등급별 분포</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cpuStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -565,7 +620,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       ) : (
         <Grid container spacing={3} sx={{ mb: 4 }}>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', bgcolor: '#f8fafc' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
                 설치된 프로그램 총 건수
               </Typography>
@@ -575,7 +630,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>주요 상용 소프트웨어 설치 현황</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -588,7 +643,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>전체 Top 5 소프트웨어</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topSoftware} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -604,7 +659,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
         </Grid>
       )}
 
-      <Paper variant="outlined" sx={{ borderRadius: 1 }}>
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 0, sm: 2 } }}>
           <Tabs value={tabValue} onChange={(e, v) => setTabValue(v)} textColor="primary" indicatorColor="primary" variant="scrollable" scrollButtons="auto" allowScrollButtonsMobile>
             <Tab label={`하드웨어 (${hardware.length})`} sx={{ fontWeight: 'bold' }} />
@@ -628,23 +683,35 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   엑셀 다운로드
                 </Button>
               </Stack>
-              <TableContainer sx={{ maxHeight: 500 }}>
+              <TableContainer sx={{ maxHeight: 500 }} ref={hwTableRef}>
                 <Table stickyHeader size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>컴퓨터이름</TableCell>
-                      <TableCell>IP주소</TableCell>
-                      <TableCell>운영체제</TableCell>
-                      <TableCell>프로세서</TableCell>
-                      <TableCell>메인보드</TableCell>
-                      <TableCell>메모리</TableCell>
-                      <TableCell>그래픽카드</TableCell>
-                      <TableCell>저장장치</TableCell>
-                      <TableCell align="center">관리</TableCell>
+                      {[
+                        { id: 'computer_name', label: '컴퓨터이름' },
+                        { id: 'ip_address', label: 'IP주소' },
+                        { id: 'os', label: '운영체제' },
+                        { id: 'processor', label: '프로세서' },
+                        { id: 'motherboard', label: '메인보드' },
+                        { id: 'memory', label: '메모리' },
+                        { id: 'graphic_card', label: '그래픽카드' },
+                        { id: 'storage', label: '저장장치' }
+                      ].map((col) => (
+                        <TableCell key={col.id} sortDirection={hwSortConfig?.key === col.id ? hwSortConfig.direction : false} sx={{ whiteSpace: 'nowrap' }}>
+                          <TableSortLabel
+                            active={hwSortConfig?.key === col.id}
+                            direction={hwSortConfig?.key === col.id ? hwSortConfig.direction : 'asc'}
+                            onClick={() => handleHwSort(col.id as keyof Hardware)}
+                          >
+                            {col.label}
+                          </TableSortLabel>
+                        </TableCell>
+                      ))}
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {hardware.length > 0 ? hardware.slice(hwPage * hwRowsPerPage, hwPage * hwRowsPerPage + hwRowsPerPage).map((row) => (
+                    {sortedHardware.length > 0 ? sortedHardware.slice(hwPage * hwRowsPerPage, hwPage * hwRowsPerPage + hwRowsPerPage).map((row) => (
                       <TableRow key={row.id} hover>
                         <TableCell sx={{ fontWeight: 'bold' }}>{row.computer_name}</TableCell>
                         <TableCell>{row.ip_address}</TableCell>
@@ -672,12 +739,22 @@ const AdminCustomerInventoryPage: React.FC = () => {
               <TablePagination
                 rowsPerPageOptions={[10, 25, 50]}
                 component="div"
-                count={hardware.length}
+                count={sortedHardware.length}
                 rowsPerPage={hwRowsPerPage}
                 page={hwPage}
-                onPageChange={(e, newPage) => setHwPage(newPage)}
+                showFirstButton
+                showLastButton
+                onPageChange={(e, newPage) => {
+                  setHwPage(newPage);
+                  if (hwTableRef.current) hwTableRef.current.scrollTop = 0;
+                }}
                 onRowsPerPageChange={(e) => { setHwRowsPerPage(parseInt(e.target.value, 10)); setHwPage(0); }}
                 labelRowsPerPage="페이지당 줄수:"
+                sx={{
+                  '.MuiTablePagination-toolbar': { px: { xs: 1, sm: 2 } },
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-select': { display: { xs: 'none', sm: 'block' } },
+                  '.MuiTablePagination-displayedRows': { m: { xs: 'auto', sm: 0 } }
+                }}
               />
             </Box>
           )}
@@ -697,17 +774,33 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   엑셀 전체 다운로드
                 </Button>
               </Stack>
-              <TableContainer sx={{ maxHeight: 500 }}>
+              <TableContainer sx={{ maxHeight: 500 }} ref={swTableRef}>
                 <Table stickyHeader size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ width: '40%' }}>컴퓨터 이름</TableCell>
-                      <TableCell sx={{ width: '30%' }}>설치된 프로그램 개수</TableCell>
-                      <TableCell align="right" sx={{ width: '30%' }}>관리</TableCell>
+                      <TableCell sx={{ width: '40%', whiteSpace: 'nowrap' }} sortDirection={swSortConfig?.key === 'computer_name' ? swSortConfig.direction : false}>
+                        <TableSortLabel
+                          active={swSortConfig?.key === 'computer_name'}
+                          direction={swSortConfig?.key === 'computer_name' ? swSortConfig.direction : 'asc'}
+                          onClick={() => handleSwSort('computer_name')}
+                        >
+                          컴퓨터 이름
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell sx={{ width: '30%', whiteSpace: 'nowrap' }} sortDirection={swSortConfig?.key === 'count' ? swSortConfig.direction : false}>
+                        <TableSortLabel
+                          active={swSortConfig?.key === 'count'}
+                          direction={swSortConfig?.key === 'count' ? swSortConfig.direction : 'asc'}
+                          onClick={() => handleSwSort('count')}
+                        >
+                          설치된 프로그램 개수
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell align="right" sx={{ width: '30%', whiteSpace: 'nowrap' }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {groupedSoftware.length > 0 ? groupedSoftware.slice(swPage * swRowsPerPage, swPage * swRowsPerPage + swRowsPerPage).map((group) => (
+                    {sortedGroupedSoftware.length > 0 ? sortedGroupedSoftware.slice(swPage * swRowsPerPage, swPage * swRowsPerPage + swRowsPerPage).map((group) => (
                       <TableRow key={group.computer_name} hover>
                         <TableCell sx={{ fontWeight: 'bold' }}>{group.computer_name}</TableCell>
                         <TableCell>{group.count} 개</TableCell>
@@ -749,12 +842,22 @@ const AdminCustomerInventoryPage: React.FC = () => {
               <TablePagination
                 rowsPerPageOptions={[15, 30, 50]}
                 component="div"
-                count={groupedSoftware.length}
+                count={sortedGroupedSoftware.length}
                 rowsPerPage={swRowsPerPage}
                 page={swPage}
-                onPageChange={(e, newPage) => setSwPage(newPage)}
+                showFirstButton
+                showLastButton
+                onPageChange={(e, newPage) => {
+                  setSwPage(newPage);
+                  if (swTableRef.current) swTableRef.current.scrollTop = 0;
+                }}
                 onRowsPerPageChange={(e) => { setSwRowsPerPage(parseInt(e.target.value, 10)); setSwPage(0); }}
                 labelRowsPerPage="페이지당 줄수:"
+                sx={{
+                  '.MuiTablePagination-toolbar': { px: { xs: 1, sm: 2 } },
+                  '.MuiTablePagination-selectLabel, .MuiTablePagination-select': { display: { xs: 'none', sm: 'block' } },
+                  '.MuiTablePagination-displayedRows': { m: { xs: 'auto', sm: 0 } }
+                }}
               />
             </Box>
           )}
@@ -802,10 +905,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
             <Table stickyHeader size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>프로그램명</TableCell>
-                  <TableCell>버전</TableCell>
-                  <TableCell>공급자</TableCell>
-                  <TableCell align="center" sx={{ width: 100 }}>관리</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>프로그램명</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>버전</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>공급자</TableCell>
+                  <TableCell align="center" sx={{ width: 100, whiteSpace: 'nowrap' }}>관리</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -835,6 +938,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
             count={currentComputerSoftware.length}
             rowsPerPage={swDetailRowsPerPage}
             page={swDetailPage}
+            showFirstButton
+            showLastButton
             onPageChange={(e, newPage) => setSwDetailPage(newPage)}
             onRowsPerPageChange={(e) => { setSwDetailRowsPerPage(parseInt(e.target.value, 10)); setSwDetailPage(0); }}
             labelRowsPerPage="페이지당 줄수:"
