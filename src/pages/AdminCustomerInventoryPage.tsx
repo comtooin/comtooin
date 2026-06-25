@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, Stack, Button, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, TablePagination, Tooltip, TableSortLabel
+  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -73,10 +73,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const [formData, setFormData] = useState<any>({});
 
   // 페이징 상태
-  const [hwPage, setHwPage] = useState(0);
-  const [hwRowsPerPage, setHwRowsPerPage] = useState(10);
-  const [swPage, setSwPage] = useState(0);
-  const [swRowsPerPage, setSwRowsPerPage] = useState(15);
+  const [hwPage, setHwPage] = useState(1);
+  const hwRowsPerPage = 15;
+  const [swPage, setSwPage] = useState(1);
+  const swRowsPerPage = 15;
   
   // 정렬 상태
   const [hwSortConfig, setHwSortConfig] = useState<{ key: keyof Hardware, direction: 'asc' | 'desc' } | null>(null);
@@ -89,8 +89,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
   // 소프트웨어 상세보기 팝업 상태
   const [swDetailOpen, setSwDetailOpen] = useState(false);
   const [selectedComputer, setSelectedComputer] = useState<string>('');
-  const [swDetailPage, setSwDetailPage] = useState(0);
-  const [swDetailRowsPerPage, setSwDetailRowsPerPage] = useState(10);
+  const [swDetailPage, setSwDetailPage] = useState(1);
+  const swDetailRowsPerPage = 15;
 
   useEffect(() => {
     if (id) fetchInventoryData();
@@ -711,7 +711,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedHardware.length > 0 ? sortedHardware.slice(hwPage * hwRowsPerPage, hwPage * hwRowsPerPage + hwRowsPerPage).map((row) => (
+                    {sortedHardware.length > 0 ? sortedHardware.slice((hwPage - 1) * hwRowsPerPage, (hwPage - 1) * hwRowsPerPage + hwRowsPerPage).map((row) => (
                       <TableRow key={row.id} hover>
                         <TableCell sx={{ fontWeight: 'bold' }}>{row.computer_name}</TableCell>
                         <TableCell>{row.ip_address}</TableCell>
@@ -736,26 +736,20 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              <TablePagination
-                rowsPerPageOptions={[10, 25, 50]}
-                component="div"
-                count={sortedHardware.length}
-                rowsPerPage={hwRowsPerPage}
-                page={hwPage}
-                showFirstButton
-                showLastButton
-                onPageChange={(e, newPage) => {
-                  setHwPage(newPage);
-                  if (hwTableRef.current) hwTableRef.current.scrollTop = 0;
-                }}
-                onRowsPerPageChange={(e) => { setHwRowsPerPage(parseInt(e.target.value, 10)); setHwPage(0); }}
-                labelRowsPerPage="페이지당 줄수:"
-                sx={{
-                  '.MuiTablePagination-toolbar': { px: { xs: 1, sm: 2 } },
-                  '.MuiTablePagination-selectLabel, .MuiTablePagination-select': { display: { xs: 'none', sm: 'block' } },
-                  '.MuiTablePagination-displayedRows': { m: { xs: 'auto', sm: 0 } }
-                }}
-              />
+                {sortedHardware.length > hwRowsPerPage && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                  <Pagination 
+                    count={Math.ceil(sortedHardware.length / hwRowsPerPage)} 
+                    page={hwPage} 
+                    onChange={(e, newPage) => {
+                      setHwPage(newPage);
+                      if (hwTableRef.current) hwTableRef.current.scrollTop = 0;
+                    }} 
+                    color="primary" 
+                    size="medium"
+                  />
+                </Box>
+              )}
             </Box>
           )}
 
@@ -800,7 +794,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedGroupedSoftware.length > 0 ? sortedGroupedSoftware.slice(swPage * swRowsPerPage, swPage * swRowsPerPage + swRowsPerPage).map((group) => (
+                    {sortedGroupedSoftware.length > 0 ? sortedGroupedSoftware.slice((swPage - 1) * swRowsPerPage, (swPage - 1) * swRowsPerPage + swRowsPerPage).map((group) => (
                       <TableRow key={group.computer_name} hover>
                         <TableCell sx={{ fontWeight: 'bold' }}>{group.computer_name}</TableCell>
                         <TableCell>{group.count} 개</TableCell>
@@ -839,26 +833,20 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-              <TablePagination
-                rowsPerPageOptions={[15, 30, 50]}
-                component="div"
-                count={sortedGroupedSoftware.length}
-                rowsPerPage={swRowsPerPage}
-                page={swPage}
-                showFirstButton
-                showLastButton
-                onPageChange={(e, newPage) => {
-                  setSwPage(newPage);
-                  if (swTableRef.current) swTableRef.current.scrollTop = 0;
-                }}
-                onRowsPerPageChange={(e) => { setSwRowsPerPage(parseInt(e.target.value, 10)); setSwPage(0); }}
-                labelRowsPerPage="페이지당 줄수:"
-                sx={{
-                  '.MuiTablePagination-toolbar': { px: { xs: 1, sm: 2 } },
-                  '.MuiTablePagination-selectLabel, .MuiTablePagination-select': { display: { xs: 'none', sm: 'block' } },
-                  '.MuiTablePagination-displayedRows': { m: { xs: 'auto', sm: 0 } }
-                }}
-              />
+                {sortedGroupedSoftware.length > swRowsPerPage && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+                  <Pagination 
+                    count={Math.ceil(sortedGroupedSoftware.length / swRowsPerPage)} 
+                    page={swPage} 
+                    onChange={(e, newPage) => {
+                      setSwPage(newPage);
+                      if (swTableRef.current) swTableRef.current.scrollTop = 0;
+                    }} 
+                    color="primary" 
+                    size="medium"
+                  />
+                </Box>
+              )}
             </Box>
           )}
         </Box>
@@ -912,7 +900,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {currentComputerSoftware.length > 0 ? currentComputerSoftware.slice(swDetailPage * swDetailRowsPerPage, swDetailPage * swDetailRowsPerPage + swDetailRowsPerPage).map((row) => (
+                {currentComputerSoftware.length > 0 ? currentComputerSoftware.slice((swDetailPage - 1) * swDetailRowsPerPage, (swDetailPage - 1) * swDetailRowsPerPage + swDetailRowsPerPage).map((row) => (
                   <TableRow key={row.id} hover>
                     <TableCell>{row.program_name}</TableCell>
                     <TableCell>{row.program_version}</TableCell>
@@ -932,18 +920,17 @@ const AdminCustomerInventoryPage: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
-          <TablePagination
-            rowsPerPageOptions={[10, 25, 50]}
-            component="div"
-            count={currentComputerSoftware.length}
-            rowsPerPage={swDetailRowsPerPage}
-            page={swDetailPage}
-            showFirstButton
-            showLastButton
-            onPageChange={(e, newPage) => setSwDetailPage(newPage)}
-            onRowsPerPageChange={(e) => { setSwDetailRowsPerPage(parseInt(e.target.value, 10)); setSwDetailPage(0); }}
-            labelRowsPerPage="페이지당 줄수:"
-          />
+          {currentComputerSoftware.length > swDetailRowsPerPage && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <Pagination 
+              count={Math.ceil(currentComputerSoftware.length / swDetailRowsPerPage)} 
+              page={swDetailPage} 
+              onChange={(e, newPage) => setSwDetailPage(newPage)} 
+              color="primary" 
+              size="medium"
+            />
+          </Box>
+        )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setSwDetailOpen(false)} variant="contained" color="inherit">닫기</Button>

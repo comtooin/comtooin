@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -102,6 +102,17 @@ const AdminReportPage: React.FC = () => {
   // 페이지네이션 상태
   const [page, setPage] = useState(1);
 
+  // 정렬 상태
+  const [sortConfig, setSortConfig] = useState<{ key: keyof IRequest, direction: 'asc' | 'desc' } | null>(null);
+
+  const handleSort = (key: keyof IRequest) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
   // AI 리포트 관련 상태
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiReportContent, setAiReportContent] = useState('');
@@ -201,7 +212,25 @@ const AdminReportPage: React.FC = () => {
     setPage(value);
   };
 
-  const paginatedRequests = filteredRequests.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+  const sortedRequests = React.useMemo(() => {
+    let sortableItems = [...filteredRequests];
+    if (sortConfig !== null) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key] || '';
+        const bValue = b[sortConfig.key] || '';
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredRequests, sortConfig]);
+
+  const paginatedRequests = sortedRequests.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
   const handleExportExcel = async () => {
     try {
@@ -733,14 +762,34 @@ const AdminReportPage: React.FC = () => {
                         <Table stickyHeader size="small" sx={{ tableLayout: 'auto', minWidth: 850 }}>
                           <TableHead sx={{ bgcolor: 'grey.50' }}>
                             <TableRow>
-                              <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '130px' }}>업무일자</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '120px' }}>거래처명</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>요청자</TableCell>
-                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }}>작성자</TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 1, width: '130px' }} sortDirection={sortConfig?.key === 'created_at' ? sortConfig.direction : false}>
+                                <TableSortLabel active={sortConfig?.key === 'created_at'} direction={sortConfig?.key === 'created_at' ? sortConfig.direction : 'asc'} onClick={() => handleSort('created_at')}>
+                                  업무일자
+                                </TableSortLabel>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '120px' }} sortDirection={sortConfig?.key === 'customer_name' ? sortConfig.direction : false}>
+                                <TableSortLabel active={sortConfig?.key === 'customer_name'} direction={sortConfig?.key === 'customer_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('customer_name')}>
+                                  거래처명
+                                </TableSortLabel>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }} sortDirection={sortConfig?.key === 'requester_name' ? sortConfig.direction : false}>
+                                <TableSortLabel active={sortConfig?.key === 'requester_name'} direction={sortConfig?.key === 'requester_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('requester_name')}>
+                                  요청자
+                                </TableSortLabel>
+                              </TableCell>
+                              <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1, width: '90px' }} sortDirection={sortConfig?.key === 'user_name' ? sortConfig.direction : false}>
+                                <TableSortLabel active={sortConfig?.key === 'user_name'} direction={sortConfig?.key === 'user_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('user_name')}>
+                                  작성자
+                                </TableSortLabel>
+                              </TableCell>
                               {!isMobile && (
                                 <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
                               )}
-                              <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }}>상태</TableCell>
+                              <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 1, width: '85px' }} sortDirection={sortConfig?.key === 'status' ? sortConfig.direction : false}>
+                                <TableSortLabel active={sortConfig?.key === 'status'} direction={sortConfig?.key === 'status' ? sortConfig.direction : 'asc'} onClick={() => handleSort('status')}>
+                                  상태
+                                </TableSortLabel>
+                              </TableCell>
                             </TableRow>
                           </TableHead>
                           <TableBody>
