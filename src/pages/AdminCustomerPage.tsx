@@ -256,7 +256,6 @@ const AdminCustomerPage: React.FC = () => {
                           </Tooltip>
                         </Stack>
                       </ListItem>
-                      {index < customers.length - 1 && <Divider component="li" />}
                     </React.Fragment>
                   ))
                 )}
