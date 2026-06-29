@@ -217,18 +217,20 @@ const AdminSchedulePage: React.FC = () => {
 
     recognition.onresult = (e: any) => {
       resetSilenceTimeout();
-      let newTranscript = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      let finalTranscript = '';
+      for (let i = 0; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
-          newTranscript += e.results[i][0].transcript + ' ';
+          finalTranscript += e.results[i][0].transcript + ' ';
         }
       }
-      if (newTranscript) {
-        setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + newTranscript }));
+      if (finalTranscript) {
+        const newText = recognition.initialContent + (recognition.initialContent && finalTranscript ? ' ' : '') + finalTranscript;
+        setFormData(p => ({ ...p, content: newText }));
       }
     };
     
     setRecognitionInstance(recognition);
+    recognition.initialContent = formData.content;
     recognition.start();
   };
 
