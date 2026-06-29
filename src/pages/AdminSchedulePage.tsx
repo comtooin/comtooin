@@ -189,8 +189,9 @@ const AdminSchedulePage: React.FC = () => {
     const recognition = new SpeechRecognition();
     recognition.lang = 'ko-KR';
     recognition.continuous = true; 
-    recognition.interimResults = true; 
+    recognition.interimResults = false; 
     recognition.manualStop = false;
+    recognition.lastProcessedResultIndex = -1;
     
     const resetSilenceTimeout = () => {
       if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
@@ -218,23 +219,17 @@ const AdminSchedulePage: React.FC = () => {
     recognition.onresult = (e: any) => {
       resetSilenceTimeout();
       
-      let finalTranscript = '';
-      let interimTranscript = '';
-      
-      for (let i = 0; i < e.results.length; i++) {
-        if (e.results[i].isFinal) {
-          finalTranscript += e.results[i][0].transcript + ' ';
-        } else {
-          interimTranscript += e.results[i][0].transcript;
-        }
+      const latestIndex = e.results.length - 1;
+      if (latestIndex <= recognition.lastProcessedResultIndex) return; // 중복 방지
+      recognition.lastProcessedResultIndex = latestIndex;
+
+      const transcript = e.results[latestIndex][0].transcript;
+      if (transcript) {
+        setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + transcript }));
       }
-      
-      const newText = recognition.initialContent + (recognition.initialContent && (finalTranscript || interimTranscript) ? ' ' : '') + finalTranscript + interimTranscript;
-      setFormData(p => ({ ...p, content: newText }));
     };
     
     setRecognitionInstance(recognition);
-    recognition.initialContent = formData.content;
     recognition.start();
   };
 

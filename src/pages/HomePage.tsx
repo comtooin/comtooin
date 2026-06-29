@@ -122,12 +122,12 @@ const HomePage: React.FC = () => {
     const recognition = new SpeechRecognition();
     recognition.lang = 'ko-KR';
     recognition.continuous = true; 
-    recognition.interimResults = true; // 중간 결과를 켜서 타이머를 계속 리셋 (텍스트엔 최종값만 반영)
+    recognition.interimResults = false; 
     recognition.manualStop = false;
+    recognition.lastProcessedResultIndex = -1;
     
     const resetSilenceTimeout = () => {
       if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
-      // 10초 동안 아무 말(중간결과 포함)이 없으면 자동 종료 (운전 중 넉넉한 대기시간)
       recognition.silenceTimeout = setTimeout(() => {
         recognition.manualStop = true;
         recognition.stop();
@@ -150,26 +150,20 @@ const HomePage: React.FC = () => {
     };
 
     recognition.onresult = (event: any) => {
-      resetSilenceTimeout(); // 소리가 인식될 때마다 종료 타이머 연장
+      resetSilenceTimeout(); 
       
-      let finalTranscript = '';
-      let interimTranscript = '';
-      
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          finalTranscript += event.results[i][0].transcript + ' ';
-        } else {
-          interimTranscript += event.results[i][0].transcript;
-        }
+      const latestIndex = event.results.length - 1;
+      if (latestIndex <= recognition.lastProcessedResultIndex) return; // 중복 방지
+      recognition.lastProcessedResultIndex = latestIndex;
+
+      const transcript = event.results[latestIndex][0].transcript;
+      if (transcript) {
+        if (target === 'content') setContent(prev => prev ? `${prev} ${transcript}` : transcript);
+        else setProcessingContent(prev => prev ? `${prev} ${transcript}` : transcript);
       }
-      
-      const newText = recognition.initialContent + (recognition.initialContent && (finalTranscript || interimTranscript) ? ' ' : '') + finalTranscript + interimTranscript;
-      if (target === 'content') setContent(newText);
-      else setProcessingContent(newText);
     };
     
     setRecognitionInstance(recognition);
-    recognition.initialContent = target === 'content' ? content : processingContent;
     recognition.start();
   };
 
