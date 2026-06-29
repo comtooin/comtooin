@@ -540,7 +540,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             <Stack direction="row" alignItems="center" spacing={1.5} mb={0.5}>
               <ComputerIcon sx={{ fontSize: '2rem', color: 'primary.main' }} />
               <Typography variant="h5" component="h1" fontWeight="bold">
-                {customer?.name} 인프라 현황
+                {customer?.name} 자산 관리
               </Typography>
             </Stack>
             <Typography variant="body2" color="text.secondary">
