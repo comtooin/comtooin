@@ -153,18 +153,19 @@ const HomePage: React.FC = () => {
       resetSilenceTimeout(); // 소리가 인식될 때마다 종료 타이머 연장
       
       let finalTranscript = '';
-      // 처음부터 다시 모든 최종 문장을 합침 (안드로이드 크롬 중복 버그 방지)
+      let interimTranscript = '';
+      
       for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript + ' ';
+        } else {
+          interimTranscript += event.results[i][0].transcript;
         }
       }
       
-      if (finalTranscript) {
-        const newText = recognition.initialContent + (recognition.initialContent && finalTranscript ? ' ' : '') + finalTranscript;
-        if (target === 'content') setContent(newText);
-        else setProcessingContent(newText);
-      }
+      const newText = recognition.initialContent + (recognition.initialContent && (finalTranscript || interimTranscript) ? ' ' : '') + finalTranscript + interimTranscript;
+      if (target === 'content') setContent(newText);
+      else setProcessingContent(newText);
     };
     
     setRecognitionInstance(recognition);
