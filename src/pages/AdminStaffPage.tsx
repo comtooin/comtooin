@@ -258,36 +258,37 @@ const AdminStaffPage: React.FC = () => {
       <Divider sx={{ mb: 4 }} />
 
       {/* 상단 요약 위젯 섹션 */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 멤버', count: stats.total, icon: <PeopleIcon color="primary" fontSize="small" />, color: '#607d8b' },
-          { label: '최근 합류', count: stats.recent, icon: <PersonAddIcon color="success" fontSize="small" />, color: '#2e7d32' },
-          { label: '관리자', count: stats.admin, icon: <AssignmentIndIcon color="info" fontSize="small" />, color: '#0288d1' },
-        ].map((item, idx) => (
-          <Grid item xs={4} sm={4} key={idx}>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: { xs: 1.5, sm: 2 }, 
-                borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 1,
-                bgcolor: 'background.paper',
-                height: '100%'
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center">
-                {item.icon}
-                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' } }}>
-                  {item.label}
-                </Typography>
-              </Stack>
-              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
-                {item.count}<Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'text.secondary', fontWeight: 'bold' }}>명</Typography>
+          { label: '전체 멤버', shortLabel: '전체', count: stats.total, icon: <PeopleIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '최근 합류', shortLabel: '최근', count: stats.recent, icon: <PersonAddIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '관리자', shortLabel: '관리자', count: stats.admin, icon: <AssignmentIndIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
+        ].map((item, idx, arr) => (
+          <Box 
+            key={idx}
+            sx={{ 
+              flex: 1, 
+              p: { xs: 1.5, sm: 2 }, 
+              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+              {item.icon}
+              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {item.label}
               </Typography>
-            </Paper>
-          </Grid>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
+                {item.shortLabel}
+              </Typography>
+              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
+                {item.count}
+                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>명</Typography>
+              </Typography>
+            </Stack>
+          </Box>
         ))}
-      </Grid>
+      </Paper>
 
       <Grid container spacing={3}>
         {/* 왼쪽: 등록 폼 */}

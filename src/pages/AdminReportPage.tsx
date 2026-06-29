@@ -537,38 +537,36 @@ const AdminReportPage: React.FC = () => {
       )}
 
       {/* 요약 위젯 */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 기록', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b' },
-          { label: '처리 중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" color="warning" />, color: '#ed6c02' },
-          { label: '처리 완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" color="success" />, color: '#2e7d32' },
-        ].map((item, idx) => (
-          <Grid item xs={4} sm={4} key={idx}>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: { xs: 1.5, sm: 2 }, 
-                borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 1,
-                height: '100%'
-              }}
-            >
-              <Stack direction="row" spacing={1} alignItems="center">
-                {item.icon}
-                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                  {item.label}
-                </Typography>
-                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.65rem' }}>
-                  {item.label.replace(' 업무 기록', '').replace(' ', '')}
-                </Typography>
-              </Stack>
-              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
+          { label: '전체 기록', shortLabel: '전체', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '처리 중', shortLabel: '처리중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
+          { label: '처리 완료', shortLabel: '완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+        ].map((item, idx, arr) => (
+          <Box 
+            key={idx}
+            sx={{ 
+              flex: 1, 
+              p: { xs: 1.5, sm: 2 }, 
+              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+              {item.icon}
+              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {item.label}
+              </Typography>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
+                {item.shortLabel}
+              </Typography>
+              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
               </Typography>
-            </Paper>
-          </Grid>
+            </Stack>
+          </Box>
         ))}
-      </Grid>
+      </Paper>
 
       {/* 필터 및 액션 섹션 */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 1, bgcolor: 'background.paper' }}>

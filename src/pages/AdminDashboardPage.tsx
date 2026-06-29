@@ -342,45 +342,40 @@ const AdminDashboardPage: React.FC = () => {
 
       <Divider sx={{ mb: 4 }} />
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
+      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 기록', count: summaryData.total, icon: <AssignmentIcon fontSize="small" color="primary" />, color: '#607d8b', filter: null },
-          { label: '처리 중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" color="warning" />, color: '#ed6c02', filter: 'processing' },
-          { label: '처리 완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" color="success" />, color: '#2e7d32', filter: 'completed' },
-        ].map((item, idx) => (
-          <Grid item xs={4} sm={4} key={idx}>
-            <ButtonBase 
-              sx={{ width: '100%', textAlign: 'left', borderRadius: 1, display: 'block' }} 
-              onClick={() => setFilterStatus(item.filter)}
-            >
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: { xs: 1.5, sm: 2 }, 
-                  borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                  borderRadius: 1,
-                  bgcolor: filterStatus === item.filter ? 'action.selected' : 'background.paper',
-                  transition: 'all 0.2s',
-                  '&:hover': { bgcolor: 'action.hover', transform: 'translateY(-2px)', boxShadow: '0 4px 12px 0 rgba(0,0,0,0.05)' }
-                }}
-              >
-                <Stack direction="row" spacing={1} alignItems="center">
-                  {item.icon}
-                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                    {item.label}
-                  </Typography>
-                  <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.65rem' }}>
-                    {item.label.replace(' 업무 기록', '').replace(' ', '')}
-                  </Typography>
-                </Stack>
-                <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
-                  {item.count}
-                </Typography>
-              </Paper>
-            </ButtonBase>
-          </Grid>
+          { label: '전체 기록', shortLabel: '전체', count: summaryData.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: null },
+          { label: '처리 중', shortLabel: '처리중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} />, filter: 'processing' },
+          { label: '처리 완료', shortLabel: '완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'completed' },
+        ].map((item, idx, arr) => (
+          <ButtonBase 
+            key={idx}
+            sx={{ 
+              flex: 1, 
+              p: { xs: 1.5, sm: 2 }, 
+              bgcolor: filterStatus === item.filter ? 'action.selected' : 'transparent',
+              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
+              borderColor: 'divider',
+              transition: 'background-color 0.2s',
+              '&:hover': { bgcolor: 'action.hover' }
+            }}
+            onClick={() => setFilterStatus(item.filter)}
+          >
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+              {item.icon}
+              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {item.label}
+              </Typography>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
+                {item.shortLabel}
+              </Typography>
+              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
+                {item.count}
+              </Typography>
+            </Stack>
+          </ButtonBase>
         ))}
-      </Grid>
+      </Paper>
 
       {/* 필터 섹션 - 카드 아래로 이동 */}
       <Paper variant="outlined" sx={{ p: 1.5, mb: 3, borderRadius: 1, bgcolor: 'background.paper' }}>

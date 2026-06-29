@@ -146,41 +146,37 @@ const ArchivePage: React.FC = () => {
       
       <Divider sx={{ mb: 4 }} />
 
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 파일', count: stats.totalFiles, icon: <FileIcon color="primary" fontSize="small" />, color: '#607d8b' },
-          { label: '최근 업로드', count: stats.recentUploads, icon: <RefreshIcon color="success" fontSize="small" />, color: '#2e7d32' },
-          { label: '폴더 수', count: stats.totalFolders, icon: <FolderIcon color="warning" fontSize="small" />, color: '#ffa000' },
-        ].map((item, idx) => (
-          <Grid item xs={4} sm={4} key={idx}>
-              <Paper 
-                variant="outlined" 
-                sx={{ 
-                  p: { xs: 1.5, sm: 2 }, 
-                  borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                  borderRadius: 2,
-                  bgcolor: 'background.paper',
-                  height: '100%',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
-                  }
-                }}
-              >
-              <Stack direction="row" spacing={1} alignItems="center">
-                {item.icon}
-                <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' } }}>
-                  {item.label}
-                </Typography>
-              </Stack>
-              <Typography variant="h6" fontWeight="bold" sx={{ mt: 0.5, ml: 0.5 }}>
-                {item.count}<Typography component="span" variant="caption" sx={{ ml: 0.5, color: 'text.secondary', fontWeight: 'bold' }}>개</Typography>
+          { label: '전체 파일', shortLabel: '전체', count: stats.totalFiles, icon: <FileIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '최근 업로드', shortLabel: '최근', count: stats.recentUploads, icon: <RefreshIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '폴더 수', shortLabel: '폴더', count: stats.totalFolders, icon: <FolderIcon fontSize="small" sx={{ color: '#ffa000' }} /> },
+        ].map((item, idx, arr) => (
+          <Box 
+            key={idx}
+            sx={{ 
+              flex: 1, 
+              p: { xs: 1.5, sm: 2 }, 
+              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
+              borderColor: 'divider',
+            }}
+          >
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+              {item.icon}
+              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                {item.label}
               </Typography>
-            </Paper>
-          </Grid>
+              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
+                {item.shortLabel}
+              </Typography>
+              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
+                {item.count}
+                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>개</Typography>
+              </Typography>
+            </Stack>
+          </Box>
         ))}
-      </Grid>
+      </Paper>
 
       {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>{error}</Alert>}
 
