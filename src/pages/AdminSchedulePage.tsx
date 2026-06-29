@@ -165,14 +165,70 @@ const AdminSchedulePage: React.FC = () => {
     setOpen(true);
   };
 
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+
   const handleSTT = () => {
+    if (isSTTActive) {
+      if (recognitionInstance) {
+        recognitionInstance.manualStop = true;
+        recognitionInstance.stop();
+        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+      }
+      setIsSTTActive(false);
+      return;
+    }
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
     if (!SpeechRecognition) return alert('음성 인식을 지원하지 않는 브라우저입니다.');
+    
+    if (recognitionInstance) {
+      recognitionInstance.manualStop = true;
+      recognitionInstance.stop();
+      if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'ko-KR';
-    recognition.onstart = () => setIsSTTActive(true);
-    recognition.onend = () => setIsSTTActive(false);
-    recognition.onresult = (e: any) => setFormData(p => ({ ...p, content: p.content + ' ' + e.results[0][0].transcript }));
+    recognition.continuous = true; 
+    recognition.interimResults = true; 
+    recognition.manualStop = false;
+    
+    const resetSilenceTimeout = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      recognition.silenceTimeout = setTimeout(() => {
+        recognition.manualStop = true;
+        recognition.stop();
+        setIsSTTActive(false);
+      }, 10000); 
+    };
+
+    recognition.onstart = () => {
+      setIsSTTActive(true);
+      resetSilenceTimeout();
+    };
+
+    recognition.onend = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      if (!recognition.manualStop) {
+        try { recognition.start(); } catch (e) { setIsSTTActive(false); }
+      } else {
+        setIsSTTActive(false);
+      }
+    };
+
+    recognition.onresult = (e: any) => {
+      resetSilenceTimeout();
+      let newTranscript = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          newTranscript += e.results[i][0].transcript + ' ';
+        }
+      }
+      if (newTranscript) {
+        setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + newTranscript }));
+      }
+    };
+    
+    setRecognitionInstance(recognition);
     recognition.start();
   };
 
@@ -280,7 +336,7 @@ const AdminSchedulePage: React.FC = () => {
       `}</style>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <CalendarMonthIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -292,12 +348,12 @@ const AdminSchedulePage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      {error && <Alert severity="error" sx={{ mb: 3, whiteSpace: 'pre-line' }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>{error}</Alert>}
 
       {/* 상단 요약 위젯 섹션 */}
-      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
           { label: '오늘 일정', shortLabel: '오늘', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
           { label: '이번달 전체', shortLabel: '이번달', count: stats.monthly, icon: <CalendarMonthIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
@@ -389,7 +445,7 @@ const AdminSchedulePage: React.FC = () => {
                   <TextField fullWidth multiline rows={4} label="상세 메모" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} />
                   <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <Tooltip title="음성 입력"><IconButton color={isSTTActive ? "secondary" : "default"} onClick={handleSTT}><MicIcon /></IconButton></Tooltip>
-                    <Tooltip title="AI 문장 정돈"><IconButton color="primary" onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton></Tooltip>
+                    <Tooltip title="AI 문장 정돈"><IconButton sx={{ color: '#673ab7' }} onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton></Tooltip>
                   </Box>
                 </Box>
               </Grid>

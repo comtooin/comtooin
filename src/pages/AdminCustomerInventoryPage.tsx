@@ -531,7 +531,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
     <Container maxWidth="lg">
       <Helmet><title>{customer?.name} 인벤토리 | COMTOOIN</title></Helmet>
 
-      <Box sx={{ mb: 4, display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between' }}>
+      <Box sx={{ mb: 2.5, display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
           <IconButton onClick={() => navigate('/admin/customers')} sx={{ bgcolor: 'white', boxShadow: 1, mt: { xs: 0.5, md: 0 } }}>
             <ArrowBackIcon />
@@ -552,11 +552,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
           <Button 
             size="small"
             variant="outlined" 
-            color="secondary" 
             startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
             onClick={handleGenerateAiReport}
             disabled={isGenerating}
-            sx={{ fontWeight: 'bold', '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' } }}
+            sx={{ 
+              fontWeight: 'bold', 
+              color: '#673ab7', 
+              borderColor: '#673ab7',
+              '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' } 
+            }}
           >
             AI 자산 분석 리포트
           </Button>
@@ -573,14 +577,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
         </Stack>
       </Box>
 
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
-      {success && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setSuccess('')}>{success}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
 
       {/* 맞춤형 동적 대시보드 */}
       {tabValue === 0 ? (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 2.5 }}>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
                 등록된 PC 대수
               </Typography>
@@ -590,7 +594,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>메모리(RAM) 용량 분포</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -603,7 +607,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>CPU 등급별 분포</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={cpuStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -618,9 +622,9 @@ const AdminCustomerInventoryPage: React.FC = () => {
           </Grid>
         </Grid>
       ) : (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid container spacing={2} sx={{ mb: 2.5 }}>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
                 설치된 프로그램 총 건수
               </Typography>
@@ -630,7 +634,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>주요 상용 소프트웨어 설치 현황</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -643,7 +647,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Paper>
           </Grid>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: '250px' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
               <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>전체 Top 5 소프트웨어</Typography>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topSoftware} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>

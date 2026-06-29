@@ -98,19 +98,73 @@ const HomePage: React.FC = () => {
     }
   }, [fetchData]);
 
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+
   const handleVoiceInput = (target: 'content' | 'processingContent') => {
+    if (isListening === target) {
+      if (recognitionInstance) {
+        recognitionInstance.manualStop = true;
+        recognitionInstance.stop();
+        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+      }
+      setIsListening(null);
+      return;
+    }
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
-    if (isListening) return;
+    
+    if (recognitionInstance) {
+        recognitionInstance.manualStop = true;
+        recognitionInstance.stop();
+        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+    }
+
     const recognition = new SpeechRecognition();
     recognition.lang = 'ko-KR';
-    recognition.onstart = () => setIsListening(target);
-    recognition.onend = () => setIsListening(null);
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (target === 'content') setContent(prev => prev ? `${prev} ${transcript}` : transcript);
-      else setProcessingContent(prev => prev ? `${prev} ${transcript}` : transcript);
+    recognition.continuous = true; 
+    recognition.interimResults = true; // 중간 결과를 켜서 타이머를 계속 리셋 (텍스트엔 최종값만 반영)
+    recognition.manualStop = false;
+    
+    const resetSilenceTimeout = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      // 10초 동안 아무 말(중간결과 포함)이 없으면 자동 종료 (운전 중 넉넉한 대기시간)
+      recognition.silenceTimeout = setTimeout(() => {
+        recognition.manualStop = true;
+        recognition.stop();
+        setIsListening(null);
+      }, 10000); 
     };
+
+    recognition.onstart = () => {
+      setIsListening(target);
+      resetSilenceTimeout();
+    };
+    
+    recognition.onend = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      if (!recognition.manualStop) {
+        try { recognition.start(); } catch (e) { setIsListening(null); }
+      } else {
+        setIsListening(null);
+      }
+    };
+
+    recognition.onresult = (event: any) => {
+      resetSilenceTimeout(); // 소리가 인식될 때마다 종료 타이머 연장
+      
+      let newTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          newTranscript += event.results[i][0].transcript + ' ';
+        }
+      }
+      if (newTranscript) {
+        if (target === 'content') setContent(prev => prev ? `${prev} ${newTranscript}` : newTranscript);
+        else setProcessingContent(prev => prev ? `${prev} ${newTranscript}` : newTranscript);
+      }
+    };
+    
+    setRecognitionInstance(recognition);
     recognition.start();
   };
 
@@ -188,7 +242,7 @@ const HomePage: React.FC = () => {
     <Container maxWidth="lg">
       <Helmet><title>업무 기록 | COMTOOIN</title></Helmet>
       
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <EditNoteIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">업무 기록</Typography>
@@ -196,9 +250,9 @@ const HomePage: React.FC = () => {
         <Typography variant="body2" color="text.secondary">유지보수 업무 내용을 상세히 기록하고 보관합니다.</Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
           { label: '오늘 등록', shortLabel: '오늘', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
           { label: '이번달 전체', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
@@ -230,11 +284,11 @@ const HomePage: React.FC = () => {
         ))}
       </Paper>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={2}>
         <Grid item xs={12} md={8}>
           <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={3}>
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
+            <Stack spacing={2}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2.5 }}>기본 정보</Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
@@ -251,7 +305,7 @@ const HomePage: React.FC = () => {
                 </Grid>
               </Paper>
 
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Stack spacing={2.5}>
                   <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
                   
@@ -279,12 +333,13 @@ const HomePage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          color="success" 
                           startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('content')} 
                           sx={{ 
                             fontSize: '0.7rem', py: 0.2, px: 1.2, 
-                            minWidth: '85px', whiteSpace: 'nowrap'
+                            minWidth: '85px', whiteSpace: 'nowrap',
+                            color: '#673ab7', borderColor: '#673ab7',
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
                           }}
                           disabled={!!isPolishing || !!isListening}
                         >
@@ -326,12 +381,13 @@ const HomePage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          color="success" 
                           startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('processingContent')} 
                           sx={{ 
                             fontSize: '0.7rem', py: 0.2, px: 1.2, 
-                            minWidth: '85px', whiteSpace: 'nowrap'
+                            minWidth: '85px', whiteSpace: 'nowrap',
+                            color: '#673ab7', borderColor: '#673ab7',
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
                           }}
                           disabled={!!isPolishing || !!isListening}
                         >
@@ -349,25 +405,40 @@ const HomePage: React.FC = () => {
                       placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." 
                     />
                   </Box>
-                </Stack>
-              </Paper>
 
-              <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>이미지 첨부</Typography>
-                <Button variant="outlined" component="label" startIcon={<PhotoCamera />} fullWidth sx={{ py: 2, borderStyle: 'dashed' }}>
-                  파일 선택 (최대 5개)
-                  <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-                </Button>
-                {images.length > 0 && (
-                  <Grid container spacing={1.5} sx={{ mt: 1.5 }}>
-                    {images.map((img, i) => (
-                      <Grid item key={i}><Box sx={{ position: 'relative' }}>
-                        <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 4 }} />
-                        <IconButton size="small" onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1 }}><Delete fontSize="small" /></IconButton>
-                      </Box></Grid>
-                    ))}
-                  </Grid>
-                )}
+                  {/* 콤팩트한 이미지 첨부 영역 */}
+                  <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                      <Button 
+                        variant="outlined" 
+                        component="label" 
+                        startIcon={<PhotoCamera />} 
+                        size="small"
+                        sx={{ borderRadius: 2, py: 0.5, px: 2, color: 'text.secondary', borderColor: 'divider' }}
+                      >
+                        이미지 첨부 (최대 5개)
+                        <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+                      </Button>
+                      
+                      {images.length > 0 && (
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                          {images.map((img, i) => (
+                            <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+                              <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                              <IconButton 
+                                size="small" 
+                                onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} 
+                                sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                              >
+                                <Delete sx={{ fontSize: '0.9rem' }} />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Stack>
+                      )}
+                    </Box>
+                  </Box>
+                </Stack>
               </Paper>
 
               {error && <Alert severity="error">{error}</Alert>}
@@ -379,8 +450,8 @@ const HomePage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Stack spacing={3}>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
+          <Stack spacing={2}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <HistoryIcon color="action" /> 최근 등록 이력
               </Typography>
@@ -399,7 +470,7 @@ const HomePage: React.FC = () => {
               </List>
             </Paper>
 
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
+            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.secondary' }}>
                 <InfoIcon fontSize="small" /> 작성 가이드
               </Typography>
