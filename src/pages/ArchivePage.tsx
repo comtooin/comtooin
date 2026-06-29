@@ -153,16 +153,21 @@ const ArchivePage: React.FC = () => {
           { label: '폴더 수', count: stats.totalFolders, icon: <FolderIcon color="warning" fontSize="small" />, color: '#ffa000' },
         ].map((item, idx) => (
           <Grid item xs={4} sm={4} key={idx}>
-            <Paper 
-              variant="outlined" 
-              sx={{ 
-                p: { xs: 1.5, sm: 2 }, 
-                borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
-                borderRadius: 1,
-                bgcolor: 'background.paper',
-                height: '100%'
-              }}
-            >
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  p: { xs: 1.5, sm: 2 }, 
+                  borderLeft: { xs: `4px solid ${item.color}`, sm: `6px solid ${item.color}` }, 
+                  borderRadius: 2,
+                  bgcolor: 'background.paper',
+                  height: '100%',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+                  }
+                }}
+              >
               <Stack direction="row" spacing={1} alignItems="center">
                 {item.icon}
                 <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.8rem' } }}>
@@ -182,9 +187,9 @@ const ArchivePage: React.FC = () => {
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           {folderHistory.length > 1 && (
-            <IconButton onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} size="small" sx={{ bgcolor: 'action.hover' }}><ArrowBackIcon fontSize="small" /></IconButton>
+            <IconButton onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} size="small" sx={{ bgcolor: 'action.hover', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}><ArrowBackIcon fontSize="small" /></IconButton>
           )}
-          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ bgcolor: 'grey.50', p: '8px 16px', borderRadius: 1, border: '1px solid', borderColor: 'divider', flexGrow: 1 }}>
+          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ bgcolor: 'background.paper', p: '10px 16px', borderRadius: 2, border: '1px solid', borderColor: 'divider', flexGrow: 1, boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}>
             {folderHistory.map((folder, index) => (
               <Link key={folder.id} underline="hover" color={index === folderHistory.length - 1 ? "primary" : "inherit"} onClick={() => handleBreadcrumbClick(index)} sx={{ cursor: 'pointer', fontWeight: index === folderHistory.length - 1 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
                 {index === 0 && <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} />}{folder.name}
@@ -192,37 +197,59 @@ const ArchivePage: React.FC = () => {
             ))}
           </Breadcrumbs>
         </Stack>
-        <TextField fullWidth placeholder="파일명 검색..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>), sx: { borderRadius: 1, bgcolor: 'background.paper' } }} />
+        <TextField fullWidth placeholder="파일명 검색..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>), sx: { borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' } }} />
       </Stack>
 
-      <Paper variant="outlined" sx={{ borderRadius: 1, overflow: 'hidden', minHeight: '300px' }}>
+      <Box sx={{ minHeight: '300px' }}>
         {loading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12, gap: 2 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12, gap: 2, bgcolor: 'background.paper', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
             <CircularProgress size={32} />
             <Typography variant="body2" color="text.secondary">자료실 목록을 불러오는 중입니다...</Typography>
           </Box>
         ) : (
-          <List sx={{ py: 0 }}>
+          <List sx={{ py: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             {filteredFiles.length > 0 ? filteredFiles.map((file, index) => (
-              <ListItem key={file.id} disablePadding divider={index < filteredFiles.length - 1} secondaryAction={
-                <Stack direction="row" spacing={0.5}>
+              <ListItem 
+                key={file.id} 
+                disablePadding 
+                sx={{ 
+                  bgcolor: 'background.paper',
+                  borderRadius: 2,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'all 0.2s ease-in-out',
+                  '&:hover': { 
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                    borderColor: 'primary.light',
+                    transform: 'translateY(-2px)'
+                  }
+                }}
+                secondaryAction={
+                <Stack direction="row" spacing={0.5} sx={{ pr: 1 }}>
                   {file.mimeType !== 'application/vnd.google-apps.folder' && file.webContentLink && (
-                    <IconButton component="a" href={file.webContentLink} target="_blank"><DirectDownloadIcon fontSize="small" color="primary" /></IconButton>
+                    <IconButton component="a" href={file.webContentLink} target="_blank" sx={{ bgcolor: 'action.hover' }}><DirectDownloadIcon fontSize="small" color="primary" /></IconButton>
                   )}
-                  <IconButton component="a" href={file.webViewLink} target="_blank"><OpenInNewIcon fontSize="small" /></IconButton>
+                  <IconButton component="a" href={file.webViewLink} target="_blank" sx={{ bgcolor: 'action.hover' }}><OpenInNewIcon fontSize="small" /></IconButton>
                 </Stack>
               }>
-                <ListItemButton onClick={() => { if (file.mimeType === 'application/vnd.google-apps.folder') handleFolderClick(file.id, file.name); else window.open(file.webViewLink, '_blank'); }} sx={{ px: 2, py: 1.5 }}>
-                  <ListItemIcon sx={{ minWidth: 44 }}>{getFileIcon(file.mimeType)}</ListItemIcon>
-                  <ListItemText primary={file.name} primaryTypographyProps={{ variant: 'body1', fontWeight: file.mimeType === 'application/vnd.google-apps.folder' ? 'bold' : 'medium', noWrap: true, component: 'div' }} secondary={<Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}><Typography variant="caption" color="text.secondary" component="span">{new Date(file.modifiedTime).toLocaleDateString()}</Typography>{file.size && (<Typography variant="caption" color="text.secondary" component="span">{formatFileSize(file.size)}</Typography>)}</Box>} secondaryTypographyProps={{ component: 'div' }} />
+                <ListItemButton onClick={() => { if (file.mimeType === 'application/vnd.google-apps.folder') handleFolderClick(file.id, file.name); else window.open(file.webViewLink, '_blank'); }} sx={{ px: { xs: 2, sm: 3 }, py: 2, borderRadius: 2 }}>
+                  <ListItemIcon sx={{ minWidth: { xs: 40, sm: 50 } }}>{getFileIcon(file.mimeType)}</ListItemIcon>
+                  <ListItemText 
+                    primary={file.name} 
+                    primaryTypographyProps={{ variant: 'body1', fontWeight: file.mimeType === 'application/vnd.google-apps.folder' ? 'bold' : 'medium', noWrap: true, component: 'div', sx: { fontSize: { xs: '0.9rem', sm: '1rem' } } }} 
+                    secondary={<Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}><Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 'medium' }}>{new Date(file.modifiedTime).toLocaleDateString()}</Typography>{file.size && (<Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 'medium' }}>{formatFileSize(file.size)}</Typography>)}</Box>} 
+                    secondaryTypographyProps={{ component: 'div' }} 
+                  />
                 </ListItemButton>
               </ListItem>
             )) : (
-              <Box sx={{ py: 12, textAlign: 'center' }}><Typography color="text.secondary">표시할 파일이 없습니다.</Typography></Box>
+              <Paper variant="outlined" sx={{ py: 12, textAlign: 'center', borderRadius: 2, bgcolor: 'background.paper', borderStyle: 'dashed' }}>
+                <Typography color="text.secondary" fontWeight="medium">표시할 파일이 없습니다.</Typography>
+              </Paper>
             )}
           </List>
         )}
-      </Paper>
+      </Box>
     </Container>
   );
 };
