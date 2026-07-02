@@ -191,8 +191,11 @@ const AdminCustomerPage: React.FC = () => {
         {/* 오른쪽: 목록 */}
         <Grid item xs={12} md={isAdmin ? 7 : 12}>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BusinessIcon fontSize="small" /> 등록된 거래처 목록
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              거래처를 선택하거나 '자산 관리' 버튼을 클릭하여 해당 고객사의 PC 및 소프트웨어 설치 현황을 확인하고 관리할 수 있습니다.
             </Typography>
             
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
