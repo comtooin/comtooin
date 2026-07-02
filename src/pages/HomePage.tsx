@@ -63,7 +63,7 @@ const HomePage: React.FC = () => {
     setLoading(true);
     try {
       const { data: customerData } = await supabase.from('customers').select('name').order('name', { ascending: true });
-      const { data: staffData } = await supabase.from('staff').select('name').order('name', { ascending: true });
+      const { data: staffData } = await supabase.from('staff').select('name, role').neq('role', 'admin').order('name', { ascending: true });
       if (customerData) setCustomerOptions(customerData.map(c => c.name));
       if (staffData) setStaffOptions(staffData.map(s => s.name));
 
@@ -233,7 +233,14 @@ const HomePage: React.FC = () => {
           user_id: staffId 
         });
       }
-      navigate(`/admin/dashboard`);
+      
+      alert('업무 기록이 성공적으로 저장되었습니다.');
+      setContent('');
+      setProcessingContent('');
+      setImages([]);
+      setRequesterName('');
+      setCustomerName('');
+      fetchData(); // 통계 업데이트
     } catch (err: any) { setError(err.message || '저장 중 오류가 발생했습니다.'); } finally { setSubmitting(false); }
   };
 

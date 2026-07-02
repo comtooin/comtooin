@@ -23,6 +23,8 @@ const AdminCustomerPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  const isAdmin = localStorage.getItem('adminRole') === 'admin';
 
   useEffect(() => {
     fetchCustomers();
@@ -149,7 +151,8 @@ const AdminCustomerPage: React.FC = () => {
 
       <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         {/* 왼쪽: 등록 폼 */}
-        <Grid item xs={12} md={5}>
+        {isAdmin && (
+          <Grid item xs={12} md={5}>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddCustomer}>
               <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -183,9 +186,10 @@ const AdminCustomerPage: React.FC = () => {
             </Box>
           </Paper>
         </Grid>
+        )}
 
         {/* 오른쪽: 목록 */}
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12} md={isAdmin ? 7 : 12}>
           <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
             <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BusinessIcon fontSize="small" /> 등록된 거래처 목록

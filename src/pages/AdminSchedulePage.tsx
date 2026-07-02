@@ -81,7 +81,7 @@ const AdminSchedulePage: React.FC = () => {
   // 1. 데이터 로드
   const fetchData = useCallback(async () => {
     const [staffRes, customerRes] = await Promise.all([
-      supabase.from('staff').select('id, name, email').order('name'),
+      supabase.from('staff').select('id, name, email, role').neq('role', 'admin').order('name'),
       supabase.from('customers').select('id, name').order('name')
     ]);
 
