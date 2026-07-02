@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip
 } from '@mui/material';
@@ -12,7 +11,6 @@ import { supabase, getCurrentStaffId } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 const HomePage: React.FC = () => {
-  const navigate = useNavigate();
   const [customerOptions, setCustomerOptions] = useState<string[]>([]); 
   const [staffOptions, setStaffOptions] = useState<string[]>([]); 
   const [customerName, setCustomerName] = useState('');
