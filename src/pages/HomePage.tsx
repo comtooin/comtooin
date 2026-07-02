@@ -253,20 +253,20 @@ const HomePage: React.FC = () => {
 
       <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '오늘 등록', shortLabel: '오늘', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '이번달 전체', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '금일 기록', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '이번달 기록', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
           { label: '활성 거래처', shortLabel: '거래처', count: stats.activeCustomers, icon: <BusinessIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
             sx={{ 
               flex: 1, 
-              p: { xs: 1.5, sm: 2 }, 
+              p: { xs: 1, sm: 2 }, 
               borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -276,20 +276,19 @@ const HomePage: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
-                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>건</Typography>
               </Typography>
             </Stack>
           </Box>
         ))}
       </Paper>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         <Grid item xs={12} md={8}>
           <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={2}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2.5 }}>기본 정보</Typography>
-                <Grid container spacing={2}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
+              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: { xs: 1.5, sm: 2.5 } }}>기본 정보</Typography>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                   <Grid item xs={12} sm={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
                   <Grid item xs={12} sm={4}>
                     <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading || submitting}>
@@ -304,8 +303,8 @@ const HomePage: React.FC = () => {
                 </Grid>
               </Paper>
 
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Stack spacing={2.5}>
+              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
+                <Stack spacing={{ xs: 1.5, sm: 2 }}>
                   <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
                   
                   <TextField label="요청자 (고객 담당자)" fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
@@ -449,9 +448,9 @@ const HomePage: React.FC = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Stack spacing={2}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+          <Stack spacing={{ xs: 1.5, sm: 2 }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
+              <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 } }}>
                 <HistoryIcon color="action" /> 최근 등록 이력
               </Typography>
               <List dense>
@@ -469,7 +468,7 @@ const HomePage: React.FC = () => {
               </List>
             </Paper>
 
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
               <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.secondary' }}>
                 <InfoIcon fontSize="small" /> 작성 가이드
               </Typography>

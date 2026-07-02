@@ -122,7 +122,7 @@ const AdminProfilePage: React.FC = () => {
     <Container maxWidth="sm">
       <Helmet><title>내 정보 | COMTOOIN</title></Helmet>
       
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <AccountCircleIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -134,10 +134,10 @@ const AdminProfilePage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, mb: 3, bgcolor: 'background.paper' }}>
-        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, mb: 2, bgcolor: 'background.paper' }}>
+        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
           기본 정보
         </Typography>
         <Stack spacing={2}>
@@ -180,8 +180,8 @@ const AdminProfilePage: React.FC = () => {
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
+        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <LockIcon fontSize="small" /> 비밀번호 변경
         </Typography>
 

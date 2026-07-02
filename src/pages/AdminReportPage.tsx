@@ -515,7 +515,7 @@ const AdminReportPage: React.FC = () => {
       <Helmet><title>리포트 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <AssessmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -527,21 +527,21 @@ const AdminReportPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
       {/* 에러 알림창 */}
       {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
           {error}
         </Alert>
       )}
 
       {/* 요약 위젯 */}
-      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 기록', shortLabel: '전체', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '처리 중', shortLabel: '처리중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
-          { label: '처리 완료', shortLabel: '완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '총 리포트', shortLabel: '총리포트', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '진행 중', shortLabel: '진행중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
+          { label: '완료됨', shortLabel: '완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
@@ -552,7 +552,7 @@ const AdminReportPage: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -569,8 +569,8 @@ const AdminReportPage: React.FC = () => {
       </Paper>
 
       {/* 필터 및 액션 섹션 */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Stack spacing={2}>
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
+        <Stack spacing={{ xs: 1.5, sm: 2 }}>
           {/* 첫 번째 줄: 필터 및 조회 버튼 */}
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1, alignItems: 'center' }}>
             <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, width: '100%' }}>
@@ -692,7 +692,7 @@ const AdminReportPage: React.FC = () => {
       </Paper>
 
       {/* 탭 섹션 */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
           <Tab label="업무 상세 리스트" sx={{ fontWeight: 'bold' }} />
           <Tab label="시각화 분석" sx={{ fontWeight: 'bold' }} />
@@ -835,7 +835,7 @@ const AdminReportPage: React.FC = () => {
               )}
               {/* 페이지네이션 추가 */}
               {filteredRequests.length > ITEMS_PER_PAGE && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2.5 }}>
                   <Pagination 
                     count={Math.ceil(filteredRequests.length / ITEMS_PER_PAGE)} 
                     page={page} 
@@ -849,7 +849,7 @@ const AdminReportPage: React.FC = () => {
           )}
 
           {tabValue === 1 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
                 <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>

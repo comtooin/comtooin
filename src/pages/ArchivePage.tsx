@@ -133,7 +133,7 @@ const ArchivePage: React.FC = () => {
     <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pb: 10 }}>
       <Helmet><title>자료실 | COMTOOIN</title></Helmet>
 
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} mb={1}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <CloudDownloadIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
@@ -144,13 +144,13 @@ const ArchivePage: React.FC = () => {
         <Typography variant="body2" color="text.secondary">업무 매뉴얼 및 현장 자료를 안전하게 관리하고 공유합니다.</Typography>
       </Box>
       
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 파일', shortLabel: '전체', count: stats.totalFiles, icon: <FileIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '최근 업로드', shortLabel: '최근', count: stats.recentUploads, icon: <RefreshIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '폴더 수', shortLabel: '폴더', count: stats.totalFolders, icon: <FolderIcon fontSize="small" sx={{ color: '#ffa000' }} /> },
+          { label: '총 파일', shortLabel: '총파일', count: stats.totalFiles, icon: <FileIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '신규 파일', shortLabel: '신규', count: stats.recentUploads, icon: <RefreshIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '전체 폴더', shortLabel: '폴더', count: stats.totalFolders, icon: <FolderIcon fontSize="small" sx={{ color: '#ffa000' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
@@ -161,7 +161,7 @@ const ArchivePage: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -171,16 +171,15 @@ const ArchivePage: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
-                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>개</Typography>
               </Typography>
             </Stack>
           </Box>
         ))}
       </Paper>
 
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 1 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>{error}</Alert>}
 
-      <Stack spacing={2} sx={{ mb: 3 }}>
+      <Stack spacing={2} sx={{ mb: 2 }}>
         <Stack direction="row" spacing={1} alignItems="center">
           {folderHistory.length > 1 && (
             <IconButton onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} size="small" sx={{ bgcolor: 'action.hover', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}><ArrowBackIcon fontSize="small" /></IconButton>

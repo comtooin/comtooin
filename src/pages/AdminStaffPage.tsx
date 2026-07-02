@@ -243,7 +243,7 @@ const AdminStaffPage: React.FC = () => {
       <Helmet><title>멤버 관리 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <PeopleIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -255,13 +255,13 @@ const AdminStaffPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
       {/* 상단 요약 위젯 섹션 */}
-      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 멤버', shortLabel: '전체', count: stats.total, icon: <PeopleIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '최근 합류', shortLabel: '최근', count: stats.recent, icon: <PersonAddIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '총 멤버', shortLabel: '총멤버', count: stats.total, icon: <PeopleIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '신규 멤버', shortLabel: '신규', count: stats.recent, icon: <PersonAddIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
           { label: '관리자', shortLabel: '관리자', count: stats.admin, icon: <AssignmentIndIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
         ].map((item, idx, arr) => (
           <Box 
@@ -273,7 +273,7 @@ const AdminStaffPage: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -283,22 +283,21 @@ const AdminStaffPage: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
-                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>명</Typography>
               </Typography>
             </Stack>
           </Box>
         ))}
       </Paper>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         {/* 왼쪽: 등록 폼 */}
         <Grid item xs={12} md={5}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddStaff}>
-              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <PersonAddIcon fontSize="small" /> 새 멤버 등록
               </Typography>
-              <Stack spacing={2}>
+              <Stack spacing={{ xs: 1.5, sm: 2 }}>
                 <TextField
                   label="사용자 아이디"
                   variant="outlined"
@@ -373,8 +372,8 @@ const AdminStaffPage: React.FC = () => {
 
         {/* 오른쪽: 목록 */}
         <Grid item xs={12} md={7}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BadgeIcon fontSize="small" /> 등록된 멤버 목록
             </Typography>
             

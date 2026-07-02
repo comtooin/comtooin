@@ -582,9 +582,9 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
       {/* 맞춤형 동적 대시보드 */}
       {tabValue === 0 ? (
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
           <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
                 등록된 PC 대수
               </Typography>

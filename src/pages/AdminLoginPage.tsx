@@ -116,18 +116,18 @@ const AdminLoginPage: React.FC = () => {
       <Paper 
         variant="outlined" 
         sx={{ 
-          p: { xs: 3, md: 5 }, 
+          p: { xs: 2, md: 3 }, 
           borderRadius: 1, 
           bgcolor: 'background.paper', 
           boxShadow: '0 8px 32px 0 rgba(0,0,0,0.05)' 
         }}
       >
-        <Typography variant="h5" align="center" fontWeight="bold" sx={{ mb: 4 }}>
+        <Typography variant="h5" align="center" fontWeight="bold" sx={{ mb: 2.5 }}>
           시스템 로그인
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit}>
-          <Stack spacing={3}>
+          <Stack spacing={2}>
             <TextField
               label="아이디 (이메일)"
               fullWidth
@@ -173,7 +173,7 @@ const AdminLoginPage: React.FC = () => {
         </Box>
       </Paper>
 
-      <Typography variant="body2" color="text.disabled" align="center" sx={{ mt: 4 }}>
+      <Typography variant="body2" color="text.disabled" align="center" sx={{ mt: 2.5 }}>
         &copy; {new Date().getFullYear()} COMTOOIN. All rights reserved.
       </Typography>
     </Container>

@@ -356,9 +356,9 @@ const AdminSchedulePage: React.FC = () => {
       {/* 상단 요약 위젯 섹션 */}
       <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '오늘 일정', shortLabel: '오늘', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '이번달 전체', shortLabel: '이번달', count: stats.monthly, icon: <CalendarMonthIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '예정된 업무', shortLabel: '예정', count: stats.upcoming, icon: <EventIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
+          { label: '금일 일정', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '이번달 일정', shortLabel: '이번달', count: stats.monthly, icon: <CalendarMonthIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '예정된 일정', shortLabel: '예정', count: stats.upcoming, icon: <EventIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
@@ -369,7 +369,7 @@ const AdminSchedulePage: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -379,7 +379,6 @@ const AdminSchedulePage: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
-                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>건</Typography>
               </Typography>
             </Stack>
           </Box>
@@ -409,8 +408,8 @@ const AdminSchedulePage: React.FC = () => {
           {formData.id ? '일정 수정' : `${formData.date} 일정 등록`}
         </DialogTitle>
         <DialogContent dividers>
-          <Box sx={{ pt: 1 }}>
-            <Grid container spacing={2}>
+          <Box sx={{ mt: 2 }}>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }}>
               <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
                 <FormControlLabel control={<Checkbox checked={formData.allDay} onChange={(e) => setFormData({...formData, allDay: e.target.checked})} />} label="하루종일" />
               </Grid>
@@ -480,7 +479,7 @@ const AdminSchedulePage: React.FC = () => {
               <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" />
             </DialogTitle>
             <DialogContent dividers>
-              <Stack spacing={2} sx={{ pt: 1 }}>
+              <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ pt: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <BusinessIcon color="action" />
                   <Box>

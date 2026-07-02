@@ -321,14 +321,14 @@ const AdminDashboardPage: React.FC = () => {
 
   const paginatedRequests = sortedRequests.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
 
-  if (error) return <Container maxWidth="lg" sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>;
+  if (error) return <Container maxWidth="lg" sx={{ mt: 2.5 }}><Alert severity="error">{error}</Alert></Container>;
 
   return (
     <Container maxWidth="lg">
       <Helmet><title>대시보드 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <DashboardIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -340,13 +340,13 @@ const AdminDashboardPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ mb: 3, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 기록', shortLabel: '전체', count: summaryData.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: null },
-          { label: '처리 중', shortLabel: '처리중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} />, filter: 'processing' },
-          { label: '처리 완료', shortLabel: '완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'completed' },
+          { label: '총 업무기록', shortLabel: '총기록', count: summaryData.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: null },
+          { label: '진행 중', shortLabel: '진행중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} />, filter: 'processing' },
+          { label: '완료됨', shortLabel: '완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'completed' },
         ].map((item, idx, arr) => (
           <ButtonBase 
             key={idx}
@@ -361,7 +361,7 @@ const AdminDashboardPage: React.FC = () => {
             }}
             onClick={() => setFilterStatus(item.filter)}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -378,8 +378,8 @@ const AdminDashboardPage: React.FC = () => {
       </Paper>
 
       {/* 필터 섹션 - 카드 아래로 이동 */}
-      <Paper variant="outlined" sx={{ p: 1.5, mb: 3, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Grid container spacing={2} alignItems="center">
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="center">
           <Grid item xs={12} sm={6}>
             <TextField 
               select 
@@ -567,7 +567,7 @@ const AdminDashboardPage: React.FC = () => {
 
       {/* 페이지네이션 추가 */}
       {requests.length > ITEMS_PER_PAGE && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2.5 }}>
           <Pagination 
             count={Math.ceil(requests.length / ITEMS_PER_PAGE)} 
             page={page} 

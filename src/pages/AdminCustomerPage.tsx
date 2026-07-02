@@ -101,7 +101,7 @@ const AdminCustomerPage: React.FC = () => {
       <Helmet><title>거래처 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <BusinessIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -113,14 +113,14 @@ const AdminCustomerPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
       {/* 상단 요약 위젯 섹션 */}
-      <Paper variant="outlined" sx={{ mb: 4, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '전체 고객사', shortLabel: '전체', count: stats.total, icon: <StoreIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '이번달 신규', shortLabel: '신규', count: stats.recent, icon: <NewIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '유지보수 활성', shortLabel: '활성', count: stats.active, icon: <ActiveIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
+          { label: '총 거래처', shortLabel: '총거래처', count: stats.total, icon: <StoreIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '신규 거래처', shortLabel: '신규', count: stats.recent, icon: <NewIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '활성 거래처', shortLabel: '활성', count: stats.active, icon: <ActiveIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
@@ -131,7 +131,7 @@ const AdminCustomerPage: React.FC = () => {
               borderColor: 'divider',
             }}
           >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" flexWrap="wrap">
+            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
               {item.icon}
               <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 {item.label}
@@ -141,25 +141,24 @@ const AdminCustomerPage: React.FC = () => {
               </Typography>
               <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
                 {item.count}
-                <Typography component="span" variant="caption" sx={{ ml: 0.2, color: 'text.secondary', fontWeight: 'bold' }}>개</Typography>
               </Typography>
             </Stack>
           </Box>
         ))}
       </Paper>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
         {/* 왼쪽: 등록 폼 */}
         <Grid item xs={12} md={5}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
             <Box component="form" onSubmit={handleAddCustomer}>
               <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <AddIcon fontSize="small" /> 새 거래처 등록
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 새로운 유지보수 대상 고객사를 시스템에 등록합니다. 등록 후 우측 목록에서 인프라 자산을 관리할 수 있습니다.
               </Typography>
-              <Stack spacing={2.5}>
+              <Stack spacing={{ xs: 1.5, sm: 2.5 }}>
                 <TextField
                   label="거래처 이름"
                   variant="outlined"
@@ -187,12 +186,12 @@ const AdminCustomerPage: React.FC = () => {
 
         {/* 오른쪽: 목록 */}
         <Grid item xs={12} md={7}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
+            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <BusinessIcon fontSize="small" /> 등록된 거래처 목록
             </Typography>
             
-            {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
             {loading ? (
               <Box sx={{ textAlign: 'center', py: 10 }}><CircularProgress /></Box>

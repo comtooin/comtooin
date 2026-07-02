@@ -118,8 +118,8 @@ const SubmissionDetailPage: React.FC = () => {
   };
 
   if (loading) return <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>;
-  if (error) return <Container maxWidth="md" sx={{ mt: 4 }}><Alert severity="error">{error}</Alert></Container>;
-  if (!request) return <Container maxWidth="md" sx={{ mt: 4 }}><Alert severity="info">접수 내역을 찾을 수 없습니다.</Alert></Container>;
+  if (error) return <Container maxWidth="md" sx={{ mt: 2.5 }}><Alert severity="error">{error}</Alert></Container>;
+  if (!request) return <Container maxWidth="md" sx={{ mt: 2.5 }}><Alert severity="info">접수 내역을 찾을 수 없습니다.</Alert></Container>;
 
   return (
     <Container maxWidth="md">
@@ -128,7 +128,7 @@ const SubmissionDetailPage: React.FC = () => {
       </Helmet>
 
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <AssignmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
@@ -140,10 +140,10 @@ const SubmissionDetailPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+      <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2.5 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <CheckCircleIcon sx={{ mr: 1, color: 'success.main' }} />
             <Typography variant="h6" fontWeight="bold">상세 현황</Typography>
@@ -156,8 +156,8 @@ const SubmissionDetailPage: React.FC = () => {
           />
         </Box>
 
-        <Paper variant="outlined" sx={{ p: 3, bgcolor: 'grey.50', borderRadius: 1, mb: 4 }}>
-          <Grid container spacing={3}>
+        <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', borderRadius: 1, mb: 2.5 }}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             <Grid item xs={12} sm={6}>
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>고객사명</Typography>
               <Typography variant="body1" fontWeight="bold">{request.customer_name}</Typography>
@@ -178,14 +178,14 @@ const SubmissionDetailPage: React.FC = () => {
         </Paper>
         
         <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 'bold' }}>접수 내용</Typography>
-        <Paper variant="outlined" sx={{ p: 3, mb: 4, bgcolor: 'white', borderRadius: 1, minHeight: 100 }}>
+        <Paper variant="outlined" sx={{ p: 2, mb: 2.5, bgcolor: 'white', borderRadius: 1, minHeight: 100 }}>
           <div dangerouslySetInnerHTML={{ __html: request.content }} style={{ lineHeight: 1.6 }} />
         </Paper>
 
         {request.images && request.images.length > 0 && (
           <>
             <Typography variant="h6" sx={{ mb: 1.5, fontWeight: 'bold' }}>첨부 이미지</Typography>
-            <Grid container spacing={2} sx={{ mb: 4 }}>
+            <Grid container spacing={2} sx={{ mb: 2.5 }}>
               {request.images
                 ?.filter(image => typeof image === 'string' && image.trim() !== '')
                 .map((image, index) => {
@@ -221,11 +221,11 @@ const SubmissionDetailPage: React.FC = () => {
           </>
         )}
 
-        <Divider sx={{ my: 4 }} />
+        <Divider sx={{ my: 2.5 }} />
 
         <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>처리 내용 및 코멘트</Typography>
         {request.comments && request.comments.length > 0 ? (
-          <Stack spacing={2} sx={{ mb: 4 }}>
+          <Stack spacing={2} sx={{ mb: 2.5 }}>
             {request.comments.map(comment => (
               <Paper
                 variant="outlined"
@@ -240,7 +240,7 @@ const SubmissionDetailPage: React.FC = () => {
             ))}
           </Stack>
         ) : (
-          <Paper variant="outlined" sx={{ p: 4, mb: 4, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Paper variant="outlined" sx={{ p: 4, mb: 2.5, textAlign: 'center', bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography color="text.secondary">등록된 처리 내용이 없습니다.</Typography>
           </Paper>
         )}
@@ -281,7 +281,7 @@ const SubmissionDetailPage: React.FC = () => {
       <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold' }}>접수 내역 삭제</DialogTitle>
         <DialogContent dividers>
-          <DialogContentText sx={{ mb: 3 }}>
+          <DialogContentText sx={{ mb: 2 }}>
             이 접수 내역을 삭제하시려면 접수 시 사용했던 비밀번호를 입력해주세요.<br />
             <strong>삭제된 데이터는 복구할 수 없습니다.</strong>
           </DialogContentText>

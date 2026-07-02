@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Grid, IconButton, Stack, Divider } from '@mui/material';
-import { Delete, EditNote as EditNoteIcon } from '@mui/icons-material';
+import { Delete, EditNote as EditNoteIcon, PhotoCamera } from '@mui/icons-material';
 import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
@@ -203,7 +203,7 @@ const EditRequestPage: React.FC = () => {
             <Helmet><title>접수 내용 수정</title></Helmet>
 
             {/* 표준 헤더 섹션 */}
-            <Box sx={{ mb: 4 }}>
+            <Box sx={{ mb: 2.5 }}>
                 <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
                     <EditNoteIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
                     <Typography variant="h5" component="h1" fontWeight="bold">
@@ -215,12 +215,12 @@ const EditRequestPage: React.FC = () => {
                 </Typography>
             </Box>
 
-            <Divider sx={{ mb: 4 }} />
+            <Divider sx={{ mb: 2.5 }} />
 
-            <Paper variant="outlined" sx={{ p: { xs: 2, md: 4 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2.5 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
                 <Box component="form" onSubmit={handleSubmit}>
-                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 3 }}>기본 정보 수정</Typography>
-                    <Grid container spacing={3}>
+                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>기본 정보 수정</Typography>
+                    <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                         <Grid item xs={12} sm={6}>
                             <TextField name="customer_name" label="거래처명" fullWidth required variant="outlined" size="small" value={formData.customer_name} onChange={handleInputChange} disabled={submitting} />
                         </Grid>
@@ -232,7 +232,7 @@ const EditRequestPage: React.FC = () => {
                         </Grid>
                     </Grid>
                     
-                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 4, mb: 2 }}>상세 내용</Typography>
+                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 2.5, mb: 2 }}>상세 내용</Typography>
                     <TextField
                         label="접수 내용"
                         multiline rows={8} fullWidth variant="outlined"
@@ -243,37 +243,43 @@ const EditRequestPage: React.FC = () => {
                         InputProps={{ style: { fontSize: '16px' } }}
                     />
 
-                    <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mt: 4, mb: 2 }}>이미지 관리</Typography>
-                    <Box sx={{ mb: 2 }}>
-                        <Button variant="outlined" component="label" fullWidth sx={{ py: 1.5, borderStyle: 'dashed' }} disabled={submitting}>
-                            이미지 추가 첨부 (최대 5개)
-                            <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
-                        </Button>
+                    <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                            <Button 
+                                variant="outlined" 
+                                component="label" 
+                                startIcon={<PhotoCamera />} 
+                                size="small"
+                                sx={{ borderRadius: 2, py: 0.5, px: 2, color: 'text.secondary', borderColor: 'divider' }}
+                                disabled={submitting}
+                            >
+                                이미지 추가 첨부 (최대 5개)
+                                <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} ref={fileInputRef} />
+                            </Button>
+                            
+                            {imagePreviews.length > 0 && (
+                                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                                    {imagePreviews.map((preview, index) => (
+                                        <Box key={index} sx={{ position: 'relative', display: 'inline-block' }}>
+                                            <img src={preview} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                                            <IconButton 
+                                                size="small" 
+                                                onClick={() => handleRemoveImage(index)} 
+                                                sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                                                disabled={submitting}
+                                            >
+                                                <Delete sx={{ fontSize: '0.9rem' }} color="error" />
+                                            </IconButton>
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            )}
+                        </Box>
                     </Box>
 
-                    <Grid container spacing={2} sx={{ mb: 4 }}>
-                        {imagePreviews.map((preview, index) => (
-                            <Grid item key={index} xs={6} sm={4} md={3}>
-                                <Box sx={{ position: 'relative' }}>
-                                    <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 1, height: 100 }}>
-                                        <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    </Paper>
-                                    <IconButton 
-                                        size="small" 
-                                        onClick={() => handleRemoveImage(index)} 
-                                        sx={{ position: 'absolute', top: -8, right: -8, bgcolor: 'white', boxShadow: 1, '&:hover': { bgcolor: '#f5f5f5' } }}
-                                        disabled={submitting}
-                                    >
-                                        <Delete fontSize="small" color="error" />
-                                    </IconButton>
-                                </Box>
-                            </Grid>
-                        ))}
-                    </Grid>
+                    <Divider sx={{ my: 2.5 }} />
 
-                    <Divider sx={{ my: 4 }} />
-
-                    <Box sx={{ bgcolor: 'grey.50', p: 3, borderRadius: 1, mb: 3 }}>
+                    <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, mb: 2 }}>
                         <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="primary">수정 권한 확인</Typography>
                         <TextField 
                             label="접수 비밀번호" 

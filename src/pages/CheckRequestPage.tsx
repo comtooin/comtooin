@@ -125,7 +125,7 @@ const CheckRequestPage: React.FC = () => {
       </Helmet>
 
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
           <Stack direction="row" alignItems="center" spacing={1.5}>
             <ReceiptLongIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
@@ -142,12 +142,12 @@ const CheckRequestPage: React.FC = () => {
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 4 }} />
+      <Divider sx={{ mb: 2.5 }} />
 
       {!isLoggedIn ? (
-        <Paper variant="outlined" sx={{ p: { xs: 3, md: 5 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
+        <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
           <Box component="form" onSubmit={handleLogin}>
-            <Stack spacing={3}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
               <TextField 
                 label="사용자명" 
                 fullWidth required 
@@ -188,9 +188,9 @@ const CheckRequestPage: React.FC = () => {
               <Button variant="contained" onClick={() => navigate('/')} sx={{ mt: 3, px: 4 }}>홈으로 이동</Button>
             </Paper>
           ) : (
-            <Stack spacing={2}>
+            <Stack spacing={{ xs: 1.5, sm: 2 }}>
               {requests.map(req => (
-                <Paper key={req.id} variant="outlined" sx={{ p: { xs: 2, md: 3 }, borderRadius: 1, transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>
+                <Paper key={req.id} variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, transition: 'all 0.2s', '&:hover': { boxShadow: 2, transform: 'translateY(-2px)' } }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                     <Box>
                       <Typography variant="h6" fontWeight="bold">접수번호: {req.id}</Typography>
@@ -238,8 +238,8 @@ const CheckRequestPage: React.FC = () => {
               <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} size="small" />
             </DialogTitle>
             <DialogContent dividers>
-              <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: 'grey.50', borderRadius: 1 }}>
-                <Grid container spacing={2}>
+              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                   <Grid item xs={12} sm={6}>
                     <Typography variant="caption" color="text.secondary">고객사명</Typography>
                     <Typography variant="body2" fontWeight="bold">{selectedRequest.customer_name}</Typography>
@@ -252,14 +252,14 @@ const CheckRequestPage: React.FC = () => {
               </Paper>
 
               <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>접수 내용</Typography>
-              <Paper variant="outlined" sx={{ p: 2, mb: 3, minHeight: 100, bgcolor: 'white' }}>
+              <Paper variant="outlined" sx={{ p: 2, mb: 2, minHeight: 100, bgcolor: 'white' }}>
                 <div dangerouslySetInnerHTML={{ __html: selectedRequest.content }} style={{ lineHeight: 1.6 }} />
               </Paper>
 
               {selectedRequest.images.length > 0 && (
                 <>
                   <Typography variant="h6" fontWeight="bold" sx={{ mb: 1 }}>첨부 이미지</Typography>
-                  <Grid container spacing={1} sx={{ mb: 3 }}>
+                  <Grid container spacing={1} sx={{ mb: 2 }}>
                     {selectedRequest.images.map((image, index) => {
                       let imageUrl = image;
                       if (!image.startsWith('http')) {
