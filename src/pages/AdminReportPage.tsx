@@ -570,125 +570,104 @@ const AdminReportPage: React.FC = () => {
 
       {/* 필터 및 액션 섹션 */}
       <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Stack spacing={{ xs: 1.5, sm: 2 }}>
-          {/* 첫 번째 줄: 필터 및 조회 버튼 */}
-          <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1, alignItems: 'center' }}>
-            <Box sx={{ display: 'flex', gap: 1, flexGrow: 1, width: '100%' }}>
-              <TextField 
-                select 
-                label="거래처" 
-                size="small"
-                fullWidth
-                value={selectedCustomer} 
-                onChange={(e) => setSelectedCustomer(e.target.value)} 
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
-              >
-                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
-                {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
-              </TextField>
-              <TextField 
-                select 
-                label="기간" 
-                size="small"
-                fullWidth
-                value={selectedMonth} 
-                onChange={(e) => setSelectedMonth(e.target.value)} 
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
-              >
-                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
-                {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
-              </TextField>
-              <TextField 
-                select 
-                label="상태" 
-                size="small"
-                fullWidth
-                value={status} 
-                onChange={(e) => setStatus(e.target.value)} 
-                sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
-              >
-                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 상태</em></MenuItem>
-                <MenuItem value="processing" sx={{ fontSize: '0.8125rem' }}>처리중</MenuItem>
-                <MenuItem value="completed" sx={{ fontSize: '0.8125rem' }}>처리완료</MenuItem>
-              </TextField>
-            </Box>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 1.5, alignItems: { xs: 'stretch', md: 'center' }, justifyContent: 'space-between' }}>
+          
+          {/* 좌측: 필터 영역 */}
+          <Box sx={{ display: 'flex', gap: 1, flex: '1 1 auto', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
+            <TextField 
+              select 
+              label="거래처" 
+              size="small"
+              fullWidth
+              value={selectedCustomer} 
+              onChange={(e) => setSelectedCustomer(e.target.value)} 
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
+            >
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
+              {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
+            </TextField>
+            <TextField 
+              select 
+              label="기간" 
+              size="small"
+              fullWidth
+              value={selectedMonth} 
+              onChange={(e) => setSelectedMonth(e.target.value)} 
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
+            >
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+              {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
+            </TextField>
+            <TextField 
+              select 
+              label="상태" 
+              size="small"
+              fullWidth
+              value={status} 
+              onChange={(e) => setStatus(e.target.value)} 
+              sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
+            >
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 상태</em></MenuItem>
+              <MenuItem value="processing" sx={{ fontSize: '0.8125rem' }}>처리중</MenuItem>
+              <MenuItem value="completed" sx={{ fontSize: '0.8125rem' }}>처리완료</MenuItem>
+            </TextField>
+          </Box>
+
+          {/* 우측: 버튼 영역 */}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-end' }, flex: '0 0 auto' }}>
             <Button 
               variant="contained" 
               onClick={applyFilters} 
               startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
-              sx={{ 
-                fontWeight: 'bold', height: '36px', fontSize: '0.75rem', 
-                minWidth: '90px', borderRadius: 1, width: { xs: '100%', md: 'auto' } 
-              }}
+              sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
             >
               조회
             </Button>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
+              onClick={handleGenerateAiReport}
+              disabled={isGenerating || filteredRequests.length === 0}
+              sx={{ 
+                fontWeight: 'bold', fontSize: '0.75rem', height: '36px',
+                color: '#673ab7', borderColor: '#673ab7', 
+                '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
+                borderRadius: 1
+              }}
+            >
+              AI 리포트
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
+              onClick={handleExportExcel}
+              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+            >
+              다운로드
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="info" 
+              startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
+              onClick={handleDownloadSampleCsv}
+              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+            >
+              샘플양식
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="primary" 
+              startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
+              component="label"
+              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+            >
+              업로드
+              <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
+            </Button>
           </Box>
-
-          <Divider />
-
-          {/* 두 번째 줄: 액션 버튼들 */}
-          <Grid container spacing={1} sx={{ justifyContent: { xs: 'center', sm: 'flex-end' } }}>
-            {/* 리포트 그룹 */}
-            <Grid item xs={6} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="secondary" 
-                startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
-                onClick={handleGenerateAiReport}
-                disabled={isGenerating || filteredRequests.length === 0}
-                sx={{ 
-                  fontWeight: 'bold', minWidth: { sm: '140px' }, fontSize: '0.75rem', height: '36px',
-                  color: '#673ab7', borderColor: '#673ab7', 
-                  '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
-                  borderRadius: 1
-                }}
-              >
-                AI 분석 리포트
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="secondary" 
-                startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
-                onClick={handleExportExcel}
-                sx={{ fontWeight: 'bold', minWidth: { sm: '100px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-              >
-                다운로드
-              </Button>
-            </Grid>
-
-            {/* 데이터 그룹 */}
-            <Grid item xs={6} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="info" 
-                startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
-                onClick={handleDownloadSampleCsv}
-                sx={{ fontWeight: 'bold', minWidth: { sm: '110px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-              >
-                샘플양식
-              </Button>
-            </Grid>
-            <Grid item xs={6} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="primary" 
-                startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
-                component="label"
-                sx={{ fontWeight: 'bold', minWidth: { sm: '90px' }, fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-              >
-                업로드
-                <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
-              </Button>
-            </Grid>
-          </Grid>
-        </Stack>
+        </Box>
       </Paper>
 
       {/* 탭 섹션 */}
