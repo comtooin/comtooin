@@ -403,12 +403,12 @@ const AdminSchedulePage: React.FC = () => {
       </Paper>
 
       {/* 등록 팝업 */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold' }}>
           {formData.id ? '일정 수정' : `${formData.date} 일정 등록`}
         </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mt: 2 }}>
+        <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
+          <Box sx={{ mt: 1 }}>
             <Grid container spacing={{ xs: 1.5, sm: 2 }}>
               <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
                 <FormControlLabel control={<Checkbox checked={formData.allDay} onChange={(e) => setFormData({...formData, allDay: e.target.checked})} />} label="하루종일" />
@@ -462,23 +462,25 @@ const AdminSchedulePage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setOpen(false)}>취소</Button>
-          <Button variant="contained" onClick={handleSave} disabled={loading} startIcon={loading ? <CircularProgress size={20} /> : <EventIcon />}>
-            {formData.id ? '수정 사항 저장' : '저장 및 알림 발송'}
-          </Button>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+            <Button onClick={() => setOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>취소</Button>
+            <Button variant="contained" onClick={handleSave} disabled={loading} startIcon={loading ? <CircularProgress size={20} /> : <EventIcon />} sx={{ fontWeight: 'bold' }}>
+              {formData.id ? '수정 사항 저장' : '저장 및 알림 발송'}
+            </Button>
+          </Stack>
         </DialogActions>
       </Dialog>
 
       {/* 상세 보기 팝업 */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="xs" fullWidth fullScreen={isMobile}>
+      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth>
         {selectedEvent && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               일정 상세
               <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" />
             </DialogTitle>
-            <DialogContent dividers>
+            <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ pt: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                   <BusinessIcon color="action" />
@@ -521,11 +523,11 @@ const AdminSchedulePage: React.FC = () => {
                 </Box>
               </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: { xs: 1.5, sm: 2.5 }, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex' }}>
-              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold', borderRadius: 1 }}>삭제</Button>
-              <Stack direction="row" spacing={1.5}>
-                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', borderRadius: 1, bgcolor: 'white' }}>닫기</Button>
-                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold', borderRadius: 1 }}>수정</Button>
+            <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
+              <Stack direction="row" spacing={1}>
+                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
+                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold' }}>수정</Button>
               </Stack>
             </DialogActions>
           </>
