@@ -5,7 +5,6 @@ import {
   Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider
 } from '@mui/material';
 import {
-  Dashboard as DashboardIcon,
   Assignment as AssignmentIcon,
   AccessTime as AccessTimeIcon,
   Edit as EditIcon
