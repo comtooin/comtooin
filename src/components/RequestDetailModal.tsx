@@ -100,32 +100,20 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 정보 (번호: {selectedRequest.id})</DialogTitle>
       <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
         <Stack spacing={1.5}>
-          <Box sx={{ bgcolor: 'grey.50', p: { xs: 1.5, sm: 2 }, borderRadius: 1 }}>
-            <Stack spacing={1.5}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <DashboardIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-                <Box>
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>거래처</Typography>
-                  <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>{selectedRequest.customer_name}</Typography>
-                </Box>
-              </Box>
-              <Divider sx={{ my: 0.5, borderColor: 'rgba(0,0,0,0.06)' }} />
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">작성자</Typography>
-                  <Typography variant="body2" fontWeight="medium">{selectedRequest.user_name}</Typography>
-                </Grid>
-                <Grid item xs={6} sm={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">요청자</Typography>
-                  <Typography variant="body2" fontWeight="medium">{selectedRequest.requester_name || '-'}</Typography>
-                </Grid>
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="caption" color="text.secondary" display="block">연락처/이메일</Typography>
-                  <Typography variant="body2">{selectedRequest.email}</Typography>
-                </Grid>
-              </Grid>
-            </Stack>
-          </Box>
+          <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', columnGap: 3, rowGap: 1, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">거래처</Typography>
+              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.customer_name}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">요청자</Typography>
+              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.requester_name || '-'}</Typography>
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">작성자</Typography>
+              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.user_name}</Typography>
+            </Box>
+          </Paper>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AssignmentIcon fontSize="small" color="action" /> 접수 내용
@@ -202,28 +190,15 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           )}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ 
-        p: { xs: 1.5, sm: 2 }, 
-        bgcolor: 'grey.50', 
-        flexDirection: { xs: 'column-reverse', sm: 'row' }, 
-        justifyContent: 'space-between',
-        alignItems: 'stretch',
-        gap: { xs: 1, sm: 0 }
-      }}>
-        <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>삭제</Button>
-        <Grid container spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, margin: 0 }}>
-          <Grid item xs={4} sm="auto">
-            <Button fullWidth onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
-          </Grid>
-          <Grid item xs={4} sm="auto">
-            <Button fullWidth startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-block' } }} />} variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', px: 1 }}>{isEditing ? '취소' : '수정'}</Button>
-          </Grid>
-          <Grid item xs={4} sm="auto">
-            <Button fullWidth onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold' }}>
-              {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
-            </Button>
-          </Grid>
-        </Grid>
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+        <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
+        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+          <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
+          <Button startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-block' } }} />} variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white' }}>{isEditing ? '취소' : '수정'}</Button>
+          <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold' }}>
+            {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
+          </Button>
+        </Stack>
       </DialogActions>
     </Dialog>
   );

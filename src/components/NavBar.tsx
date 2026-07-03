@@ -149,6 +149,16 @@ const NavBar: React.FC = () => {
     <>
       <AppBar position="static">
         <Toolbar>
+          {isMobile && (
+            <IconButton
+              color="inherit"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
           <Typography
             variant="h6"
             component={RouterLink}
@@ -210,15 +220,7 @@ const NavBar: React.FC = () => {
               (IT Service Management)
             </Box>
           </Typography>
-          {isMobile ? (
-            <IconButton
-              color="inherit"
-              edge="end"
-              onClick={handleDrawerToggle}
-            >
-              <MenuIcon />
-            </IconButton>
-          ) : (
+          {!isMobile && (
             <Box sx={{ display: 'flex', gap: 1 }}>
               {isAdminLoggedIn ? (
                 <>
@@ -265,7 +267,7 @@ const NavBar: React.FC = () => {
         </Toolbar>
       </AppBar>
       <Drawer
-        anchor="right"
+        anchor="left"
         open={drawerOpen}
         onClose={handleDrawerToggle}
       >
