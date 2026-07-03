@@ -2,45 +2,7 @@ import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 
-/**
- * 1. 슬랙 메시지 발송 함수 (유지보수 업무용)
- */
-async function sendSlackMessage(webhookUrl: string, data: any) {
-  const message = {
-    text: `📝 *신규 유지보수 업무 기록 알림 (컴투인)*`,
-    attachments: [{
-      color: data.status === 'completed' ? "#2EB67D" : "#ECB22E", // 완료는 초록, 진행중은 노랑
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*새로운 유지보수 업무가 기록되었습니다.*\n*거래처:* ${data.customer_name}\n*요청자:* ${data.requester_name || '미기입'}\n*작성자:* ${data.user_name}`
-          }
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*업무 내용:*\n${data.content.replace(/<[^>]*>?/gm, '').substring(0, 500)}` 
-          }
-        },
-        {
-          type: "context",
-          elements: [{ type: "mrkdwn", text: `기록 일시: ${new Date(data.created_at).toLocaleString('ko-KR')}` }]
-        }
-      ]
-    }]
-  };
 
-  const res = await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(message),
-  });
-  
-  if (!res.ok) console.error("슬랙 발송 실패:", await res.text());
-}
 
 /**
  * 2. 이메일 발송 함수
@@ -74,15 +36,12 @@ serve(async (req) => {
     }
 
     const record = payload.record;
-    const SLACK_URL = Deno.env.get("SLACK_WEBHOOK_URL");
     const RESEND_KEY = Deno.env.get("RESEND_API_KEY");
     const ADMIN_EMAIL = Deno.env.get("ADMIN_EMAIL");
     
     const tasks = [];
 
-    if (SLACK_URL) {
-      tasks.push(sendSlackMessage(SLACK_URL, record));
-    }
+
 
     if (RESEND_KEY && ADMIN_EMAIL) {
       const statusLabel = record.status === 'completed' ? '[처리완료]' : '[처리중]';
