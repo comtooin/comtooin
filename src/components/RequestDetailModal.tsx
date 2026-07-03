@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Typography, Box, Paper, CircularProgress, Button,
-  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider, Chip
+  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -12,10 +12,7 @@ import {
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId } from '../api';
 
-const stripHtmlTags = (html: string) => {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
-  return doc.body.textContent || '';
-};
+
 
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
   const [selectedRequest, setSelectedRequest] = useState<any>(request);

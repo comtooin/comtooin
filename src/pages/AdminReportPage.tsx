@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
@@ -87,7 +87,7 @@ interface MonthlySummary {
 }
 
 const AdminReportPage: React.FC = () => {
-  const navigate = useNavigate();
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
