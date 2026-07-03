@@ -619,59 +619,74 @@ const AdminReportPage: React.FC = () => {
           </Box>
 
           {/* 우측: 버튼 영역 */}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', md: 'flex-end' }, flex: '0 0 auto' }}>
-            <Button 
-              variant="contained" 
-              onClick={applyFilters} 
-              startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
-              sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
-            >
-              조회
-            </Button>
-            <Button 
-              variant="outlined" 
-              color="secondary" 
-              startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
-              onClick={handleGenerateAiReport}
-              disabled={isGenerating || filteredRequests.length === 0}
-              sx={{ 
-                fontWeight: 'bold', fontSize: '0.75rem', height: '36px',
-                color: '#673ab7', borderColor: '#673ab7', 
-                '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
-                borderRadius: 1
-              }}
-            >
-              AI 리포트
-            </Button>
-            <Button 
-              variant="outlined" 
-              color="secondary" 
-              startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
-              onClick={handleExportExcel}
-              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-            >
-              다운로드
-            </Button>
-            <Button 
-              variant="outlined" 
-              color="primary" 
-              startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
-              component="label"
-              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-            >
-              업로드
-              <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
-            </Button>
-            <Button 
-              variant="outlined" 
-              color="info" 
-              startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
-              onClick={handleDownloadSampleCsv}
-              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-            >
-              업로드양식
-            </Button>
-          </Box>
+          <Grid container spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
+            <Grid item xs={6} sm="auto">
+              <Button 
+                fullWidth
+                variant="contained" 
+                onClick={applyFilters} 
+                startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
+              >
+                조회
+              </Button>
+            </Grid>
+            <Grid item xs={6} sm="auto">
+              <Button 
+                fullWidth
+                variant="outlined" 
+                color="secondary" 
+                startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
+                onClick={handleGenerateAiReport}
+                disabled={isGenerating || filteredRequests.length === 0}
+                sx={{ 
+                  fontWeight: 'bold', fontSize: '0.75rem', height: '36px',
+                  color: '#673ab7', borderColor: '#673ab7', 
+                  '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
+                  borderRadius: 1
+                }}
+              >
+                AI 리포트
+              </Button>
+            </Grid>
+            <Grid item xs={4} sm="auto">
+              <Button 
+                fullWidth
+                variant="outlined" 
+                color="secondary" 
+                startIcon={<FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                onClick={handleExportExcel}
+                sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+              >
+                다운로드
+              </Button>
+            </Grid>
+            <Grid item xs={4} sm="auto">
+              <Button 
+                fullWidth
+                variant="outlined" 
+                color="primary" 
+                startIcon={<FileUploadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                component="label"
+                sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+              >
+                업로드
+                <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
+              </Button>
+            </Grid>
+            <Grid item xs={4} sm="auto">
+              <Button 
+                fullWidth
+                variant="outlined" 
+                color="info" 
+                startIcon={<DescriptionIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                onClick={handleDownloadSampleCsv}
+                sx={{ fontWeight: 'bold', fontSize: { xs: '0.65rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+              >
+                업로드양식
+              </Button>
+            </Grid>
+          </Grid>
         </Box>
       </Paper>
 
@@ -695,9 +710,15 @@ const AdminReportPage: React.FC = () => {
                     <Paper 
                       key={request.id} 
                       variant="outlined" 
+                      onClick={() => {
+                        setSelectedRequest(request);
+                        setOpenDetailModal(true);
+                      }}
                       sx={{ 
                         p: 1.5, 
                         borderRadius: 1, 
+                        cursor: 'pointer',
+                        '&:active': { bgcolor: 'action.selected' },
                         borderLeft: `4px solid ${getStatusChipColor(request.status) === 'success' ? '#2e7d32' : getStatusChipColor(request.status) === 'warning' ? '#ed6c02' : '#0288d1'}`
                       }}
                     >

@@ -98,9 +98,9 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 정보 (번호: {selectedRequest.id})</DialogTitle>
-      <DialogContent dividers>
-        <Stack spacing={2.5}>
-          <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+      <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
+        <Stack spacing={1.5}>
+          <Box sx={{ bgcolor: 'grey.50', p: { xs: 1.5, sm: 2 }, borderRadius: 1 }}>
             <Stack spacing={1.5}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <DashboardIcon sx={{ color: 'primary.main', fontSize: 22 }} />
@@ -127,10 +127,10 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Stack>
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AssignmentIcon fontSize="small" color="action" /> 접수 내용
             </Typography>
-            <Paper variant="outlined" sx={{ p: 2, bgcolor: 'background.paper' }}>
+            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'background.paper' }}>
               {isEditing ? (
                 <TextField multiline rows={4} fullWidth value={editForm.content} onChange={(e) => setEditForm({ ...editForm, content: e.target.value })} />
               ) : (
@@ -139,7 +139,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Paper>
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <AccessTimeIcon fontSize="small" color="action" /> 처리내용 기록
             </Typography>
             <Stack spacing={1}>
@@ -167,8 +167,8 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           
           {selectedRequest.images && selectedRequest.images.length > 0 && (
             <Box>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>첨부 이미지</Typography>
-              <Grid container spacing={2}>
+              <Typography variant="subtitle1" fontWeight="bold" gutterBottom>첨부 이미지</Typography>
+              <Grid container spacing={1}>
                 {selectedRequest.images.map((image: string, index: number) => {
                   let imageUrl = image;
                   if (!image.startsWith('http')) imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
@@ -188,7 +188,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Box>
           )}
 
-          <Divider sx={{ my: 1 }} />
+          <Divider sx={{ my: 0.5 }} />
           
           <FormControl fullWidth>
             <InputLabel>상태 변경</InputLabel>
@@ -202,15 +202,28 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           )}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: 2, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex' }}>
-        <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
-        <Stack direction="row" spacing={1.5}>
-          <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
-          <Button startIcon={<EditIcon />} variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white' }}>{isEditing ? '취소' : '수정'}</Button>
-          <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold' }}>
-            {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
-          </Button>
-        </Stack>
+      <DialogActions sx={{ 
+        p: { xs: 1.5, sm: 2 }, 
+        bgcolor: 'grey.50', 
+        flexDirection: { xs: 'column-reverse', sm: 'row' }, 
+        justifyContent: 'space-between',
+        alignItems: 'stretch',
+        gap: { xs: 1, sm: 0 }
+      }}>
+        <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', width: { xs: '100%', sm: 'auto' } }}>삭제</Button>
+        <Grid container spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, margin: 0 }}>
+          <Grid item xs={4} sm="auto">
+            <Button fullWidth onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
+          </Grid>
+          <Grid item xs={4} sm="auto">
+            <Button fullWidth startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-block' } }} />} variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', px: 1 }}>{isEditing ? '취소' : '수정'}</Button>
+          </Grid>
+          <Grid item xs={4} sm="auto">
+            <Button fullWidth onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold' }}>
+              {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
+            </Button>
+          </Grid>
+        </Grid>
       </DialogActions>
     </Dialog>
   );
