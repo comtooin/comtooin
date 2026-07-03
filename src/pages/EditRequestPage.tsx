@@ -24,7 +24,7 @@ const EditRequestPage: React.FC = () => {
         content: '',
         images: [],
     });
-    const [password, setPassword] = useState('');
+
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -144,12 +144,6 @@ const EditRequestPage: React.FC = () => {
         setSubmitting(true);
         setError('');
         try {
-            let hashedPassword = '';
-            if (password) {
-                const { data: hashed, error: hashError } = await supabase.rpc('hash_password', { plaintext_password: password });
-                if (hashError) throw hashError;
-                hashedPassword = hashed as string;
-            }
 
             // 1. 이미지 처리 및 일괄 업로드
             let uploadedImageUrls: string[] = [];
@@ -182,7 +176,6 @@ const EditRequestPage: React.FC = () => {
                 content: formData.content,
                 images: [...formData.images, ...uploadedImageUrls]
             };
-            if (hashedPassword) updatePayload.password = hashedPassword;
 
             const { error: updateError } = await supabase.from('requests').update(updatePayload).eq('id', id);
             if (updateError) throw updateError;
@@ -277,24 +270,6 @@ const EditRequestPage: React.FC = () => {
                         </Box>
                     </Box>
 
-                    <Divider sx={{ my: 2.5 }} />
-
-                    <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1, mb: 2 }}>
-                        <Typography variant="subtitle2" gutterBottom fontWeight="bold" color="primary">수정 권한 확인</Typography>
-                        <TextField 
-                            label="접수 비밀번호" 
-                            type="password" 
-                            fullWidth 
-                            required 
-                            variant="outlined" 
-                            size="small"
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)} 
-                            placeholder="본인 확인을 위한 비밀번호 입력"
-                            sx={{ bgcolor: 'white' }}
-                            disabled={submitting}
-                        />
-                    </Box>
 
                     {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
                     {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
@@ -318,7 +293,7 @@ const EditRequestPage: React.FC = () => {
                             sx={{ py: 1.5, fontWeight: 'bold' }}
                             disabled={submitting}
                         >
-                            {submitting ? <><CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> 저장 중...</> : '수정 사항 저장'}
+                            {submitting ? <><CircularProgress size={20} color="inherit" sx={{ mr: 1 }} /> 저장 중...</> : '저장'}
                         </Button>
                     </Stack>
                 </Box>

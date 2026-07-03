@@ -4,7 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import HomePage from './pages/HomePage';
 import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
 import AdminLoginPage from './pages/AdminLoginPage'; 
-import AdminDashboardPage from './pages/AdminDashboardPage';
+
 import AdminReportPage from './pages/AdminReportPage'; 
 import AdminCustomerPage from './pages/AdminCustomerPage';
 import AdminCustomerInventoryPage from './pages/AdminCustomerInventoryPage';
@@ -222,10 +222,6 @@ function App() {
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route
                 path="/admin/dashboard"
-                element={<AdminRoute><AdminDashboardPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/reports"
                 element={<AdminRoute><AdminReportPage /></AdminRoute>}
               />
               <Route

@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel
@@ -10,7 +12,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Business as BusinessIcon,
   PieChart as PieChartIcon,
-  Assessment as AssessmentIcon,
+  Dashboard as DashboardIcon,
   AutoAwesome as AiIcon,
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
@@ -85,6 +87,7 @@ interface MonthlySummary {
 }
 
 const AdminReportPage: React.FC = () => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
@@ -97,6 +100,8 @@ const AdminReportPage: React.FC = () => {
   const [status, setStatus] = useState('all');
   const [tabValue, setTabValue] = useState(0);
   const [statusData, setStatusData] = useState<any[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
 
   // 페이지네이션 상태
@@ -512,14 +517,14 @@ const AdminReportPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>리포트 | COMTOOIN</title></Helmet>
+      <Helmet><title>대시보드 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <AssessmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
+          <DashboardIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            리포트
+            대시보드
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
@@ -539,7 +544,7 @@ const AdminReportPage: React.FC = () => {
       {/* 요약 위젯 */}
       <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '총 리포트', shortLabel: '총리포트', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '총 건수', shortLabel: '총건수', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
           { label: '진행 중', shortLabel: '진행중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
           { label: '완료됨', shortLabel: '완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
         ].map((item, idx, arr) => (
@@ -649,15 +654,6 @@ const AdminReportPage: React.FC = () => {
             </Button>
             <Button 
               variant="outlined" 
-              color="info" 
-              startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
-              onClick={handleDownloadSampleCsv}
-              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
-            >
-              샘플양식
-            </Button>
-            <Button 
-              variant="outlined" 
               color="primary" 
               startIcon={<FileUploadIcon sx={{ fontSize: 18 }} />}
               component="label"
@@ -665,6 +661,15 @@ const AdminReportPage: React.FC = () => {
             >
               업로드
               <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
+            </Button>
+            <Button 
+              variant="outlined" 
+              color="info" 
+              startIcon={<DescriptionIcon sx={{ fontSize: 18 }} />}
+              onClick={handleDownloadSampleCsv}
+              sx={{ fontWeight: 'bold', fontSize: '0.75rem', height: '36px', borderRadius: 1 }}
+            >
+              업로드양식
             </Button>
           </Box>
         </Box>
@@ -771,7 +776,15 @@ const AdminReportPage: React.FC = () => {
                           </TableHead>
                           <TableBody>
                             {paginatedRequests.length > 0 ? paginatedRequests.map((request) => (
-                              <TableRow key={request.id} hover>
+                              <TableRow 
+                                key={request.id} 
+                                hover
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setOpenDetailModal(true);
+                                }}
+                                sx={{ cursor: 'pointer', '&:active': { bgcolor: 'action.selected' } }}
+                              >
                                 <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
                                   {(() => {
                                     const d = new Date(request.created_at);
@@ -910,6 +923,13 @@ const AdminReportPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      
+      <RequestDetailModal 
+        open={openDetailModal} 
+        request={selectedRequest} 
+        onClose={() => setOpenDetailModal(false)} 
+        onRefresh={applyFilters} 
+      />
     </Container>
   );
 };

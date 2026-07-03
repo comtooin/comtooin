@@ -111,7 +111,7 @@ const SubmissionDetailPage: React.FC = () => {
 
         alert('성공적으로 삭제되었습니다.');
         setOpenDeleteDialog(false);
-        navigate('/');
+        navigate('/admin/dashboard');
     } catch (err: any) {
         setDeleteError(err.message || '삭제 중 오류가 발생했습니다.');
     }
@@ -251,28 +251,26 @@ const SubmissionDetailPage: React.FC = () => {
               color="primary" 
               size="large"
               onClick={() => navigate(`/admin/request/edit/${id}`)} 
-              disabled={request.status !== 'pending'}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
+              sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
             >
-                수정하기
+                수정
             </Button>
             <Button 
               variant="contained" 
               color="error" 
               size="large"
               onClick={() => setOpenDeleteDialog(true)} 
-              disabled={request.status !== 'pending'}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
+              sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
             >
-                삭제하기
+                삭제
             </Button>
             <Button 
               variant="outlined" 
               size="large"
-              onClick={() => navigate('/')}
-              sx={{ minWidth: 140, fontWeight: 'bold', borderRadius: 1 }}
+              onClick={() => navigate('/admin/dashboard')}
+              sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
             >
-                목록으로
+                목록
             </Button>
         </Box>
       </Paper>

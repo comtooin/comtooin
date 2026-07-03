@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Divider,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Button, TableSortLabel,
@@ -37,9 +37,9 @@ interface IRequest {
 
 const getStatusLabel = (status: string): string => {
   switch (status) {
-    case 'pending': return '접수완료';
-    case 'processing': return '처리중';
-    case 'completed': return '처리완료';
+    case 'pending': return '?묒닔?꾨즺';
+    case 'processing': return '泥섎━以?;
+    case 'completed': return '泥섎━?꾨즺';
     default: return status;
   }
 };
@@ -61,7 +61,7 @@ const AdminDashboardPage: React.FC = () => {
   const [selectedRequest, setSelectedRequest] = useState<IRequest | null>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
   
-  // 편집 모드 관련 상태 및 타입 정의
+  // ?몄쭛 紐⑤뱶 愿???곹깭 諛?????뺤쓽
   interface IEditForm {
     customer_name: string;
     user_name: string;
@@ -83,17 +83,17 @@ const AdminDashboardPage: React.FC = () => {
   const [newComment, setNewComment] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // 필터 관련 상태 추가
+  // ?꾪꽣 愿???곹깭 異붽?
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
 
-  // 페이지네이션 상태
+  // ?섏씠吏?ㅼ씠???곹깭
   const [page, setPage] = useState(1);
 
-  // 정렬 상태
+  // ?뺣젹 ?곹깭
   const [sortConfig, setSortConfig] = useState<{ key: keyof IRequest, direction: 'asc' | 'desc' } | null>(null);
 
   const handleSort = (key: keyof IRequest) => {
@@ -112,7 +112,7 @@ const AdminDashboardPage: React.FC = () => {
       user_name: req.user_name || '',
       requester_name: req.requester_name || '',
       content: req.content,
-      // 중요: 깊은 복사를 통해 원본 데이터와의 참조를 완전히 끊음
+      // 以묒슂: 源딆? 蹂듭궗瑜??듯빐 ?먮낯 ?곗씠?곗???李몄“瑜??꾩쟾???딆쓬
       comments: req.comments ? req.comments.map(c => ({ ...c })) : []
     });
     setIsEditing(false);
@@ -170,7 +170,7 @@ const AdminDashboardPage: React.FC = () => {
       
       const allFiltered = data || [];
       
-      // 요약 데이터 업데이트 (현재 선택된 거래처/기간 기준)
+      // ?붿빟 ?곗씠???낅뜲?댄듃 (?꾩옱 ?좏깮??嫄곕옒泥?湲곌컙 湲곗?)
       setSummaryData({
         total: allFiltered.length,
         pending: allFiltered.filter(req => req.status === 'pending').length,
@@ -178,19 +178,19 @@ const AdminDashboardPage: React.FC = () => {
         completed: allFiltered.filter(req => req.status === 'completed').length,
       });
 
-      // 리스트 데이터 업데이트 (상태 필터 적용)
+      // 由ъ뒪???곗씠???낅뜲?댄듃 (?곹깭 ?꾪꽣 ?곸슜)
       if (filterStatus) {
         setRequests(allFiltered.filter(req => req.status === filterStatus));
       } else {
         setRequests(allFiltered);
       }
       
-      // 필터가 바뀌면 페이지를 1로 리셋 (수정 후 갱신시는 유지)
+      // ?꾪꽣媛 諛붾뚮㈃ ?섏씠吏瑜?1濡?由ъ뀑 (?섏젙 ??媛깆떊?쒕뒗 ?좎?)
       if (resetPage) {
         setPage(1);
       }
     } catch (err: any) {
-      setError(err.message || '데이터를 불러오는 중 오류가 발생했습니다.');
+      setError(err.message || '?곗씠?곕? 遺덈윭?ㅻ뒗 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     } finally {
       setLoading(false);
     }
@@ -202,15 +202,15 @@ const AdminDashboardPage: React.FC = () => {
 
   const handleDeleteRequest = async () => {
     if (!selectedRequest) return;
-    if (!window.confirm('정말로 이 기록을 삭제하시겠습니까?')) return;
+    if (!window.confirm('?뺣쭚濡???湲곕줉????젣?섏떆寃좎뒿?덇퉴?')) return;
     try {
       const { error: deleteError } = await supabase.from('requests').delete().eq('id', selectedRequest.id);
       if (deleteError) throw deleteError;
       setOpenDetailModal(false);
       fetchRequests(false);
-      alert('업무 기록이 삭제되었습니다.');
+      alert('?낅Т 湲곕줉????젣?섏뿀?듬땲??');
     } catch (err: any) {
-      alert(err.message || '삭제 중 오류가 발생했습니다.');
+      alert(err.message || '??젣 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.');
     }
   };
 
@@ -218,13 +218,13 @@ const AdminDashboardPage: React.FC = () => {
     if (!selectedRequest) return;
     setSaving(true);
     try {
-      // 1. 요청 상태 및 업데이트 시간 갱신
+      // 1. ?붿껌 ?곹깭 諛??낅뜲?댄듃 ?쒓컙 媛깆떊
       const updatePayload: any = { 
         status: newStatus, 
         updated_at: new Date().toISOString()
       };
 
-      // 수정 모드일 경우 접수내용(content)도 포함
+      // ?섏젙 紐⑤뱶??寃쎌슦 ?묒닔?댁슜(content)???ы븿
       if (isEditing) {
         updatePayload.content = editForm.content;
       }
@@ -236,7 +236,7 @@ const AdminDashboardPage: React.FC = () => {
       
       if (updateError) throw updateError;
 
-      // 2. 기존 댓글 수정 사항 반영 (수정 모드일 때만 수행)
+      // 2. 湲곗〈 ?볤? ?섏젙 ?ы빆 諛섏쁺 (?섏젙 紐⑤뱶???뚮쭔 ?섑뻾)
       if (isEditing && editForm.comments && editForm.comments.length > 0) {
         for (const c of editForm.comments) {
           const original = selectedRequest.comments.find((oc: any) => oc.id === c.id);
@@ -250,7 +250,7 @@ const AdminDashboardPage: React.FC = () => {
         }
       }
 
-      // 3. 새로운 댓글 추가 (일반 모드에서 newComment가 있을 때)
+      // 3. ?덈줈???볤? 異붽? (?쇰컲 紐⑤뱶?먯꽌 newComment媛 ?덉쓣 ??
       if (!isEditing && newComment.trim()) {
         const staffId = await getCurrentStaffId();
         const { error: commentError } = await supabase.from('comments').insert({
@@ -261,8 +261,7 @@ const AdminDashboardPage: React.FC = () => {
         if (commentError) throw commentError;
       }
       
-      // 4. 데이터 최신화
-      await fetchRequests(false);
+      // 4. ?곗씠??理쒖떊??      await fetchRequests(false);
       
       const { data: refreshedData } = await supabase
         .from('requests')
@@ -274,14 +273,13 @@ const AdminDashboardPage: React.FC = () => {
         setSelectedRequest(refreshedData);
       }
       
-      // 5. 상태 초기화
-      setNewComment('');
+      // 5. ?곹깭 珥덇린??      setNewComment('');
       setIsEditing(false);
-      alert('성공적으로 저장되었습니다.');
+      alert('?깃났?곸쑝濡???λ릺?덉뒿?덈떎.');
       setOpenDetailModal(false);
     } catch (err: any) {
       console.error("Save Error:", err);
-      alert('저장 실패: ' + (err.message || '오류가 발생했습니다.'));
+      alert('????ㅽ뙣: ' + (err.message || '?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎.'));
     } finally {
       setSaving(false);
     }
@@ -325,18 +323,17 @@ const AdminDashboardPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>대시보드 | COMTOOIN</title></Helmet>
+      <Helmet><title>??쒕낫??| COMTOOIN</title></Helmet>
       
-      {/* 표준 헤더 섹션 */}
+      {/* ?쒖? ?ㅻ뜑 ?뱀뀡 */}
       <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <DashboardIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            대시보드
-          </Typography>
+            ??쒕낫??          </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
-          전체 유지보수 접수 현황을 실시간으로 확인하고 관리합니다.
+          ?꾩껜 ?좎?蹂댁닔 ?묒닔 ?꾪솴???ㅼ떆媛꾩쑝濡??뺤씤?섍퀬 愿由ы빀?덈떎.
         </Typography>
       </Box>
 
@@ -344,9 +341,9 @@ const AdminDashboardPage: React.FC = () => {
 
       <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '총 업무기록', shortLabel: '총기록', count: summaryData.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: null },
-          { label: '진행 중', shortLabel: '진행중', count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} />, filter: 'processing' },
-          { label: '완료됨', shortLabel: '완료', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'completed' },
+          { label: '珥??낅Т湲곕줉', shortLabel: '珥앷린濡?, count: summaryData.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: null },
+          { label: '吏꾪뻾 以?, shortLabel: '吏꾪뻾以?, count: summaryData.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} />, filter: 'processing' },
+          { label: '?꾨즺??, shortLabel: '?꾨즺', count: summaryData.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'completed' },
         ].map((item, idx, arr) => (
           <ButtonBase 
             key={idx}
@@ -377,13 +374,13 @@ const AdminDashboardPage: React.FC = () => {
         ))}
       </Paper>
 
-      {/* 필터 섹션 - 카드 아래로 이동 */}
+      {/* ?꾪꽣 ?뱀뀡 - 移대뱶 ?꾨옒濡??대룞 */}
       <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
         <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="center">
           <Grid item xs={12} sm={6}>
             <TextField 
               select 
-              label="거래처 필터" 
+              label="嫄곕옒泥??꾪꽣" 
               fullWidth 
               value={selectedCustomer} 
               onChange={(e) => setSelectedCustomer(e.target.value)} 
@@ -391,14 +388,14 @@ const AdminDashboardPage: React.FC = () => {
               InputProps={{ sx: { fontSize: '0.8125rem' } }}
               InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
             >
-                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>?꾩껜 嫄곕옒泥?/em></MenuItem>
                 {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
             </TextField>
           </Grid>
           <Grid item xs={12} sm={6}>
             <TextField 
               select 
-              label="기간(월) 필터" 
+              label="湲곌컙(?? ?꾪꽣" 
               fullWidth 
               value={selectedMonth} 
               onChange={(e) => setSelectedMonth(e.target.value)} 
@@ -406,7 +403,7 @@ const AdminDashboardPage: React.FC = () => {
               InputProps={{ sx: { fontSize: '0.8125rem' } }}
               InputLabelProps={{ sx: { fontSize: '0.8125rem' } }}
             >
-                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>?꾩껜 湲곌컙</em></MenuItem>
                 {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
             </TextField>
           </Grid>
@@ -467,7 +464,7 @@ const AdminDashboardPage: React.FC = () => {
               </Paper>
             )) : (
               <Paper variant="outlined" sx={{ p: 8, textAlign: 'center', borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Typography color="text.secondary">표시할 데이터가 없습니다.</Typography>
+                <Typography color="text.secondary">?쒖떆???곗씠?곌? ?놁뒿?덈떎.</Typography>
               </Paper>
             )}
           </Stack>
@@ -479,32 +476,30 @@ const AdminDashboardPage: React.FC = () => {
                   <TableRow>
                     <TableCell sx={{ fontWeight: 'bold', py: 2, pl: 3, pr: 0.5, width: '140px' }} sortDirection={sortConfig?.key === 'created_at' ? sortConfig.direction : false}>
                       <TableSortLabel active={sortConfig?.key === 'created_at'} direction={sortConfig?.key === 'created_at' ? sortConfig.direction : 'asc'} onClick={() => handleSort('created_at')}>
-                        업무일자
+                        ?낅Т?쇱옄
                       </TableSortLabel>
                     </TableCell>
                     <TableCell sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '150px' }} sortDirection={sortConfig?.key === 'customer_name' ? sortConfig.direction : false}>
                       <TableSortLabel active={sortConfig?.key === 'customer_name'} direction={sortConfig?.key === 'customer_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('customer_name')}>
-                        거래처명
+                        嫄곕옒泥섎챸
                       </TableSortLabel>
                     </TableCell>
                     <TableCell sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '100px' }} sortDirection={sortConfig?.key === 'requester_name' ? sortConfig.direction : false}>
                       <TableSortLabel active={sortConfig?.key === 'requester_name'} direction={sortConfig?.key === 'requester_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('requester_name')}>
-                        요청자
-                      </TableSortLabel>
+                        ?붿껌??                      </TableSortLabel>
                     </TableCell>
                     {!isMobile && (
                       <TableCell sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '100px' }} sortDirection={sortConfig?.key === 'user_name' ? sortConfig.direction : false}>
                         <TableSortLabel active={sortConfig?.key === 'user_name'} direction={sortConfig?.key === 'user_name' ? sortConfig.direction : 'asc'} onClick={() => handleSort('user_name')}>
-                          작성자
-                        </TableSortLabel>
+                          ?묒꽦??                        </TableSortLabel>
                       </TableCell>
                     )}
                     {!isMobile && (
-                      <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>접수내용 요약</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', py: 2, px: 1 }}>?묒닔?댁슜 ?붿빟</TableCell>
                     )}
                     <TableCell align="center" sx={{ fontWeight: 'bold', py: 2, px: 0.5, width: '85px' }} sortDirection={sortConfig?.key === 'status' ? sortConfig.direction : false}>
                       <TableSortLabel active={sortConfig?.key === 'status'} direction={sortConfig?.key === 'status' ? sortConfig.direction : 'asc'} onClick={() => handleSort('status')}>
-                        상태
+                        ?곹깭
                       </TableSortLabel>
                     </TableCell>
                   </TableRow>
@@ -520,7 +515,7 @@ const AdminDashboardPage: React.FC = () => {
                       <TableCell sx={{ py: 2, pl: 3, pr: 0.5, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {(() => {
                           const d = new Date(req.created_at);
-                          return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+                          return `${d.getFullYear().toString().substring(2)}??${d.getMonth() + 1}??${d.getDate()}??;
                         })()}
                       </TableCell>
                       <TableCell sx={{ py: 2, px: 0.5, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
@@ -554,7 +549,7 @@ const AdminDashboardPage: React.FC = () => {
                   )) : (
                     <TableRow>
                       <TableCell colSpan={5} align="center" sx={{ py: 8 }}>
-                        <Typography color="text.secondary">표시할 데이터가 없습니다.</Typography>
+                        <Typography color="text.secondary">?쒖떆???곗씠?곌? ?놁뒿?덈떎.</Typography>
                       </TableCell>
                     </TableRow>
                   )}
@@ -565,7 +560,7 @@ const AdminDashboardPage: React.FC = () => {
         )}
       </Paper>
 
-      {/* 페이지네이션 추가 */}
+      {/* ?섏씠吏?ㅼ씠??異붽? */}
       {requests.length > ITEMS_PER_PAGE && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2.5 }}>
           <Pagination 
@@ -577,7 +572,7 @@ const AdminDashboardPage: React.FC = () => {
           />
         </Box>
       )}
-{/* 상세 모달 */}
+{/* ?곸꽭 紐⑤떖 */}
 <Dialog 
   open={openDetailModal} 
   onClose={() => setOpenDetailModal(false)} 
@@ -588,7 +583,7 @@ const AdminDashboardPage: React.FC = () => {
         {selectedRequest && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold' }}>
-              업무 상세 정보 (번호: {selectedRequest.id})
+              ?낅Т ?곸꽭 ?뺣낫 (踰덊샇: {selectedRequest.id})
             </DialogTitle>
             <DialogContent dividers>
               <Stack spacing={2.5}>
@@ -597,7 +592,7 @@ const AdminDashboardPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <DashboardIcon sx={{ color: 'primary.main', fontSize: 22 }} />
                       <Box>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>거래처</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>嫄곕옒泥?/Typography>
                         <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>
                           {selectedRequest.customer_name}
                         </Typography>
@@ -606,33 +601,33 @@ const AdminDashboardPage: React.FC = () => {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                       <AssignmentIcon sx={{ color: 'action.active', fontSize: 22 }} />
                       <Box>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>요청자 / 작성자</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: -0.5 }}>?붿껌??/ ?묒꽦??/Typography>
                         <Typography variant="body1" fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.1rem' } }}>
-                          {selectedRequest.requester_name || '미지정'} / {selectedRequest.user_name || '관리자'}
+                          {selectedRequest.requester_name || '誘몄???} / {selectedRequest.user_name || '愿由ъ옄'}
                         </Typography>
                       </Box>
                     </Box>
                   </Stack>
                 </Box>
                 
-                <Typography variant="h6" fontWeight="bold">접수내용</Typography>
+                <Typography variant="h6" fontWeight="bold">?묒닔?댁슜</Typography>
                 {isEditing ? (
                   <TextField
                     multiline rows={6} fullWidth
                     value={editForm.content}
                     onChange={(e) => setEditForm({ ...editForm, content: e.target.value })}
-                    placeholder="접수 내용을 수정하세요."
+                    placeholder="?묒닔 ?댁슜???섏젙?섏꽭??"
                   />
                 ) : (
                   <Paper variant="outlined" sx={{ p: 2, bgcolor: 'white' }} dangerouslySetInnerHTML={{ __html: selectedRequest.content }} />
                 )}
                 
-                <Typography variant="h6" fontWeight="bold">처리내용 기록</Typography>
+                <Typography variant="h6" fontWeight="bold">泥섎━?댁슜 湲곕줉</Typography>
                 <Stack spacing={1}>
                   {isEditing ? (
                     editForm.comments.map((c: any, idx: number) => (
                       <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{new Date(c.created_at).toLocaleString()} (작성자: {c.user_name || '관리자'})</Typography>
+                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{new Date(c.created_at).toLocaleString()} (?묒꽦?? {c.user_name || '愿由ъ옄'})</Typography>
                         <TextField
                           multiline rows={2} fullWidth size="small"
                           value={c.comment}
@@ -654,25 +649,24 @@ const AdminDashboardPage: React.FC = () => {
                     ))
                   )}
                   {(!isEditing && selectedRequest.comments.length === 0) && (
-                    <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>등록된 코멘트가 없습니다.</Typography>
+                    <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>?깅줉??肄붾찘?멸? ?놁뒿?덈떎.</Typography>
                   )}
                   {(isEditing && editForm.comments.length === 0) && (
-                    <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>수정할 코멘트가 없습니다.</Typography>
+                    <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>?섏젙??肄붾찘?멸? ?놁뒿?덈떎.</Typography>
                   )}
                 </Stack>
 
                 {selectedRequest.images && selectedRequest.images.length > 0 && (
                   <>
-                    <Typography variant="h6" fontWeight="bold">첨부 이미지</Typography>
+                    <Typography variant="h6" fontWeight="bold">泥⑤? ?대?吏</Typography>
                     <Grid container spacing={2}>
                       {selectedRequest.images.map((image, index) => {
                         let imageUrl = image;
                         if (!image.startsWith('http')) {
-                          // 기존 Supabase 이미지 경로 처리 (ID 수정: szwiejswmfivultxxywb)
+                          // 湲곗〈 Supabase ?대?吏 寃쎈줈 泥섎━ (ID ?섏젙: szwiejswmfivultxxywb)
                           imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
                         } else if (image.includes('drive.google.com')) {
-                          // 구글 드라이브 링크를 안정적인 썸네일 직링으로 변환
-                          const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                          // 援ш? ?쒕씪?대툕 留곹겕瑜??덉젙?곸씤 ?몃꽕??吏곷쭅?쇰줈 蹂??                          const fileId = image.match(/\/d\/(.+?)\//)?.[1];
                           if (fileId) {
                             imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                           }
@@ -703,19 +697,19 @@ const AdminDashboardPage: React.FC = () => {
                 <Divider sx={{ my: 1 }} />
                 
                 <FormControl fullWidth>
-                  <InputLabel>상태 변경</InputLabel>
-                  <Select value={newStatus} label="상태 변경" onChange={(e) => setNewStatus(e.target.value)}>
-                    <MenuItem value="processing">처리중</MenuItem>
-                    <MenuItem value="completed">처리완료</MenuItem>
+                  <InputLabel>?곹깭 蹂寃?/InputLabel>
+                  <Select value={newStatus} label="?곹깭 蹂寃? onChange={(e) => setNewStatus(e.target.value)}>
+                    <MenuItem value="processing">泥섎━以?/MenuItem>
+                    <MenuItem value="completed">泥섎━?꾨즺</MenuItem>
                   </Select>
                 </FormControl>
                 {!isEditing && (
                   <TextField
-                    label="새로운 처리내용 입력"
+                    label="?덈줈??泥섎━?댁슜 ?낅젰"
                     multiline rows={3} fullWidth variant="outlined"
                     value={newComment} onChange={(e) => setNewComment(e.target.value)}
                     spellCheck={false}
-                    placeholder="추가할 처리 내용을 입력해 주세요."
+                    placeholder="異붽???泥섎━ ?댁슜???낅젰??二쇱꽭??"
                   />
                 )}
               </Stack>
@@ -741,7 +735,7 @@ const AdminDashboardPage: React.FC = () => {
                   minWidth: 'auto'
                 }}
               >
-                삭제
+                ??젣
               </Button>
               
               <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }}>
@@ -759,7 +753,7 @@ const AdminDashboardPage: React.FC = () => {
                     minWidth: 'auto'
                   }}
                 >
-                  닫기
+                  ?リ린
                 </Button>
                 
                 <Button 
@@ -777,7 +771,7 @@ const AdminDashboardPage: React.FC = () => {
                     minWidth: 'auto'
                   }}
                 >
-                  {isEditing ? '취소' : '수정'}
+                  {isEditing ? '痍⑥냼' : '?섏젙'}
                 </Button>
 
                 <Button 
@@ -794,7 +788,7 @@ const AdminDashboardPage: React.FC = () => {
                     minWidth: { xs: 'auto', sm: 80 }
                   }}
                 >
-                  {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
+                  {saving ? <CircularProgress size={16} color="inherit" /> : '???}
                 </Button>
               </Stack>
             </DialogActions>

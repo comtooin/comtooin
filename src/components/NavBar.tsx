@@ -19,7 +19,6 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import AssessmentIcon from '@mui/icons-material/Assessment';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import EditNoteIcon from '@mui/icons-material/EditNote';
 import BusinessIcon from '@mui/icons-material/Business';
@@ -94,13 +93,7 @@ const NavBar: React.FC = () => {
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
-            <ListItem button component={RouterLink} to="/admin/reports">
-              <ListItemIcon><AssessmentIcon /></ListItemIcon>
-              <ListItemText
-                primary="리포트"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
+
             <ListItem button component={RouterLink} to="/admin/schedule">
               <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
               <ListItemText
@@ -231,7 +224,7 @@ const NavBar: React.FC = () => {
                 <>
                   <Button color="inherit" component={RouterLink} to="/" sx={{ px: 1.5 }}>업무 기록</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/reports" sx={{ px: 1.5 }}>리포트</Button>
+
                   <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
