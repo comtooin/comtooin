@@ -6,8 +6,7 @@ import {
 } from '@mui/material';
 import {
   Assignment as AssignmentIcon,
-  AccessTime as AccessTimeIcon,
-  Edit as EditIcon
+  AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId } from '../api';
 
@@ -40,6 +39,31 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
     try {
       const { error } = await supabase.from('requests').delete().eq('id', selectedRequest.id);
       if (error) throw error;
+      
+      // 관련 스케줄 및 구글 캘린더 자동 삭제 시도
+      try {
+        const scheduleTitle = `업무기록 접수 (${selectedRequest.user_name})`;
+        const startTimeStr = `${selectedRequest.created_at.split('T')[0]}T00:00:00`;
+        const { data: matchedSchedules } = await supabase.from('schedules')
+          .select('*')
+          .eq('title', scheduleTitle)
+          .eq('start_time', startTimeStr)
+          .eq('content', selectedRequest.content)
+          .limit(1);
+
+        if (matchedSchedules && matchedSchedules.length > 0) {
+          const schedule = matchedSchedules[0];
+          await supabase.from('schedules').delete().eq('id', schedule.id);
+          if (schedule.google_event_id) {
+            await supabase.functions.invoke('google-calendar-sync', {
+              body: { method: 'DELETE', googleEventId: schedule.google_event_id }
+            });
+          }
+        }
+      } catch (scheduleErr) {
+        console.warn('연동된 스케줄 삭제 실패:', scheduleErr);
+      }
+
       alert('업무 기록이 삭제되었습니다.');
       onClose();
       onRefresh();
@@ -69,7 +93,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
         }
       }
 
-      if (!isEditing && newComment.trim()) {
+      if (newComment.trim()) {
         const staffId = await getCurrentStaffId();
         await supabase.from('comments').insert({
           request_id: selectedRequest.id,
@@ -184,17 +208,19 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
               <MenuItem value="completed">처리완료</MenuItem>
             </Select>
           </FormControl>
-          {!isEditing && (
-            <TextField label="새로운 처리내용 입력" multiline rows={3} fullWidth variant="outlined" value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="추가할 처리 내용을 입력해 주세요." />
-          )}
+          <TextField 
+            label={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리내용 입력" : "새로운 처리내용 추가"} 
+            multiline rows={3} fullWidth variant="outlined" value={newComment} onChange={(e) => setNewComment(e.target.value)} 
+            placeholder={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리 내용을 입력해 주세요." : "추가할 처리 내용을 입력해 주세요."} 
+          />
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'space-between', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-        <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
-        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-          <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
-          <Button startIcon={<EditIcon sx={{ display: { xs: 'none', sm: 'inline-block' } }} />} variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white' }}>{isEditing ? '취소' : '수정'}</Button>
-          <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold' }}>
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'center' }}>
+        <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+          <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', minWidth: 'auto' }}>삭제</Button>
+          <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
+          <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>{isEditing ? '취소' : '수정'}</Button>
+          <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', minWidth: 'auto' }}>
             {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
           </Button>
         </Stack>

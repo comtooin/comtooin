@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
@@ -102,6 +103,7 @@ const AdminReportPage: React.FC = () => {
   const [statusData, setStatusData] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
+  const [searchParams] = useSearchParams();
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
 
   // 페이지네이션 상태
@@ -167,6 +169,18 @@ const AdminReportPage: React.FC = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  useEffect(() => {
+    const period = searchParams.get('period');
+    if (period === 'today') {
+      setSelectedMonth('today');
+    } else if (period === 'month') {
+      const d = new Date();
+      setSelectedMonth(`${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`);
+    } else if (period === 'all') {
+      setSelectedMonth('all');
+    }
+  }, [searchParams]);
+
   const applyFilters = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -181,7 +195,15 @@ const AdminReportPage: React.FC = () => {
         const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
         requestsQuery = requestsQuery.eq('status', dbStatus);
       }
-      if (selectedMonth !== 'all') {
+      if (selectedMonth === 'today') {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        const startDate = `${year}-${month}-${day}T00:00:00.000Z`;
+        const endDate = `${year}-${month}-${day}T23:59:59.999Z`;
+        requestsQuery = requestsQuery.gte('created_at', startDate).lte('created_at', endDate);
+      } else if (selectedMonth !== 'all') {
         const year = selectedMonth.split('-')[0];
         const month = selectedMonth.split('-')[1];
         const startDate = `${year}-${month}-01T00:00:00.000Z`;
@@ -544,17 +566,21 @@ const AdminReportPage: React.FC = () => {
       {/* 요약 위젯 */}
       <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '총 건수', shortLabel: '총건수', count: summaryStats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '진행 중', shortLabel: '진행중', count: summaryStats.processing, icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
-          { label: '완료됨', shortLabel: '완료', count: summaryStats.completed, icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
+          { label: '전체', shortLabel: '전체', count: summaryStats.total, statusFilter: 'all', icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
+          { label: '처리중', shortLabel: '처리중', count: summaryStats.processing, statusFilter: 'processing', icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
+          { label: '완료됨', shortLabel: '완료', count: summaryStats.completed, statusFilter: 'completed', icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
+            onClick={() => setStatus(item.statusFilter)}
             sx={{ 
               flex: 1, 
               p: { xs: 1.5, sm: 2 }, 
               borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
               borderColor: 'divider',
+              cursor: 'pointer',
+              bgcolor: status === item.statusFilter ? 'rgba(0,0,0,0.04)' : 'transparent',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
             }}
           >
             <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
@@ -601,6 +627,7 @@ const AdminReportPage: React.FC = () => {
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
               <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+              <MenuItem value="today" sx={{ fontSize: '0.8125rem' }}>오늘 (금일)</MenuItem>
               {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
             </TextField>
             <TextField 

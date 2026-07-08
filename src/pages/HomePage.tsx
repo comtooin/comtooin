@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip
 } from '@mui/material';
 import { 
   PhotoCamera, Delete, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon,
-  Today as TodayIcon, Assessment as AssessmentIcon, Business as BusinessIcon, History as HistoryIcon,
+  Today as TodayIcon, Assessment as AssessmentIcon, Assignment as AssignmentIcon, History as HistoryIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate();
   const [customerOptions, setCustomerOptions] = useState<string[]>([]); 
   const [staffOptions, setStaffOptions] = useState<string[]>([]); 
   const [customerName, setCustomerName] = useState('');
@@ -28,7 +30,7 @@ const HomePage: React.FC = () => {
   
   // 최근 기록 상태
   const [recentRequests, setRecentRequests] = useState<any[]>([]);
-  const [stats, setStats] = useState({ today: 0, monthly: 0, activeCustomers: 0 });
+  const [stats, setStats] = useState({ today: 0, monthly: 0, total: 0 });
 
   const compressImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -68,16 +70,17 @@ const HomePage: React.FC = () => {
       const today = new Date().toISOString().split('T')[0];
       const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
       
-      const [todayRes, monthlyRes, recentRes] = await Promise.all([
+      const [todayRes, monthlyRes, totalRes, recentRes] = await Promise.all([
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', today + 'T00:00:00Z'),
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', firstDayOfMonth),
+        supabase.from('requests').select('id', { count: 'exact' }),
         supabase.from('requests').select('*').order('created_at', { ascending: false }).order('id', { ascending: false }).limit(5)
       ]);
 
       setStats({
         today: todayRes.count || 0,
         monthly: monthlyRes.count || 0,
-        activeCustomers: customerData?.length || 0
+        total: totalRes.count || 0
       });
       setRecentRequests(recentRes.data || []);
     } catch (err: any) {
@@ -232,6 +235,41 @@ const HomePage: React.FC = () => {
         });
       }
       
+      // 스케줄 자동 연동 및 구글 캘린더 동기화
+      const staffId = await getCurrentStaffId();
+      const startTimeStr = `${workDate}T00:00:00`;
+      const endTimeStr = `${workDate}T23:59:59`;
+      
+      const syncPayload = {
+        method: 'POST',
+        title: `[${customerName}] 업무기록 접수`,
+        description: `작성자: ${userName}\n거래처: ${customerName}\n요청자: ${requesterName}\n\n[접수내용]\n${content}\n\n[처리내용]\n${processingContent}`,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        allDay: true,
+        assigneeEmail: session?.user?.email || ''
+      };
+
+      const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
+        body: syncPayload
+      });
+      if (syncError) console.warn('Google Calendar Sync Error:', syncError.message);
+
+      const scheduleData = {
+        title: `업무기록 접수 (${userName})`,
+        content: content,
+        staff_id: staffId,
+        staff_ids: staffId ? [staffId] : [],
+        assignee_name: userName,
+        assignee_email: session?.user?.email || '',
+        customer_name: customerName,
+        start_time: startTimeStr,
+        end_time: endTimeStr,
+        all_day: true,
+        google_event_id: syncData?.googleEventId
+      };
+      await supabase.from('schedules').insert(scheduleData);
+
       alert('업무 기록이 성공적으로 저장되었습니다.');
       setContent('');
       setProcessingContent('');
@@ -258,17 +296,20 @@ const HomePage: React.FC = () => {
 
       <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
         {[
-          { label: '금일 기록', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '이번달 기록', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '활성 거래처', shortLabel: '거래처', count: stats.activeCustomers, icon: <BusinessIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
+          { label: '금일 기록', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: 'today' },
+          { label: '이번달 기록', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'month' },
+          { label: '전체 기록', shortLabel: '전체', count: stats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#0288d1' }} />, filter: 'all' },
         ].map((item, idx, arr) => (
           <Box 
             key={idx}
+            onClick={() => navigate(`/admin/dashboard?period=${item.filter}`)}
             sx={{ 
               flex: 1, 
               p: { xs: 1, sm: 2 }, 
               borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
               borderColor: 'divider',
+              cursor: 'pointer',
+              '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
             }}
           >
             <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
