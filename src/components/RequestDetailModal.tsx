@@ -15,7 +15,7 @@ import { supabase, getCurrentStaffId } from '../api';
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ content: '', comments: [] as any[] });
+  const [editForm, setEditForm] = useState({ content: '', requester_name: '', comments: [] as any[] });
   const [newComment, setNewComment] = useState('');
   const [newStatus, setNewStatus] = useState(request?.status || 'processing');
   const [saving, setSaving] = useState(false);
@@ -31,6 +31,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       setEditingCommentId(null);
       setEditForm({
         content: request.content || '',
+        requester_name: request.requester_name || '',
         comments: []
       });
     }
@@ -114,7 +115,10 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
         status: newStatus, 
         updated_at: new Date().toISOString()
       };
-      if (isEditing) updatePayload.content = editForm.content;
+      if (isEditing) {
+        updatePayload.content = editForm.content;
+        updatePayload.requester_name = editForm.requester_name;
+      }
       const { error: updateError } = await supabase.from('requests').update(updatePayload).eq('id', selectedRequest.id);
       if (updateError) throw updateError;
 
@@ -155,7 +159,11 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">요청자</Typography>
-              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.requester_name || '-'}</Typography>
+              {isEditing ? (
+                <TextField size="small" variant="outlined" value={editForm.requester_name} onChange={(e) => setEditForm({ ...editForm, requester_name: e.target.value })} sx={{ minWidth: 120 }} />
+              ) : (
+                <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.requester_name || '-'}</Typography>
+              )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">작성자</Typography>

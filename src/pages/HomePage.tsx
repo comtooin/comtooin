@@ -201,7 +201,7 @@ const HomePage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (!customerName || !userName || !content) return setError('필수 항목을 모두 입력해주세요.');
+    if (!customerName || !userName || !requesterName || !content) return setError('필수 항목을 모두 입력해주세요.');
     setSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -353,7 +353,7 @@ const HomePage: React.FC = () => {
                 <Stack spacing={{ xs: 1.5, sm: 2 }}>
                   <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
                   
-                  <TextField label="요청자 (고객 담당자)" fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
+                  <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
                   
                   <Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
