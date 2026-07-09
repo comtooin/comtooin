@@ -181,7 +181,7 @@ const AdminReportPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  const applyFilters = useCallback(async () => {
+  const applyFilters = useCallback(async (resetPage = false) => {
     setLoading(true);
     setError('');
 
@@ -215,7 +215,9 @@ const AdminReportPage: React.FC = () => {
       const { data: requestsData, error: requestsError } = await requestsQuery;
       if (requestsError) throw requestsError;
       setFilteredRequests(requestsData || []);
-      setPage(1); // 필터 적용 시 페이지 리셋
+      if (resetPage === true) {
+        setPage(1); // 필터 적용 시에만 페이지 리셋
+      }
 
       const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
       setStatusData(statusSummaryData || []);
@@ -232,7 +234,7 @@ const AdminReportPage: React.FC = () => {
   }, [selectedCustomer, selectedMonth, status, currentYear]);
 
   useEffect(() => {
-    applyFilters();
+    applyFilters(true);
   }, [applyFilters]);
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
@@ -651,7 +653,7 @@ const AdminReportPage: React.FC = () => {
               <Button 
                 fullWidth
                 variant="contained" 
-                onClick={applyFilters} 
+                onClick={() => applyFilters(true)} 
                 startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
                 sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
               >
