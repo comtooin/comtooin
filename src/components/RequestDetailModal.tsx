@@ -19,6 +19,8 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   const [newComment, setNewComment] = useState('');
   const [newStatus, setNewStatus] = useState(request?.status || 'processing');
   const [saving, setSaving] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingCommentContent, setEditingCommentContent] = useState('');
 
   useEffect(() => {
     if (open && request) {
@@ -26,9 +28,10 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       setNewStatus(request.status);
       setNewComment('');
       setIsEditing(false);
+      setEditingCommentId(null);
       setEditForm({
         content: request.content || '',
-        comments: request.comments ? JSON.parse(JSON.stringify(request.comments)) : []
+        comments: []
       });
     }
   }, [open, request]);
@@ -72,6 +75,37 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
     }
   };
 
+  const handleEditComment = async (commentId: number) => {
+    if (!editingCommentContent.trim()) return;
+    try {
+      const { error } = await supabase.from('comments').update({ comment: editingCommentContent }).eq('id', commentId);
+      if (error) throw error;
+      
+      const { data: refreshedData } = await supabase.from('requests').select('*, comments(*)').eq('id', selectedRequest.id).single();
+      if (refreshedData) setSelectedRequest(refreshedData);
+      
+      setEditingCommentId(null);
+      setEditingCommentContent('');
+      onRefresh(); 
+    } catch (err: any) {
+      alert(err.message || '처리내용 수정 중 오류가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!window.confirm('이 처리내용을 삭제하시겠습니까?')) return;
+    try {
+      const { error } = await supabase.from('comments').delete().eq('id', commentId);
+      if (error) throw error;
+      
+      const { data: refreshedData } = await supabase.from('requests').select('*, comments(*)').eq('id', selectedRequest.id).single();
+      if (refreshedData) setSelectedRequest(refreshedData);
+      onRefresh();
+    } catch (err: any) {
+      alert(err.message || '처리내용 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSaveRequest = async () => {
     if (!selectedRequest) return;
     setSaving(true);
@@ -83,15 +117,6 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       if (isEditing) updatePayload.content = editForm.content;
       const { error: updateError } = await supabase.from('requests').update(updatePayload).eq('id', selectedRequest.id);
       if (updateError) throw updateError;
-
-      if (isEditing && editForm.comments && editForm.comments.length > 0) {
-        for (const c of editForm.comments) {
-          const original = selectedRequest.comments.find((oc: any) => oc.id === c.id);
-          if (original && original.comment !== c.comment) {
-            await supabase.from('comments').update({ comment: c.comment }).eq('id', c.id);
-          }
-        }
-      }
 
       if (newComment.trim()) {
         const staffId = await getCurrentStaffId();
@@ -154,25 +179,32 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
               <AccessTimeIcon fontSize="small" color="action" /> 처리내용 기록
             </Typography>
             <Stack spacing={1}>
-              {isEditing ? (
-                editForm.comments.map((c: any, idx: number) => (
-                  <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{new Date(c.created_at).toLocaleString()}</Typography>
-                    <TextField multiline rows={2} fullWidth size="small" value={c.comment} onChange={(e) => {
-                        const updated = editForm.comments.map((item, i) => i === idx ? { ...item, comment: e.target.value } : item);
-                        setEditForm({ ...editForm, comments: updated });
-                      }} />
-                  </Paper>
-                ))
-              ) : (
-                selectedRequest.comments?.map((c: any) => (
-                  <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
-                    <Typography variant="caption" color="text.secondary" display="block" gutterBottom>{new Date(c.created_at).toLocaleString()}</Typography>
-                    <div dangerouslySetInnerHTML={{ __html: c.comment }} />
-                  </Paper>
-                ))
-              )}
-              {(!isEditing && (!selectedRequest.comments || selectedRequest.comments.length === 0)) && <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>등록된 코멘트가 없습니다.</Typography>}
+              {selectedRequest.comments?.map((c: any) => (
+                <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
+                    <Typography variant="caption" color="text.secondary">{new Date(c.created_at).toLocaleString()}</Typography>
+                    <Stack direction="row" spacing={0.5}>
+                      {editingCommentId === c.id ? (
+                        <>
+                          <Button size="small" variant="text" color="primary" onClick={() => handleEditComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>저장</Button>
+                          <Button size="small" variant="text" color="inherit" onClick={() => setEditingCommentId(null)} sx={{ minWidth: 'auto', p: 0.5 }}>취소</Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button size="small" variant="text" color="primary" onClick={() => { setEditingCommentId(c.id); setEditingCommentContent(c.comment); }} sx={{ minWidth: 'auto', p: 0.5 }}>수정</Button>
+                          <Button size="small" variant="text" color="error" onClick={() => handleDeleteComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>삭제</Button>
+                        </>
+                      )}
+                    </Stack>
+                  </Stack>
+                  {editingCommentId === c.id ? (
+                    <TextField multiline rows={2} fullWidth size="small" value={editingCommentContent} onChange={(e) => setEditingCommentContent(e.target.value)} />
+                  ) : (
+                    <div dangerouslySetInnerHTML={{ __html: c.comment }} style={{ wordBreak: 'break-word', fontSize: '0.9rem' }} />
+                  )}
+                </Paper>
+              ))}
+              {(!selectedRequest.comments || selectedRequest.comments.length === 0) && <Typography variant="body2" color="text.disabled" align="center" sx={{ py: 2 }}>등록된 코멘트가 없습니다.</Typography>}
             </Stack>
           </Box>
           
