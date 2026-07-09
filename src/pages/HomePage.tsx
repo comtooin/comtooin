@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip, InputAdornment
 } from '@mui/material';
 import { 
   PhotoCamera, Delete, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon,
@@ -335,7 +335,36 @@ const HomePage: React.FC = () => {
               <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: { xs: 1.5, sm: 2.5 } }}>기본 정보</Typography>
                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                  <Grid item xs={12} sm={4}><TextField label="업무 일자" type="date" fullWidth required variant="outlined" size="small" value={workDate} onChange={(e) => setWorkDate(e.target.value)} InputLabelProps={{ shrink: true }} /></Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField 
+                      label="업무 일자" 
+                      type="date" 
+                      fullWidth 
+                      required 
+                      variant="outlined" 
+                      size="small" 
+                      value={workDate} 
+                      onChange={(e) => setWorkDate(e.target.value)} 
+                      InputLabelProps={{ shrink: true }} 
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <TodayIcon fontSize="small" sx={{ pointerEvents: 'none', color: 'action.active' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                          position: 'absolute',
+                          right: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                        }
+                      }}
+                    />
+                  </Grid>
                   <Grid item xs={12} sm={4}>
                     <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading || submitting}>
                       {customerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}

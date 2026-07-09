@@ -97,13 +97,21 @@ const AdminReportPage: React.FC = () => {
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
-  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [searchParams] = useSearchParams();
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const period = searchParams.get('period');
+    if (period === 'today') return 'today';
+    if (period === 'month') {
+      const d = new Date();
+      return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+    }
+    return 'all';
+  });
   const [status, setStatus] = useState('all');
   const [tabValue, setTabValue] = useState(0);
   const [statusData, setStatusData] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
-  const [searchParams] = useSearchParams();
   const [monthlyData, setMonthlyData] = useState<MonthlySummary[]>([]);
 
   // 페이지네이션 상태
@@ -616,7 +624,7 @@ const AdminReportPage: React.FC = () => {
               onChange={(e) => setSelectedCustomer(e.target.value)} 
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
-              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 거래처</em></MenuItem>
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 거래처</MenuItem>
               {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
             </TextField>
             <TextField 
@@ -624,11 +632,11 @@ const AdminReportPage: React.FC = () => {
               label="기간" 
               size="small"
               fullWidth
-              value={selectedMonth} 
+              value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)} 
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
-              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 기간</em></MenuItem>
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 기간</MenuItem>
               <MenuItem value="today" sx={{ fontSize: '0.8125rem' }}>오늘 (금일)</MenuItem>
               {allMonths.map(month => <MenuItem key={month} value={month} sx={{ fontSize: '0.8125rem' }}>{month}</MenuItem>)}
             </TextField>
@@ -641,7 +649,7 @@ const AdminReportPage: React.FC = () => {
               onChange={(e) => setStatus(e.target.value)} 
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
-              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}><em>전체 상태</em></MenuItem>
+              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 상태</MenuItem>
               <MenuItem value="processing" sx={{ fontSize: '0.8125rem' }}>처리중</MenuItem>
               <MenuItem value="completed" sx={{ fontSize: '0.8125rem' }}>처리완료</MenuItem>
             </TextField>
