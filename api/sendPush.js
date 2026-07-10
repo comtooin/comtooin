@@ -1,4 +1,4 @@
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
       return res.status(405).json({ error: 'Method Not Allowed' });
@@ -36,7 +36,7 @@ export default async function handler(req: any, res: any) {
 
     const data = await response.json();
     return res.status(200).json({ success: true, data });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Fatal Error sending push notification:', error);
     return res.status(500).json({ error: 'Failed to send notification', details: error.message || String(error) });
   }

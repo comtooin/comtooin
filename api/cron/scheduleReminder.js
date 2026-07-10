@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || ''
 );
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req, res) {
   // Vercel Cron passes a specific header we can check (optional security)
   // if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
   //   return res.status(401).json({ error: 'Unauthorized' });
@@ -49,8 +49,8 @@ export default async function handler(req: any, res: any) {
     }
 
     // 3. Collect unique staff IDs who have schedules tomorrow
-    const targetStaffIds = new Set<string>();
-    const staffScheduleTitles: Record<string, string[]> = {};
+    const targetStaffIds = new Set();
+    const staffScheduleTitles = {};
 
     for (const schedule of schedules) {
       if (schedule.staff_ids && Array.isArray(schedule.staff_ids)) {
@@ -108,7 +108,7 @@ export default async function handler(req: any, res: any) {
     }
 
     return res.status(200).json({ success: true, message: `Sent ${sendCount} notifications.` });
-  } catch (error: any) {
+  } catch (error) {
     console.error('Cron Error:', error);
     return res.status(500).json({ error: error.message });
   }
