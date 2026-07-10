@@ -21,7 +21,7 @@ import {
   Today as TodayIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '../api';
+import { supabase, sendPushNotification } from '../api';
 
 // 타입 정의
 interface Staff { id: string; name: string; email: string; }
@@ -294,6 +294,11 @@ const AdminSchedulePage: React.FC = () => {
         const { error: insertError } = await supabase.from('schedules').insert([scheduleData]);
         if (insertError) throw insertError;
         alert('일정이 등록되었습니다.');
+        
+        // 새 스케줄 알림 전송 (지정된 멤버에게)
+        if (staffIds.length > 0) {
+          sendPushNotification('새로운 일정 등록', `[${formData.title}] 일정이 배정되었습니다.`, staffIds);
+        }
       }
 
       await fetchSchedules();

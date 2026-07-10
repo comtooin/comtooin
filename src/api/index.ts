@@ -45,3 +45,34 @@ export const getCurrentStaffId = async () => {
   }
   return null;
 };
+
+/**
+ * 푸시 알림을 전송하는 헬퍼 함수
+ * @param title 알림 제목
+ * @param message 알림 내용
+ * @param targetStaffIds 특정 직원에게만 보낼 경우 ID 배열. 없거나 'all'이면 전체 발송. (관리자는 항상 제외됨)
+ */
+export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all') => {
+  try {
+    let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null).neq('role', 'admin');
+    
+    if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
+      query = query.in('id', targetStaffIds);
+    }
+    
+    const { data } = await query;
+    if (!data || data.length === 0) return;
+
+    const validPlayerIds = data.map(s => s.onesignal_id).filter(Boolean);
+    if (validPlayerIds.length === 0) return;
+
+    await fetch('/api/sendPush', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, message, include_player_ids: validPlayerIds })
+    });
+  } catch (error) {
+    console.error('Error sending push notification', error);
+  }
+};
+

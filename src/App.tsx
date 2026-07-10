@@ -15,6 +15,8 @@ import ArchivePage from './pages/ArchivePage';
 import EditRequestPage from './pages/EditRequestPage';
 import NavBar from './components/NavBar';
 import AdminRoute from './components/AdminRoute';
+import OneSignal from 'react-onesignal';
+import { supabase, getCurrentStaffId } from './api';
 
 const theme = createTheme({
   palette: {
@@ -208,12 +210,53 @@ const SessionManager = () => {
   return null;
 };
 
+const OneSignalManager = () => {
+  useEffect(() => {
+    const initOneSignal = async () => {
+      const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
+      if (!appId) return;
+
+      try {
+        await OneSignal.init({
+          appId: appId,
+          allowLocalhostAsSecureOrigin: true,
+        });
+
+        OneSignal.Slidedown.promptPush();
+
+        const updatePlayerId = async () => {
+          const staffId = await getCurrentStaffId();
+          if (staffId && OneSignal.User.PushSubscription.id) {
+            await supabase.from('staff').update({ onesignal_id: OneSignal.User.PushSubscription.id }).eq('id', staffId);
+          }
+        };
+
+        if (OneSignal.User.PushSubscription.id) {
+          updatePlayerId();
+        }
+
+        OneSignal.User.PushSubscription.addEventListener("change", (e: any) => {
+          if (e.current?.id) {
+            updatePlayerId();
+          }
+        });
+      } catch (err) {
+        console.error('OneSignal Init Error:', err);
+      }
+    };
+    initOneSignal();
+  }, []);
+
+  return null;
+};
+
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
         <SessionManager />
+        <OneSignalManager />
         <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
           <NavBar />
           <Box component="main" sx={{ flexGrow: 1, py: { xs: 3, md: 5 } }}>

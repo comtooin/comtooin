@@ -8,7 +8,7 @@ import {
   Today as TodayIcon, Assessment as AssessmentIcon, Assignment as AssignmentIcon, History as HistoryIcon,
   Info as InfoIcon
 } from '@mui/icons-material';
-import { supabase, getCurrentStaffId } from '../api';
+import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 const HomePage: React.FC = () => {
@@ -226,6 +226,9 @@ const HomePage: React.FC = () => {
       const { data: requestData, error: insertError } = await supabase.from('requests').insert([requestPayload]).select();
       if (insertError) throw insertError;
       
+      // 알림 전송 (관리자 제외 모든 직원에게)
+      sendPushNotification('새로운 업무기록 등록', `[${customerName}] ${content}`, 'all');
+
       if (processingContent.trim()) {
         const staffId = await getCurrentStaffId();
         await supabase.from('comments').insert({ 

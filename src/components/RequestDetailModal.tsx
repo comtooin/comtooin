@@ -8,7 +8,7 @@ import {
   Assignment as AssignmentIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
-import { supabase, getCurrentStaffId } from '../api';
+import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 
 
 
@@ -129,6 +129,14 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           comment: newComment.trim(),
           user_id: staffId,
         });
+
+        const { data: requestAuthor } = await supabase.from('requests').select('user_email, customer_name').eq('id', selectedRequest.id).single();
+        if (requestAuthor?.user_email) {
+          const { data: authorStaff } = await supabase.from('staff').select('id').eq('email', requestAuthor.user_email).single();
+          if (authorStaff && authorStaff.id !== staffId) {
+             sendPushNotification('새 코멘트 등록 알림', `[${requestAuthor.customer_name}] 업무기록에 코멘트가 달렸습니다.`, [authorStaff.id]);
+          }
+        }
       }
 
       const { data: refreshedData } = await supabase.from('requests').select('*, comments(*)').eq('id', selectedRequest.id).single();
