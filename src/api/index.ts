@@ -66,11 +66,15 @@ export const sendPushNotification = async (title: string, message: string, targe
     const validPlayerIds = data.map(s => s.onesignal_id).filter(Boolean);
     if (validPlayerIds.length === 0) return;
 
-    await fetch('/api/sendPush', {
+    const res = await fetch('/api/sendPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, message, include_player_ids: validPlayerIds })
     });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Push API Error Response:', errorText);
+    }
   } catch (error) {
     console.error('Error sending push notification', error);
   }
