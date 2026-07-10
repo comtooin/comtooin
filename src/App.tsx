@@ -207,11 +207,12 @@ const SessionManager = () => {
     return () => clearInterval(interval);
   }, [checkSession]);
 
-  return null;
-};
+let isOneSignalInitialized = false;
 
 const OneSignalManager = () => {
   useEffect(() => {
+    if (isOneSignalInitialized) return;
+
     const initOneSignal = async () => {
       const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
       console.log('OneSignal App ID:', appId);
@@ -223,6 +224,7 @@ const OneSignalManager = () => {
 
       try {
         console.log('Initializing OneSignal...');
+        isOneSignalInitialized = true;
         await OneSignal.init({
           appId: appId,
           allowLocalhostAsSecureOrigin: true,
@@ -249,6 +251,7 @@ const OneSignalManager = () => {
         });
       } catch (err) {
         console.error('OneSignal Init Error:', err);
+        isOneSignalInitialized = false;
       }
     };
     initOneSignal();
