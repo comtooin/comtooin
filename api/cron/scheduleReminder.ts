@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Supabase admin client to bypass RLS for cron job
@@ -7,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || ''
 );
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: any, res: any) {
   // Vercel Cron passes a specific header we can check (optional security)
   // if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
   //   return res.status(401).json({ error: 'Unauthorized' });
