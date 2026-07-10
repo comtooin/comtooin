@@ -214,14 +214,21 @@ const OneSignalManager = () => {
   useEffect(() => {
     const initOneSignal = async () => {
       const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
-      if (!appId) return;
+      console.log('OneSignal App ID:', appId);
+      
+      if (!appId) {
+        console.warn('OneSignal App ID is undefined. Make sure to restart the dev server or check Vercel environment variables.');
+        return;
+      }
 
       try {
+        console.log('Initializing OneSignal...');
         await OneSignal.init({
           appId: appId,
           allowLocalhostAsSecureOrigin: true,
         });
 
+        console.log('OneSignal initialized. Prompting for push...');
         OneSignal.Slidedown.promptPush();
 
         const updatePlayerId = async () => {
