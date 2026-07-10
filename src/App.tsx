@@ -207,6 +207,9 @@ const SessionManager = () => {
     return () => clearInterval(interval);
   }, [checkSession]);
 
+  return null;
+};
+
 let isOneSignalInitialized = false;
 
 const OneSignalManager = () => {
