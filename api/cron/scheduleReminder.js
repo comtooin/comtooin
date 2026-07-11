@@ -20,35 +20,39 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 1. Get tomorrow's date range in KST
+    const target = req.query?.target === 'today' ? 'today' : 'tomorrow';
+    
+    // 1. Get the target date range in KST
     const now = new Date();
     // Move to KST (UTC+9)
     const kstDate = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-    // Add 1 day
-    kstDate.setDate(kstDate.getDate() + 1);
+    
+    if (target === 'tomorrow') {
+      kstDate.setDate(kstDate.getDate() + 1);
+    }
     
     const year = kstDate.getFullYear();
     const month = String(kstDate.getMonth() + 1).padStart(2, '0');
     const day = String(kstDate.getDate()).padStart(2, '0');
     
     // YYYY-MM-DD format
-    const tomorrowStr = `${year}-${month}-${day}`;
-    const startOfTomorrow = `${tomorrowStr}T00:00:00.000Z`;
-    const endOfTomorrow = `${tomorrowStr}T23:59:59.999Z`;
+    const targetDateStr = `${year}-${month}-${day}`;
+    const startOfTarget = `${targetDateStr}T00:00:00.000Z`;
+    const endOfTarget = `${targetDateStr}T23:59:59.999Z`;
 
-    // 2. Fetch schedules for tomorrow
+    // 2. Fetch schedules for the target date
     const { data: schedules, error } = await supabase
       .from('schedules')
       .select('id, title, staff_ids')
-      .gte('start_time', startOfTomorrow)
-      .lte('start_time', endOfTomorrow);
+      .gte('start_time', startOfTarget)
+      .lte('start_time', endOfTarget);
 
     if (error) throw error;
     if (!schedules || schedules.length === 0) {
-      return res.status(200).json({ message: 'No schedules for tomorrow.' });
+      return res.status(200).json({ message: `No schedules for ${target}.` });
     }
 
-    // 3. Collect unique staff IDs who have schedules tomorrow
+    // 3. Collect unique staff IDs who have schedules on the target date
     const targetStaffIds = new Set();
     const staffScheduleTitles = {};
 
@@ -63,7 +67,7 @@ export default async function handler(req, res) {
     }
 
     if (targetStaffIds.size === 0) {
-      return res.status(200).json({ message: 'No staff assigned to tomorrow\'s schedules.' });
+      return res.status(200).json({ message: `No staff assigned to ${target}'s schedules.` });
     }
 
     // 4. Fetch valid OneSignal IDs for these staff (excluding admins)
@@ -85,8 +89,9 @@ export default async function handler(req, res) {
       const titles = staffScheduleTitles[staff.id];
       if (!titles) continue;
 
-      const title = '내일 일정 알림';
-      const message = `내일 ${titles.length}개의 일정이 있습니다: ${titles.join(', ')}`;
+      const dayLabel = target === 'today' ? '오늘' : '내일';
+      const title = `${dayLabel} 일정 알림`;
+      const message = `${dayLabel} ${titles.length}개의 일정이 있습니다: ${titles.join(', ')}`;
 
       const response = await fetch('https://api.onesignal.com/notifications?c=push', {
         method: 'POST',
