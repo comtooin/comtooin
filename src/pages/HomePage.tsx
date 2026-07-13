@@ -68,7 +68,7 @@ const HomePage: React.FC = () => {
       if (staffData) setStaffOptions(staffData.map(s => s.name));
 
       const today = format(new Date(), 'yyyy-MM-dd');
-      const firstDayOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), \'yyyy-MM-dd\');
+      const firstDayOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd');
       
       const [todayRes, monthlyRes, totalRes, recentRes] = await Promise.all([
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', today + 'T00:00:00Z'),
