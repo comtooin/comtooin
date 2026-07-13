@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -308,7 +309,7 @@ const AdminReportPage: React.FC = () => {
             throw new Error(errorBody.error || `서버 응답 오류 (${response.status})`);
         }
 
-        let actualFileName = `컴투인_유지보수_리포트_${new Date().toISOString().split('T')[0]}.csv`; 
+        let actualFileName = `컴투인_유지보수_리포트_${format(new Date(), 'yyyy-MM-dd')}.csv`; 
         const contentDisposition = response.headers.get('Content-Disposition');
         if (contentDisposition) {
             if (contentDisposition.includes("filename*=")) {

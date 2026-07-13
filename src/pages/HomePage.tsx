@@ -18,7 +18,7 @@ const HomePage: React.FC = () => {
   const [customerName, setCustomerName] = useState('');
   const [userName, setUserName] = useState('');
   const [requesterName, setRequesterName] = useState('');
-  const [workDate, setWorkDate] = useState(new Date().toISOString().split('T')[0]);
+  const [workDate, setWorkDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [content, setContent] = useState(''); 
   const [processingContent, setProcessingContent] = useState(''); 
   const [images, setImages] = useState<File[]>([]);
@@ -67,8 +67,8 @@ const HomePage: React.FC = () => {
       if (customerData) setCustomerOptions(customerData.map(c => c.name));
       if (staffData) setStaffOptions(staffData.map(s => s.name));
 
-      const today = new Date().toISOString().split('T')[0];
-      const firstDayOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      const today = format(new Date(), 'yyyy-MM-dd');
+      const firstDayOfMonth = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), \'yyyy-MM-dd\');
       
       const [todayRes, monthlyRes, totalRes, recentRes] = await Promise.all([
         supabase.from('requests').select('id', { count: 'exact' }).gte('created_at', today + 'T00:00:00Z'),

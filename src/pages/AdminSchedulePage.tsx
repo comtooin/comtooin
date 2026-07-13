@@ -1,3 +1,4 @@
+import { format } from 'date-fns';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
@@ -59,7 +60,7 @@ const AdminSchedulePage: React.FC = () => {
   // 통계 계산
   const stats = useMemo(() => {
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = format(now, 'yyyy-MM-dd');
     const monthStr = todayStr.substring(0, 7);
 
     return {
