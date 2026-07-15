@@ -185,26 +185,31 @@ const AdminQuotePage: React.FC = () => {
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
     
-    // 1. 모바일 짤림 방지: 캡처 전 임시로 스타일을 PC(A4 너비) 기준으로 고정
     const element = printRef.current;
     const originalWidth = element.style.width;
     const originalMinHeight = element.style.minHeight;
     const originalTransform = element.style.transform;
     const originalTransformOrigin = element.style.transformOrigin;
 
-    // 강제로 PC 규격(794px)으로 엘리먼트 크기 고정 및 숨김 처리 방지
+    // 가로 794px, 세로 1123px(A4 표준)로 껍데기 강제 고정 및 스크롤 영역 강제 확장
     element.style.width = '794px';
     element.style.minHeight = '1123px';
     element.style.transform = 'none';
     element.style.transformOrigin = 'unset';
     
     try {
-      // 2. 고화질 캡처 진행
+      // 캡처 전에 화면 최상단으로 임시 이동 (모바일 스크롤 위치 인식 오류 우회)
+      window.scrollTo(0, 0);
+
       const canvas = await html2canvas(element, { 
         scale: 2,
-        useCORS: true, // 이미지 깨짐 방지
+        useCORS: true, 
         width: 794,
-        windowWidth: 794 // 가상 윈도우 너비를 794px로 속여서 반응형 찌그러짐 차단
+        height: 1123, // 캡처할 높이를 A4 표준 규격으로 딱 찍어서 고정!
+        windowWidth: 794,
+        windowHeight: 1123, // 렌더링 영역 높이도 강제로 고정하여 하단 짤림 차단
+        scrollX: 0,
+        scrollY: 0
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -223,7 +228,7 @@ const AdminQuotePage: React.FC = () => {
       console.error('PDF generation failed:', error);
       alert('PDF 생성에 실패했습니다.');
     } finally {
-      // 3. 캡처가 끝나면 원래 모바일 반응형 스타일로 깔끔하게 복구
+      // 캡처 완료 후 원상복구
       element.style.width = originalWidth;
       element.style.minHeight = originalMinHeight;
       element.style.transform = originalTransform;
