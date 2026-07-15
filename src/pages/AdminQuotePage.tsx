@@ -3,17 +3,19 @@ import {
   Container, Typography, Box, Paper, TextField, Button, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Grid, Divider, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, ListItemText, ListItemButton, Collapse
+  List, ListItem, ListItemText, ListItemButton, Collapse, Stack
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import SaveIcon from '@mui/icons-material/Save';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { supabase } from '../api';
+import { Helmet } from 'react-helmet-async';
 
 interface QuoteItem {
   id: string;
@@ -187,27 +189,28 @@ const AdminQuotePage: React.FC = () => {
     
     const element = printRef.current;
     
-    // 원래 스타일 백업
-    const originalWidth = element.style.width;
-    const originalMinHeight = element.style.minHeight;
-    const originalTransform = element.style.transform;
-    const originalTransformOrigin = element.style.transformOrigin;
-    const originalMargin = element.style.margin;
-    const originalPadding = element.style.padding;
-
-    // 모바일 뷰포트에서 우측 여백이 늘어나는 현상 원천 차단
-    element.style.width = '794px';
-    element.style.minHeight = '1123px';
-    element.style.margin = '0px';
-    element.style.padding = '40px'; // A4 내부 패딩만 유지
-    element.style.transform = 'none';
-    element.style.transformOrigin = 'unset';
+    // Clone the element for rendering off-screen to avoid mobile flexbox shrinking/wrapping issues
+    const clone = element.cloneNode(true) as HTMLElement;
+    
+    // Style the clone to be exactly A4 dimensions and positioned off-screen
+    clone.style.position = 'absolute';
+    clone.style.left = '-9999px';
+    clone.style.top = '0';
+    clone.style.width = '794px';
+    clone.style.minHeight = '1123px';
+    clone.style.height = '1123px';
+    clone.style.margin = '0px';
+    clone.style.padding = '32px';
+    clone.style.boxSizing = 'border-box';
+    clone.style.backgroundColor = '#ffffff';
+    
+    document.body.appendChild(clone);
     
     try {
       // 스크롤 오류 방지를 위해 임시 최상단 이동
       window.scrollTo(0, 0);
 
-      const canvas = await html2canvas(element, { 
+      const canvas = await html2canvas(clone, { 
         scale: 2,           // 고화질
         useCORS: true, 
         width: 794,         // 캡처할 박스의 가로를 딱 794px로 칼같이 도려냄
@@ -235,13 +238,8 @@ const AdminQuotePage: React.FC = () => {
       console.error('PDF generation failed:', error);
       alert('PDF 생성에 실패했습니다.');
     } finally {
-      // 캡처 완료 후 원래 모바일 화면 스타일에 맞춰 원상복구
-      element.style.width = originalWidth;
-      element.style.minHeight = originalMinHeight;
-      element.style.margin = originalMargin;
-      element.style.padding = originalPadding;
-      element.style.transform = originalTransform;
-      element.style.transformOrigin = originalTransformOrigin;
+      // 캡처 완료 후 클론 제거
+      document.body.removeChild(clone);
     }
   };
 
@@ -323,22 +321,30 @@ const AdminQuotePage: React.FC = () => {
 
   return (
     <Container maxWidth="xl" sx={{ mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 } }}>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-          간편 변환 및 작성
-        </Typography>
+      <Helmet><title>간편견적 | COMTOOIN</title></Helmet>
+
+      {/* 표준 헤더 섹션 */}
+      <Box sx={{ mb: 2.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <ReceiptLongIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            간편견적
+          </Typography>
+        </Stack>
         <Box sx={{ color: 'text.secondary', fontSize: '0.875rem', lineHeight: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 0.5 }}>
-            <Box sx={{ mr: 0.5 }}>1.</Box>
+            <Box sx={{ mr: 1 }}>•</Box>
             <Box><b>[텍스트 견적 자동입력]</b> 버튼을 눌러 쇼핑몰 견적서의 텍스트를 넣어 견적서를 작성합니다.</Box>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-            <Box sx={{ mr: 0.5 }}>2.</Box>
+            <Box sx={{ mr: 1 }}>•</Box>
             <Box>자주 사용하는 견적은 <b>[견적 템플릿 저장]</b>, <b>[저장된 견적 템플릿]</b>으로 저장 및 불러 옵니다.</Box>
           </Box>
         </Box>
       </Box>
-      
+
+      <Divider sx={{ mb: 2.5 }} />
+
       <Box>
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -578,27 +584,28 @@ const AdminQuotePage: React.FC = () => {
                 minHeight: '1123px', 
                 bgcolor: 'white', 
                 boxShadow: 3,
-                p: 5,
-                boxSizing: 'border-box'
+                p: 4,
+                boxSizing: 'border-box',
+                flexShrink: 0
               }}
             >
               {/* Header */}
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 4, position: 'relative', minHeight: 60 }}>
-                <Box component="img" src="/comtooin_logo.jpg" alt="logo" sx={{ position: 'absolute', left: 0, height: 60 }} />
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 2.5, position: 'relative', minHeight: 60 }}>
+                <Box component="img" src="/comtooin_logo.jpg" alt="logo" sx={{ position: 'absolute', left: 0, height: 50 }} />
                 <Typography variant="h4" fontWeight="900" sx={{ letterSpacing: 10, mr: -1 }}>
                   견 적 서
                 </Typography>
               </Box>
               
               {/* 고객 및 공급자 정보 (완벽한 좌우 대칭 테이블 구조) */}
-              <Table size="small" sx={{ mb: 3, borderTop: '2px solid black', borderBottom: '2px solid black', '& .MuiTableCell-root': { border: '1px solid #ddd', py: 0.8, px: 1, whiteSpace: 'nowrap', fontSize: '0.85rem' } }}>
+              <Table size="small" sx={{ mb: 2, borderTop: '2px solid black', borderBottom: '2px solid black', '& .MuiTableCell-root': { border: '1px solid #ddd', py: 0.5, px: 1, whiteSpace: 'nowrap', fontSize: '0.85rem' } }}>
                 <TableBody>
                   {/* 1행 */}
                   <TableRow>
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', width: '12%', textAlign: 'center' }}>수 신</TableCell>
                     <TableCell sx={{ width: '35%', fontWeight: '900', fontSize: '1rem' }}>{customerName || '____________________'} 귀하</TableCell>
                     
-                    <TableCell rowSpan={6} width="30px" sx={{ bgcolor: '#f5f5f5', writingMode: 'vertical-rl', textOrientation: 'upright', textAlign: 'center', fontWeight: 'bold', letterSpacing: 4, p: 0 }}>
+                    <TableCell rowSpan={6} width="30px" sx={{ bgcolor: '#f5f5f5', writingMode: 'vertical-rl', textOrientation: 'upright', textAlign: 'center', fontWeight: 'bold', letterSpacing: 4, p: 0, borderBottom: '2px solid black' }}>
                       공급자
                     </TableCell>
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', width: '12%', textAlign: 'center' }}>등록번호</TableCell>
@@ -644,27 +651,27 @@ const AdminQuotePage: React.FC = () => {
 
                   {/* 5행 */}
                   <TableRow>
-                    <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem' }}>합계금액<br/>(VAT포함)</TableCell>
-                    <TableCell rowSpan={2} sx={{ fontWeight: '900', fontSize: '1.2rem', textAlign: 'center' }}>
+                    <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem', borderBottom: '2px solid black' }}>합계금액<br/>(VAT포함)</TableCell>
+                    <TableCell rowSpan={2} sx={{ fontWeight: '900', fontSize: '1.2rem', textAlign: 'center', borderBottom: '2px solid black' }}>
                       ₩ {totalFinal.toLocaleString()}
                     </TableCell>
                     
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center' }}>담당자</TableCell>
                     <TableCell>{currentUser?.name || '관리자'}</TableCell>
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center' }}>연락처</TableCell>
-                    <TableCell>{currentUser?.phone || '-'}</TableCell>
+                    <TableCell sx={{ '& a': { textDecoration: 'none !important', color: 'inherit !important' } }}>{currentUser?.phone || '-'}</TableCell>
                   </TableRow>
 
                   {/* 6행 */}
                   <TableRow>
-                    <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center' }}>이메일</TableCell>
-                    <TableCell colSpan={3}>{currentUser?.email || '-'}</TableCell>
+                    <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', borderBottom: '2px solid black' }}>이메일</TableCell>
+                    <TableCell colSpan={3} sx={{ borderBottom: '2px solid black', '& a': { textDecoration: 'none !important', color: 'inherit !important' } }}>{currentUser?.email || '-'}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
 
               {/* Items Table */}
-              <Table size="small" sx={{ borderTop: '2px solid black', borderBottom: '2px solid black', '& .MuiTableCell-root': { border: '1px solid #ddd', py: 1 } }}>
+              <Table size="small" sx={{ borderTop: '2px solid black', borderBottom: '2px solid black', '& .MuiTableCell-root': { border: '1px solid #ddd', py: 0.6 } }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f0f0f0' }}>
                     <TableCell align="center" width="50px">NO</TableCell>
@@ -711,7 +718,7 @@ const AdminQuotePage: React.FC = () => {
                 </TableBody>
               </Table>
               
-              <Typography variant="body2" sx={{ mt: 3, color: '#555', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <Typography variant="caption" sx={{ mt: 2, color: '#666', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                 <span>* 부품 수급 상황에 따라 동급의 타사 제품으로 대체될 수 있습니다.</span>
                 <span>* 가격정보가 수시로 변경 되므로 구매시 최종 단가를 반드시 다시 확인하시기 바랍니다.</span>
               </Typography>
