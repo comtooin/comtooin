@@ -94,7 +94,7 @@ const AdminReportPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filteredRequests, setFilteredRequests] = useState<IRequest[]>([]);
+  const [allRequests, setAllRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
@@ -143,11 +143,21 @@ const AdminReportPage: React.FC = () => {
   const currentYear = new Date().getFullYear();
 
   const summaryStats = useMemo(() => {
-    const total = filteredRequests.length;
-    const processing = filteredRequests.filter(r => r.status === 'processing' || r.status === 'pending' || r.status === '처리중').length;
-    const completed = filteredRequests.filter(r => r.status === 'completed' || r.status === '처리완료').length;
+    const total = allRequests.length;
+    const processing = allRequests.filter(r => r.status === 'processing' || r.status === 'pending' || r.status === '처리중').length;
+    const completed = allRequests.filter(r => r.status === 'completed' || r.status === '처리완료').length;
     return { total, processing, completed };
-  }, [filteredRequests]);
+  }, [allRequests]);
+
+  const filteredRequests = useMemo(() => {
+    if (status === 'all') return allRequests;
+    const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
+    return allRequests.filter(r => {
+      if (dbStatus === 'processing') return r.status === 'processing' || r.status === 'pending' || r.status === '처리중';
+      if (dbStatus === 'completed') return r.status === 'completed' || r.status === '처리완료';
+      return r.status === dbStatus;
+    });
+  }, [allRequests, status]);
 
   const customerShareData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -205,10 +215,6 @@ const AdminReportPage: React.FC = () => {
       if (selectedCustomer !== 'all') {
         requestsQuery = requestsQuery.eq('customer_name', selectedCustomer);
       }
-      if (status !== 'all') {
-        const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
-        requestsQuery = requestsQuery.eq('status', dbStatus);
-      }
       if (selectedMonth === 'today') {
         const d = new Date();
         const year = d.getFullYear();
@@ -228,7 +234,7 @@ const AdminReportPage: React.FC = () => {
 
       const { data: requestsData, error: requestsError } = await requestsQuery;
       if (requestsError) throw requestsError;
-      setFilteredRequests(requestsData || []);
+      setAllRequests(requestsData || []);
       if (resetPage === true) {
         setPage(1); // 필터 적용 시에만 페이지 리셋
       }
@@ -245,7 +251,7 @@ const AdminReportPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedCustomer, selectedMonth, status, currentYear]);
+  }, [selectedCustomer, selectedMonth, currentYear]);
 
   useEffect(() => {
     applyFilters(true);
