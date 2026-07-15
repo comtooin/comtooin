@@ -182,34 +182,41 @@ const AdminQuotePage: React.FC = () => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, quantity: value } : item));
   };
 
-  const handleDownloadPDF = async () => {
+ const handleDownloadPDF = async () => {
     if (!printRef.current) return;
     
     const element = printRef.current;
+    
+    // 원래 스타일 백업
     const originalWidth = element.style.width;
     const originalMinHeight = element.style.minHeight;
     const originalTransform = element.style.transform;
     const originalTransformOrigin = element.style.transformOrigin;
+    const originalMargin = element.style.margin;
+    const originalPadding = element.style.padding;
 
-    // 가로 794px, 세로 1123px(A4 표준)로 껍데기 강제 고정 및 스크롤 영역 강제 확장
+    // 모바일 뷰포트에서 우측 여백이 늘어나는 현상 원천 차단
     element.style.width = '794px';
     element.style.minHeight = '1123px';
+    element.style.margin = '0px';
+    element.style.padding = '40px'; // A4 내부 패딩만 유지
     element.style.transform = 'none';
     element.style.transformOrigin = 'unset';
     
     try {
-      // 캡처 전에 화면 최상단으로 임시 이동 (모바일 스크롤 위치 인식 오류 우회)
+      // 스크롤 오류 방지를 위해 임시 최상단 이동
       window.scrollTo(0, 0);
 
       const canvas = await html2canvas(element, { 
-        scale: 2,
+        scale: 2,           // 고화질
         useCORS: true, 
-        width: 794,
-        height: 1123, // 캡처할 높이를 A4 표준 규격으로 딱 찍어서 고정!
-        windowWidth: 794,
-        windowHeight: 1123, // 렌더링 영역 높이도 강제로 고정하여 하단 짤림 차단
+        width: 794,         // 캡처할 박스의 가로를 딱 794px로 칼같이 도려냄
+        height: 1123,       // 세로도 딱 A4 높이인 1123px로 고정
+        windowWidth: 794,   // 가상 브라우저 너비를 794px로 속여 우측 여백 발생 차단
+        windowHeight: 1123,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        backgroundColor: '#ffffff' // 배경을 하얗게 채워 투명화 방지
       });
       
       const imgData = canvas.toDataURL('image/png');
@@ -228,9 +235,11 @@ const AdminQuotePage: React.FC = () => {
       console.error('PDF generation failed:', error);
       alert('PDF 생성에 실패했습니다.');
     } finally {
-      // 캡처 완료 후 원상복구
+      // 캡처 완료 후 원래 모바일 화면 스타일에 맞춰 원상복구
       element.style.width = originalWidth;
       element.style.minHeight = originalMinHeight;
+      element.style.margin = originalMargin;
+      element.style.padding = originalPadding;
       element.style.transform = originalTransform;
       element.style.transformOrigin = originalTransformOrigin;
     }
