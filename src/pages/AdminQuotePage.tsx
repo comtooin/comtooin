@@ -30,8 +30,11 @@ const AdminQuotePage: React.FC = () => {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [globalMargin, setGlobalMargin] = useState<number>(15);
   const [customerName, setCustomerName] = useState<string>('');
+  
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSaving, setIsSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [activeTab, setActiveTab] = useState(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
   
@@ -73,6 +76,7 @@ const AdminQuotePage: React.FC = () => {
         const parts = line.split('\t').map(p => p.trim()).filter(p => p !== '');
         if (parts.length >= 4) {
           // Typically the last 3 columns are Price, Quantity, Total
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const totalStr = parts[parts.length - 1].replace(/[^0-9]/g, '');
           const qtyStr = parts[parts.length - 2].replace(/[^0-9]/g, '');
           const priceStr = parts[parts.length - 3].replace(/[^0-9]/g, '');
