@@ -129,6 +129,11 @@ const AdminReportPage: React.FC = () => {
     setSortConfig({ key, direction });
   };
 
+  // 엑셀 업로드 검증 모달 관련 상태
+  const [validationOpen, setValidationOpen] = useState(false);
+  const [parsedRows, setParsedRows] = useState<any[]>([]);
+  const [importing, setImporting] = useState(false);
+
   // AI 리포트 관련 상태
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiReportContent, setAiReportContent] = useState('');
@@ -360,11 +365,7 @@ const AdminReportPage: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!window.confirm('선택한 파일의 데이터를 대량 등록하시겠습니까?\n기존 형식과 일치해야 합니다.')) return;
-
-    setLoading(true);
     setError('');
-
     const reader = new FileReader();
     reader.onload = async (event) => {
       try {
@@ -372,77 +373,126 @@ const AdminReportPage: React.FC = () => {
         const lines = text.split('\n');
         
         // 데이터 추출 (헤더: ID, 업무일시, 거래처명, 요청자, 작성자, 상태, 접수내용, 처리내용)
-        const requestsToInsert: any[] = [];
-        const processNotes: string[] = []; // 처리내용 임시 보관
+        const tempRows: any[] = [];
+        let indexCounter = 1;
 
         lines.slice(1).forEach(line => {
           if (!line.trim()) return;
           const values = line.split(',');
           
+          const createdAtRaw = values[1]?.trim();
           const customerName = values[2]?.trim();
+          const requesterName = values[3]?.trim();
+          const userName = values[4]?.trim();
+          const statusRaw = values[5]?.trim();
           const content = values[6]?.trim();
+          const processNote = values[7]?.trim() || '';
 
-          // 거래처명(2)과 접수내용(6)이 모두 있는 경우만 진짜 데이터로 인정
-          if (customerName && content) {
-            requestsToInsert.push({
-              created_at: values[1] ? new Date(values[1]).toISOString() : new Date().toISOString(),
-              customer_name: customerName,
-              requester_name: values[3]?.trim(),
-              user_name: values[4]?.trim() || '관리자',
-              status: values[5]?.trim() === '처리완료' ? 'completed' : 'processing',
-              content: content,
-            });
-            processNotes.push(values[7]?.trim() || '');
+          const rowErrors: string[] = [];
+          if (!customerName) {
+            rowErrors.push('거래처명이 누락되었습니다.');
           }
+          if (!content) {
+            rowErrors.push('접수내용이 누락되었습니다.');
+          }
+          if (createdAtRaw && isNaN(Date.parse(createdAtRaw))) {
+            rowErrors.push('날짜 형식이 올바르지 않습니다.');
+          }
+
+          tempRows.push({
+            index: indexCounter++,
+            rawLine: line,
+            createdAt: createdAtRaw ? new Date(createdAtRaw).toISOString() : new Date().toISOString(),
+            createdAtRaw: createdAtRaw || '',
+            customerName: customerName || '',
+            requesterName: requesterName || '',
+            userName: userName || '관리자',
+            status: statusRaw === '처리완료' ? 'completed' : 'processing',
+            statusRaw: statusRaw || '',
+            content: content || '',
+            processNote,
+            errors: rowErrors
+          });
         });
 
-        if (requestsToInsert.length === 0) {
+        if (tempRows.length === 0) {
           throw new Error('등록할 유효한 데이터가 없습니다.');
         }
 
-        // 1. Requests 삽입
-        const { data: insertedRequests, error: insertError } = await supabase
-          .from('requests')
-          .insert(requestsToInsert)
-          .select();
-
-        if (insertError) throw insertError;
-
-        // 2. 처리내용(Comments) 삽입
-        if (insertedRequests && insertedRequests.length > 0) {
-          const commentsToInsert: any[] = [];
-          const staffId = await getCurrentStaffId();
-
-          insertedRequests.forEach((req, index) => {
-            const note = processNotes[index];
-            if (note) {
-              commentsToInsert.push({
-                request_id: req.id,
-                comment: note,
-                user_id: staffId,
-              });
-            }
-          });
-
-          if (commentsToInsert.length > 0) {
-            await supabase.from('comments').insert(commentsToInsert);
-          }
-        }
-
-        alert(`${requestsToInsert.length}건의 업무 기록이 성공적으로 등록되었습니다.`);
-        applyFilters(); 
+        setParsedRows(tempRows);
+        setValidationOpen(true);
       } catch (err: any) {
-        console.error("CSV Import Error:", err);
-        alert(`업로드 실패: ${err.message}`);
+        console.error("CSV Parse Error:", err);
+        alert(`파일 읽기 오류: ${err.message}`);
         setError(err.message);
       } finally {
-        setLoading(false);
         if (e.target) e.target.value = '';
       }
     };
     
-    // 인코딩 감지 시도 (기본적으로 UTF-8로 읽고 실패하면 EUC-KR 고려)
     reader.readAsText(file); 
+  };
+
+  const handleExecuteImport = async () => {
+    const hasErrors = parsedRows.some(row => row.errors.length > 0);
+    if (hasErrors) {
+      alert('오류가 있는 행이 존재합니다. 수정한 후 다시 업로드해주세요.');
+      return;
+    }
+
+    setImporting(true);
+    setError('');
+    try {
+      const requestsToInsert = parsedRows.map(row => ({
+        created_at: row.createdAt,
+        customer_name: row.customerName,
+        requester_name: row.requesterName,
+        user_name: row.userName,
+        status: row.status,
+        content: row.content,
+      }));
+
+      const processNotes = parsedRows.map(row => row.processNote);
+
+      // 1. Requests 삽입
+      const { data: insertedRequests, error: insertError } = await supabase
+        .from('requests')
+        .insert(requestsToInsert)
+        .select();
+
+      if (insertError) throw insertError;
+
+      // 2. 처리내용(Comments) 삽입
+      if (insertedRequests && insertedRequests.length > 0) {
+        const commentsToInsert: any[] = [];
+        const staffId = await getCurrentStaffId();
+
+        insertedRequests.forEach((req, index) => {
+          const note = processNotes[index];
+          if (note) {
+            commentsToInsert.push({
+              request_id: req.id,
+              comment: note,
+              user_id: staffId,
+            });
+          }
+        });
+
+        if (commentsToInsert.length > 0) {
+          await supabase.from('comments').insert(commentsToInsert);
+        }
+      }
+
+      alert(`${parsedRows.length}건의 업무 기록이 성공적으로 등록되었습니다.`);
+      setValidationOpen(false);
+      applyFilters(); 
+    } catch (err: any) {
+      console.error("Import Execute Error:", err);
+      alert(`업로드 실패: ${err.message}`);
+      setError(err.message);
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleGenerateAiReport = async () => {
@@ -983,6 +1033,140 @@ const AdminReportPage: React.FC = () => {
         </DialogActions>
       </Dialog>
       
+      {/* 엑셀/CSV 업로드 검증 모달 */}
+      <Dialog 
+        open={validationOpen} 
+        onClose={() => !importing && setValidationOpen(false)} 
+        maxWidth="lg" 
+        fullWidth
+        scroll="paper"
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <FileUploadIcon color="primary" />
+          업로드 데이터 검증 결과
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          {/* 요약 밴너 */}
+          {(() => {
+            const errCount = parsedRows.filter(r => r.errors.length > 0).length;
+            const isValid = errCount === 0;
+            return (
+              <Box sx={{ 
+                p: 2, 
+                bgcolor: isValid ? 'rgba(46, 125, 50, 0.08)' : 'rgba(211, 47, 47, 0.08)',
+                color: isValid ? 'success.main' : 'error.main',
+                borderBottom: '1px solid',
+                borderColor: isValid ? 'success.light' : 'error.light',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <Typography variant="body2" fontWeight="bold">
+                  총 {parsedRows.length}행 중 정상 {parsedRows.length - errCount}행, 오류 {errCount}행 발견
+                </Typography>
+                {!isValid && (
+                  <Typography variant="caption" sx={{ bgcolor: 'error.main', color: 'white', px: 1, py: 0.5, borderRadius: 1, fontWeight: 'bold' }}>
+                    가져오기 제한됨 (오류 발생)
+                  </Typography>
+                )}
+              </Box>
+            );
+          })()}
+
+          {/* 데이터 목록 표 */}
+          <TableContainer sx={{ maxHeight: '60vh' }}>
+            <Table size="small" stickyHeader>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9' }}>행</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9', minWidth: 100 }}>업무일시</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9', minWidth: 120 }}>거래처명</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9' }}>요청자</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9' }}>작성자</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9' }}>상태</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9', minWidth: 200 }}>접수내용</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9', minWidth: 150 }}>처리내용</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold', bgcolor: '#f1f5f9', minWidth: 180 }}>검증결과</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {parsedRows.map((row) => {
+                  const hasRowError = row.errors.length > 0;
+                  return (
+                    <TableRow 
+                      key={row.index}
+                      sx={{ 
+                        bgcolor: hasRowError ? 'rgba(211, 47, 47, 0.04)' : 'inherit',
+                        '&:hover': { bgcolor: hasRowError ? 'rgba(211, 47, 47, 0.08)' : 'rgba(0, 0, 0, 0.04)' }
+                      }}
+                    >
+                      <TableCell sx={{ color: hasRowError ? 'error.main' : 'inherit', fontWeight: hasRowError ? 'bold' : 'normal' }}>
+                        {row.index}
+                      </TableCell>
+                      <TableCell sx={{ color: hasRowError ? 'error.main' : 'inherit' }}>
+                        {row.createdAtRaw || <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>(자동생성)</span>}
+                      </TableCell>
+                      <TableCell sx={{ color: hasRowError && !row.customerName ? 'error.main' : 'inherit', fontWeight: hasRowError && !row.customerName ? 'bold' : 'normal' }}>
+                        {row.customerName || <span style={{ color: '#ef4444' }}>[누락]</span>}
+                      </TableCell>
+                      <TableCell>{row.requesterName || '-'}</TableCell>
+                      <TableCell>{row.userName}</TableCell>
+                      <TableCell>
+                        <Chip 
+                          label={row.statusRaw || (row.status === 'completed' ? '처리완료' : '처리중')} 
+                          size="small"
+                          color={row.status === 'completed' ? 'success' : 'warning'}
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell sx={{ 
+                        color: hasRowError && !row.content ? 'error.main' : 'inherit', 
+                        fontWeight: hasRowError && !row.content ? 'bold' : 'normal',
+                        maxWidth: 300,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
+                      }}>
+                        {row.content || <span style={{ color: '#ef4444' }}>[누락]</span>}
+                      </TableCell>
+                      <TableCell sx={{ maxWidth: 200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {row.processNote || '-'}
+                      </TableCell>
+                      <TableCell>
+                        {hasRowError ? (
+                          <Box sx={{ color: 'error.main', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            {row.errors.map((err: string, i: number) => (
+                              <span key={i}>⚠️ {err}</span>
+                            ))}
+                          </Box>
+                        ) : (
+                          <span style={{ color: '#2e7d32', fontSize: '0.85rem', fontWeight: 'bold' }}>✓ 통과</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setValidationOpen(false)} disabled={importing} color="inherit">
+            취소
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleExecuteImport}
+            disabled={importing || parsedRows.some(row => row.errors.length > 0)}
+            startIcon={importing && <CircularProgress size={16} color="inherit" />}
+            sx={{ fontWeight: 'bold' }}
+          >
+            {importing ? '가져오는 중...' : '가져오기 완료'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <RequestDetailModal 
         open={openDetailModal} 
         request={selectedRequest} 

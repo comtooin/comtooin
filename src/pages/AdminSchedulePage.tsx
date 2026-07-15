@@ -311,15 +311,31 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('이 일정을 삭제하시겠습니까?')) return;
+    if (!window.confirm('일정을 삭제하시겠습니까?')) return;
+    setLoading(true);
     try {
+      // 구글 캘린더 연동 삭제가 필요한 경우 처리
+      if (selectedEvent?.google_event_id) {
+        const { error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
+          body: {
+            method: 'DELETE',
+            googleEventId: selectedEvent.google_event_id
+          }
+        });
+        if (syncError) {
+          console.warn('Google Calendar Sync Delete Error:', syncError.message);
+        }
+      }
+
       const { error } = await supabase.from('schedules').delete().eq('id', id);
       if (error) throw error;
       alert('일정이 삭제되었습니다.');
       setDetailOpen(false);
       fetchSchedules();
     } catch (err: any) {
-      alert('삭제 중 오류 발생: ' + err.message);
+      alert('일정 삭제 중 오류 발생: ' + err.message);
+    } finally {
+      setLoading(false);
     }
   };
 

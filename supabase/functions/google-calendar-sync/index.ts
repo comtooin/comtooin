@@ -41,41 +41,50 @@ serve(async (req) => {
 
     const accessToken = tokenData.access_token
 
-    // 2. 이메일 주소 전처리 (빈 값 및 중복 제거)
-    const emails = assigneeEmail 
-      ? Array.from(new Set(assigneeEmail.split(',').map((e: string) => e.trim()).filter((e: string) => e !== '')))
-      : []
-    
-    const eventBody: any = {
-      summary: title,
-      description: description,
-      attendees: emails.map((email: string) => ({ email })),
-    }
-
     // 3. API URL 및 메소드 결정
     let effectiveMethod = method
     let apiUrl = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?sendUpdates=all'
     
-    if (method === 'PATCH' && googleEventId) {
-      apiUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${googleEventId}?sendUpdates=all`
-    } else if (method === 'PATCH' && !googleEventId) {
-      effectiveMethod = 'POST'
-    }
+    let eventBody: any = null
 
-    // 4. 날짜 처리
-    if (allDay) {
-      const startDay = startTime.split('T')[0]
-      eventBody.start = { date: startDay }
-      
-      // 종료일은 시작일 다음날로 설정 (exclusive)
-      const date = new Date(startDay)
-      date.setDate(date.getDate() + 1)
-      const endDay = date.toISOString().split('T')[0]
-      eventBody.end = { date: endDay } 
+    if (method === 'DELETE') {
+      if (!googleEventId) {
+        throw new Error('DELETE 요청에는 googleEventId가 필수입니다.')
+      }
+      apiUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${googleEventId}?sendUpdates=all`
     } else {
-      eventBody.start = { dateTime: new Date(startTime).toISOString(), timeZone: 'Asia/Seoul' }
-      const endDateTime = endTime ? new Date(endTime) : new Date(new Date(startTime).getTime() + 3600000)
-      eventBody.end = { dateTime: endDateTime.toISOString(), timeZone: 'Asia/Seoul' }
+      // POST 또는 PATCH 일 때만 바디 구성 및 날짜 처리 실행
+      const emails = assigneeEmail 
+        ? Array.from(new Set(assigneeEmail.split(',').map((e: string) => e.trim()).filter((e: string) => e !== '')))
+        : []
+      
+      eventBody = {
+        summary: title,
+        description: description,
+        attendees: emails.map((email: string) => ({ email })),
+      }
+
+      if (method === 'PATCH' && googleEventId) {
+        apiUrl = `https://www.googleapis.com/calendar/v3/calendars/primary/events/${googleEventId}?sendUpdates=all`
+      } else if (method === 'PATCH' && !googleEventId) {
+        effectiveMethod = 'POST'
+      }
+
+      // 날짜 처리
+      if (allDay) {
+        const startDay = startTime.split('T')[0]
+        eventBody.start = { date: startDay }
+        
+        // 종료일은 시작일 다음날로 설정 (exclusive)
+        const date = new Date(startDay)
+        date.setDate(date.getDate() + 1)
+        const endDay = date.toISOString().split('T')[0]
+        eventBody.end = { date: endDay } 
+      } else {
+        eventBody.start = { dateTime: new Date(startTime).toISOString(), timeZone: 'Asia/Seoul' }
+        const endDateTime = endTime ? new Date(endTime) : new Date(new Date(startTime).getTime() + 3600000)
+        eventBody.end = { dateTime: endDateTime.toISOString(), timeZone: 'Asia/Seoul' }
+      }
     }
 
     // 5. 구글 캘린더 API 호출
@@ -83,10 +92,17 @@ serve(async (req) => {
       method: effectiveMethod,
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
+        ...(effectiveMethod !== 'DELETE' ? { 'Content-Type': 'application/json' } : {}),
       },
-      body: JSON.stringify(eventBody),
+      ...(effectiveMethod !== 'DELETE' ? { body: JSON.stringify(eventBody) } : {}),
     })
+
+    if (effectiveMethod === 'DELETE' && calendarResponse.status === 204) {
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
 
     const calendarData = await calendarResponse.json()
     if (!calendarResponse.ok) {
