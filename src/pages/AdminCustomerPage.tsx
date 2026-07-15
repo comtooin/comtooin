@@ -182,6 +182,10 @@ const AdminCustomerPage: React.FC = () => {
   };
 
   const handleDeleteCustomer = async (id: string, name: string) => {
+    if (!isAdmin) {
+      alert('거래처 삭제 권한이 없습니다.');
+      return;
+    }
     if (!window.confirm(`'${name}' 거래처를 삭제하시겠습니까?`)) return;
 
     try {
@@ -483,11 +487,13 @@ const AdminCustomerPage: React.FC = () => {
                           >
                             자산 관리
                           </Button>
-                          <Tooltip title="삭제">
-                            <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
-                              <DeleteIcon color="action" fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          {isAdmin && (
+                            <Tooltip title="삭제">
+                              <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
+                                <DeleteIcon color="action" fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                         </Stack>
                       </ListItem>
                     </React.Fragment>
