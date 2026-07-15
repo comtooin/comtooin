@@ -40,7 +40,7 @@ serve(async (req) => {
 
     switch (action) {
       case "create": {
-        const { email, password, name, username, role } = userData;
+        const { email, password, name, username, role, phone } = userData;
         
         // 비밀번호 길이 체크 (Supabase 기본값은 6자)
         if (password.length < 6) {
@@ -66,7 +66,8 @@ serve(async (req) => {
             email,
             name,
             username,
-            role: role || 'member'
+            role: role || 'member',
+            phone
           }]);
 
         if (staffError) {
@@ -81,7 +82,7 @@ serve(async (req) => {
       }
 
       case "update": {
-        const { id, auth_user_id, email, name, username, role } = userData;
+        const { id, auth_user_id, email, name, username, role, phone } = userData;
         
         // 1. Auth 사용자 정보 업데이트 (auth_user_id가 있는 경우만)
         if (auth_user_id && email) {
@@ -92,7 +93,7 @@ serve(async (req) => {
         // 2. staff 테이블 업데이트 (staff id 기준)
         const { error: staffError } = await supabase
           .from("staff")
-          .update({ name, email, username, role })
+          .update({ name, email, username, role, phone })
           .eq("id", id);
 
         if (staffError) throw new Error("Database update error: " + staffError.message);

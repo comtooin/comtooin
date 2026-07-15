@@ -26,6 +26,7 @@ import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import ReceiptIcon from '@mui/icons-material/Receipt';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -112,6 +113,13 @@ const NavBar: React.FC = () => {
               <ListItemIcon><BusinessIcon /></ListItemIcon>
               <ListItemText
                 primary="거래처"
+                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+              />
+            </ListItem>
+            <ListItem button component={RouterLink} to="/admin/quote">
+              <ListItemIcon><ReceiptIcon /></ListItemIcon>
+              <ListItemText
+                primary="간편견적"
                 primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
               />
             </ListItem>
@@ -230,6 +238,7 @@ const NavBar: React.FC = () => {
                   <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
                   <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
+                  <Button color="inherit" component={RouterLink} to="/admin/quote" sx={{ px: 1.5 }}>간편견적</Button>
                   {userRole === 'admin' && (
                     <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
                   )}

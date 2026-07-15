@@ -25,6 +25,7 @@ interface Staff {
   email: string;
   username: string;
   role: 'admin' | 'member';
+  phone?: string;
   created_at?: string;
 }
 
@@ -41,6 +42,7 @@ const AdminStaffPage: React.FC = () => {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member');
+  const [newPhone, setNewPhone] = useState('');
 
   // 수정 다이얼로그 상태
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -88,7 +90,8 @@ const AdminStaffPage: React.FC = () => {
             email: newEmail.trim(),
             username: newUsername.trim(),
             password: newPassword.trim(),
-            role: newRole
+            role: newRole,
+            phone: newPhone.trim()
           }
         }
       });
@@ -105,11 +108,18 @@ const AdminStaffPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
+      // Edge Function 배포가 누락되었을 경우를 대비해 프론트엔드에서 직접 전화번호 업데이트 시도
+      if (newPhone.trim()) {
+        await supabase.from('staff').update({ phone: newPhone.trim() }).eq('email', newEmail.trim());
+      }
+
       setNewName('');
       setNewEmail('');
       setNewUsername('');
       setNewPassword('');
-      setSuccess('새 멤버가 등록되었습니다.');
+      setNewRole('member');
+      setNewPhone('');
+      setSuccess('새로운 멤버가 등록되었습니다.');
       fetchStaffs();
     } catch (err: any) {
       setError(err.message || '멤버 추가 중 오류가 발생했습니다.');
@@ -130,10 +140,11 @@ const AdminStaffPage: React.FC = () => {
           userData: {
             id: editingStaff.id,
             auth_user_id: editingStaff.auth_user_id,
-            name: editingStaff.name,
-            email: editingStaff.email,
-            username: editingStaff.username,
-            role: editingStaff.role
+            email: editingStaff.email.trim(),
+            name: editingStaff.name.trim(),
+            username: editingStaff.username.trim(),
+            role: editingStaff.role,
+            phone: editingStaff.phone?.trim()
           }
         }
       });
@@ -145,6 +156,11 @@ const AdminStaffPage: React.FC = () => {
           if (body && body.error) errorMessage = body.error;
         } catch (e) {}
         throw new Error(errorMessage);
+      }
+
+      // Edge Function 배포가 누락되었을 경우를 대비해 프론트엔드에서 직접 전화번호 업데이트 시도
+      if (editingStaff.phone !== undefined) {
+        await supabase.from('staff').update({ phone: editingStaff.phone.trim() }).eq('id', editingStaff.id);
       }
 
       setEditDialogOpen(false);
@@ -344,6 +360,16 @@ const AdminStaffPage: React.FC = () => {
                   type="email"
                   required
                 />
+                <TextField
+                  label="연락처"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  disabled={submitting}
+                  placeholder="010-0000-0000"
+                />
                 <FormControl fullWidth size="small">
                   <InputLabel>권한</InputLabel>
                   <Select
@@ -479,6 +505,13 @@ const AdminStaffPage: React.FC = () => {
               size="small"
               value={editingStaff?.email || ''}
               onChange={(e) => setEditingStaff(prev => prev ? {...prev, email: e.target.value} : null)}
+            />
+            <TextField
+              label="연락처"
+              fullWidth
+              size="small"
+              value={editingStaff?.phone || ''}
+              onChange={(e) => setEditingStaff(prev => prev ? {...prev, phone: e.target.value} : null)}
             />
             <FormControl fullWidth size="small">
               <InputLabel>권한</InputLabel>

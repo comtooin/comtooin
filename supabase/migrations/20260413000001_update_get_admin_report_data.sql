@@ -1,4 +1,5 @@
 -- AI 리포트 전용 데이터 추출 함수 업데이트 (요청자 이름 포함)
+DROP FUNCTION IF EXISTS public.get_admin_report_data(TEXT, TEXT, TEXT);
 CREATE OR REPLACE FUNCTION public.get_admin_report_data(
     _customer_name TEXT DEFAULT 'all',
     _month TEXT DEFAULT 'all',
