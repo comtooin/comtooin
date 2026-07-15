@@ -185,8 +185,28 @@ const AdminQuotePage: React.FC = () => {
   const handleDownloadPDF = async () => {
     if (!printRef.current) return;
     
+    // 1. 모바일 짤림 방지: 캡처 전 임시로 스타일을 PC(A4 너비) 기준으로 고정
+    const element = printRef.current;
+    const originalWidth = element.style.width;
+    const originalMinHeight = element.style.minHeight;
+    const originalTransform = element.style.transform;
+    const originalTransformOrigin = element.style.transformOrigin;
+
+    // 강제로 PC 규격(794px)으로 엘리먼트 크기 고정 및 숨김 처리 방지
+    element.style.width = '794px';
+    element.style.minHeight = '1123px';
+    element.style.transform = 'none';
+    element.style.transformOrigin = 'unset';
+    
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2 });
+      // 2. 고화질 캡처 진행
+      const canvas = await html2canvas(element, { 
+        scale: 2,
+        useCORS: true, // 이미지 깨짐 방지
+        width: 794,
+        windowWidth: 794 // 가상 윈도우 너비를 794px로 속여서 반응형 찌그러짐 차단
+      });
+      
       const imgData = canvas.toDataURL('image/png');
       
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -202,6 +222,12 @@ const AdminQuotePage: React.FC = () => {
     } catch (error) {
       console.error('PDF generation failed:', error);
       alert('PDF 생성에 실패했습니다.');
+    } finally {
+      // 3. 캡처가 끝나면 원래 모바일 반응형 스타일로 깔끔하게 복구
+      element.style.width = originalWidth;
+      element.style.minHeight = originalMinHeight;
+      element.style.transform = originalTransform;
+      element.style.transformOrigin = originalTransformOrigin;
     }
   };
 
