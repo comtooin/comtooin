@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Container, Typography, Box, Paper, Accordion, AccordionSummary, AccordionDetails,
+  Container, Typography, Box, Accordion, AccordionSummary, AccordionDetails,
   Grid, Card, CardContent, Divider, Stack
 } from '@mui/material';
 import {
