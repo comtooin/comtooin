@@ -14,6 +14,7 @@ import AdminSchedulePage from './pages/AdminSchedulePage';
 import AdminProfilePage from './pages/AdminProfilePage';
 import ArchivePage from './pages/ArchivePage';
 import EditRequestPage from './pages/EditRequestPage';
+import AdminHelpPage from './pages/AdminHelpPage';
 import NavBar from './components/NavBar';
 import AdminRoute from './components/AdminRoute';
 import OneSignal from 'react-onesignal';
@@ -304,6 +305,10 @@ function App() {
               <Route
                 path="/admin/profile"
                 element={<AdminRoute><AdminProfilePage /></AdminRoute>}
+              />
+              <Route
+                path="/admin/help"
+                element={<AdminRoute><AdminHelpPage /></AdminRoute>}
               />
               <Route
                 path="/admin/schedule"

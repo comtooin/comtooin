@@ -27,6 +27,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -132,6 +133,13 @@ const NavBar: React.FC = () => {
                 />
               </ListItem>
             )}
+            <ListItem button component={RouterLink} to="/admin/help">
+              <ListItemIcon><HelpOutlineIcon /></ListItemIcon>
+              <ListItemText
+                primary="시스템 도움말"
+                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+              />
+            </ListItem>
             <ListItem button onClick={handleLogout}>
               <ListItemIcon><LogoutIcon /></ListItemIcon>
               <ListItemText
@@ -257,6 +265,16 @@ const NavBar: React.FC = () => {
                     >
                       {userName}님
                     </Typography>
+                    <IconButton 
+                      color="inherit" 
+                      component={RouterLink}
+                      to="/admin/help"
+                      size="small" 
+                      title="도움말"
+                      sx={{ mr: 1, bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
+                    >
+                      <HelpOutlineIcon fontSize="small" />
+                    </IconButton>
                     <IconButton 
                       color="inherit" 
                       onClick={handleLogout} 
