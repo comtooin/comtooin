@@ -387,6 +387,11 @@ const AdminReportPage: React.FC = () => {
           const statusRaw = values[5]?.trim();
           const content = values[6]?.trim();
           const processNote = values[7]?.trim() || '';
+          
+          let dateStrForParse = createdAtRaw;
+          if (dateStrForParse) {
+            dateStrForParse = dateStrForParse.replace(/\./g, '-').trim();
+          }
 
           const rowErrors: string[] = [];
           if (!customerName) {
@@ -395,14 +400,21 @@ const AdminReportPage: React.FC = () => {
           if (!content) {
             rowErrors.push('접수내용이 누락되었습니다.');
           }
-          if (createdAtRaw && isNaN(Date.parse(createdAtRaw))) {
-            rowErrors.push('날짜 형식이 올바르지 않습니다.');
+          
+          let parsedDateIso = new Date().toISOString();
+          if (dateStrForParse) {
+            const parsedTime = Date.parse(dateStrForParse);
+            if (isNaN(parsedTime)) {
+              rowErrors.push('날짜 형식이 올바르지 않습니다.');
+            } else {
+              parsedDateIso = new Date(parsedTime).toISOString();
+            }
           }
 
           tempRows.push({
             index: indexCounter++,
             rawLine: line,
-            createdAt: createdAtRaw ? new Date(createdAtRaw).toISOString() : new Date().toISOString(),
+            createdAt: parsedDateIso,
             createdAtRaw: createdAtRaw || '',
             customerName: customerName || '',
             requesterName: requesterName || '',
