@@ -542,18 +542,26 @@ const AdminQuotePage: React.FC = () => {
       <Dialog open={pasteDialogOpen} onClose={() => setPasteDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold' }}>텍스트 견적 자동입력</DialogTitle>
         <DialogContent dividers>
-          <Typography variant="body2" color="text.secondary" gutterBottom>
-            조이젠, 컴퓨존 등에서 복사한 견적서 텍스트(부품 목록)를 아래에 붙여넣으세요.
+          <Typography variant="body2" color="text.secondary" gutterBottom sx={{ lineHeight: 1.5 }}>
+            쇼핑몰 견적서 페이지의 품목 목록을 전체 복사(Ctrl+A ➔ Ctrl+C)하여 아래에 붙여넣으세요.<br />
+            줄별로 <strong>[분류, 품목명, 수량, 금액]</strong>을 감지하여 표에 자동으로 입력합니다.
           </Typography>
           <TextField
             multiline
-            rows={8}
+            rows={10}
             fullWidth
             variant="outlined"
-            placeholder="1 CPU [AMD] 라이젠5... 199,000 원 1 199,000 원"
+            placeholder={`[입력 예시 1: 컴퓨존/조이젠 등 견적서 복사 양식]
+CPU	[AMD] 라이젠5 5600 (멀티팩)	152,000원	1	152,000원
+메모리	[삼성전자] DDR4 8GB	26,500원	2	53,000원
+SSD	[삼성전자] 980 M.2 NVMe (500GB)	79,000원	1	79,000원
+
+[입력 예시 2: 공백/줄바꿈 형태의 자유 양식]
+CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
+메모리 삼성전자 DDR5 16G 65,000 원 2 130,000 원`}
             value={rawText}
             onChange={(e) => setRawText(e.target.value)}
-            sx={{ mt: 2 }}
+            sx={{ mt: 2, fontFamily: 'monospace', fontSize: '0.85rem' }}
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
