@@ -661,7 +661,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                   <TableRow>
                     <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem', borderBottom: '2px solid black' }}>합계금액<br/>(VAT포함)</TableCell>
                     <TableCell rowSpan={2} sx={{ fontWeight: '900', fontSize: '1.2rem', textAlign: 'center', borderBottom: '2px solid black' }}>
-                      ₩ {Math.round(totalFinal * 1.1).toLocaleString()}
+                      ₩ {Math.round(totalFinal * 1.1).toLocaleString()} 원
                     </TableCell>
                     
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center' }}>담당자</TableCell>
@@ -720,7 +720,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                     </TableCell>
                     <TableCell></TableCell>
                     <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
-                      {totalFinal.toLocaleString()}
+                      {totalFinal.toLocaleString()} 원
                     </TableCell>
                   </TableRow>
                 </TableBody>
