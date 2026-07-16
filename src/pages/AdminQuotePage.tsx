@@ -719,7 +719,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                       {items.reduce((sum, item) => sum + item.quantity, 0)}
                     </TableCell>
                     <TableCell></TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem' }}>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
                       {totalFinal.toLocaleString()} 원
                     </TableCell>
                   </TableRow>
