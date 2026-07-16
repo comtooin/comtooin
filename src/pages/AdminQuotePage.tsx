@@ -660,8 +660,8 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                   {/* 5행 */}
                   <TableRow>
                     <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem', borderBottom: '2px solid black' }}>합계금액<br/>(VAT포함)</TableCell>
-                    <TableCell rowSpan={2} sx={{ fontWeight: '900', fontSize: '1.2rem', textAlign: 'center', borderBottom: '2px solid black' }}>
-                      ₩ {Math.round(totalFinal * 1.1).toLocaleString()} 원
+                    <TableCell rowSpan={2} sx={{ fontWeight: '950', fontSize: '1.85rem', textAlign: 'left', pl: 3, borderBottom: '2px solid black', whiteSpace: 'nowrap' }}>
+                      {Math.round(totalFinal * 1.1).toLocaleString()} 원
                     </TableCell>
                     
                     <TableCell component="th" sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center' }}>담당자</TableCell>
@@ -682,23 +682,23 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
               <Table size="small" sx={{ borderTop: '2px solid black', borderBottom: '2px solid black', '& .MuiTableCell-root': { border: '1px solid #ddd', py: 0.6 } }}>
                 <TableHead>
                   <TableRow sx={{ bgcolor: '#f0f0f0' }}>
-                    <TableCell align="center" width="50px">NO</TableCell>
-                    <TableCell align="center" width="80px">분류</TableCell>
-                    <TableCell align="center">품목명 / 규격</TableCell>
-                    <TableCell align="center" width="60px">수량</TableCell>
-                    <TableCell align="center" width="100px">단가</TableCell>
-                    <TableCell align="center" width="120px">공급가액</TableCell>
+                    <TableCell align="center" width="50px" sx={{ whiteSpace: 'nowrap' }}>NO</TableCell>
+                    <TableCell align="center" width="90px" sx={{ whiteSpace: 'nowrap' }}>분류</TableCell>
+                    <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>품목명 / 규격</TableCell>
+                    <TableCell align="center" width="45px" sx={{ whiteSpace: 'nowrap' }}>수량</TableCell>
+                    <TableCell align="center" width="115px" sx={{ whiteSpace: 'nowrap' }}>단가</TableCell>
+                    <TableCell align="center" width="135px" sx={{ whiteSpace: 'nowrap' }}>공급가액</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {items.map((item, index) => (
                     <TableRow key={item.id}>
-                      <TableCell align="center">{index + 1}</TableCell>
-                      <TableCell align="center">{item.category}</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{index + 1}</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{item.category}</TableCell>
                       <TableCell sx={{ fontSize: '0.85rem' }}>{item.name}</TableCell>
-                      <TableCell align="center">{item.quantity}</TableCell>
-                      <TableCell align="right">{item.finalPrice.toLocaleString()}</TableCell>
-                      <TableCell align="right">{(item.finalPrice * item.quantity).toLocaleString()}</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{item.quantity}</TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{item.finalPrice.toLocaleString()}</TableCell>
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{(item.finalPrice * item.quantity).toLocaleString()}</TableCell>
                     </TableRow>
                   ))}
                   {/* Empty rows filler if items are few */}
