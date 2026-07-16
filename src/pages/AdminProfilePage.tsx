@@ -1,14 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Paper, TextField, Button, Stack, Alert, CircularProgress, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton
 } from '@mui/material';
-import { AccountCircle as AccountCircleIcon, Lock as LockIcon } from '@mui/icons-material';
+import { AccountCircle as AccountCircleIcon, Lock as LockIcon, Close as CloseIcon } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 
-const AdminProfilePage: React.FC = () => {
+interface AdminProfileProps {
+  isDialog?: boolean;
+  onClose?: () => void;
+}
+
+const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -19,7 +24,8 @@ const AdminProfilePage: React.FC = () => {
     name: '',
     email: '',
     username: '',
-    role: ''
+    role: '',
+    phone: ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -52,12 +58,36 @@ const AdminProfilePage: React.FC = () => {
         name: profile.name,
         email: profile.email,
         username: profile.username,
-        role: profile.role
+        role: profile.role,
+        phone: profile.phone || ''
       });
     } catch (err: any) {
       setError(err.message || '사용자 정보를 불러오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePhoneSave = async () => {
+    setSubmitting(true);
+    setError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('로그인 정보가 없습니다.');
+
+      const { error: updateError } = await supabase
+        .from('staff')
+        .update({ phone: userInfo.phone.trim() })
+        .eq('auth_user_id', user.id);
+
+      if (updateError) throw updateError;
+      
+      alert('핸드폰 번호가 정상적으로 저장되었습니다.');
+      fetchUserInfo();
+    } catch (err: any) {
+      setError(err.message || '핸드폰 번호 저장 중 오류가 발생했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -107,38 +137,25 @@ const AdminProfilePage: React.FC = () => {
     localStorage.removeItem('adminRole');
     localStorage.removeItem('adminName');
     setSuccessDialogOpen(false);
+    if (onClose) onClose();
     navigate('/admin/login');
   };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '30vh' }}>
         <CircularProgress />
       </Box>
     );
   }
 
-  return (
-    <Container maxWidth="sm">
-      <Helmet><title>내 정보 | COMTOOIN</title></Helmet>
-      
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <AccountCircleIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" fontWeight="bold">
-            내 정보
-          </Typography>
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          로그인된 계정의 정보를 확인하고 비밀번호를 관리합니다.
-        </Typography>
-      </Box>
+  const profileContent = (
+    <Stack spacing={2.5}>
+      {error && <Alert severity="error" variant="outlined">{error}</Alert>}
 
-      <Divider sx={{ mb: 2.5 }} />
-
-      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, mb: 2, bgcolor: 'background.paper' }}>
-        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
-          기본 정보
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
+        <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, color: 'primary.main' }}>
+          👤 기본 회원 정보
         </Typography>
         <Stack spacing={2}>
           <TextField 
@@ -177,11 +194,33 @@ const AdminProfilePage: React.FC = () => {
             InputProps={{ readOnly: true }} 
             sx={{ bgcolor: 'grey.50' }}
           />
+          <TextField 
+            label="연락처" 
+            value={userInfo.phone} 
+            onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+            fullWidth 
+            variant="outlined" 
+            size="small" 
+            placeholder="예: 010-1234-5678"
+            InputProps={{
+              endAdornment: (
+                <Button 
+                  size="small" 
+                  variant="contained" 
+                  onClick={handlePhoneSave} 
+                  disabled={submitting} 
+                  sx={{ ml: 1, whiteSpace: 'nowrap', minWidth: '60px', fontWeight: 'bold' }}
+                >
+                  저장
+                </Button>
+              )
+            }}
+          />
         </Stack>
       </Paper>
 
-      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1, bgcolor: 'background.paper' }}>
-        <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
+        <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
           <LockIcon fontSize="small" /> 비밀번호 변경
         </Typography>
 
@@ -191,9 +230,7 @@ const AdminProfilePage: React.FC = () => {
           </Alert>
         ) : (
           <Box component="form" onSubmit={handlePasswordChange}>
-            <Stack spacing={2.5}>
-              {error && <Alert severity="error" variant="outlined">{error}</Alert>}
-              
+            <Stack spacing={2}>
               <TextField
                 label="새 비밀번호"
                 type="password"
@@ -218,7 +255,7 @@ const AdminProfilePage: React.FC = () => {
                 type="submit"
                 variant="contained"
                 disabled={submitting}
-                sx={{ mt: 1, py: 1.5, fontWeight: 'bold', fontSize: '1rem' }}
+                sx={{ mt: 1, py: 1.2, fontWeight: 'bold' }}
               >
                 {submitting ? <CircularProgress size={24} color="inherit" /> : '비밀번호 변경하기'}
               </Button>
@@ -235,6 +272,7 @@ const AdminProfilePage: React.FC = () => {
         }}
         maxWidth="xs"
         fullWidth
+        style={{ zIndex: 2100 }}
       >
         <DialogTitle fontWeight="bold">비밀번호 변경 완료</DialogTitle>
         <DialogContent>
@@ -254,6 +292,42 @@ const AdminProfilePage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+    </Stack>
+  );
+
+  if (isDialog) {
+    return (
+      <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth style={{ zIndex: 1400 }}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <AccountCircleIcon color="primary" />
+            <span>내 정보 및 보안 설정</span>
+          </Box>
+          <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 2.5, bgcolor: '#f8fafc' }}>
+          {profileContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Container maxWidth="sm" sx={{ py: 4 }}>
+      <Helmet><title>내 정보 | COMTOOIN</title></Helmet>
+      <Box sx={{ mb: 2.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <AccountCircleIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            내 정보
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          로그인된 계정의 정보를 확인하고 비밀번호를 관리합니다.
+        </Typography>
+      </Box>
+      <Divider sx={{ mb: 2.5 }} />
+      {profileContent}
     </Container>
   );
 };

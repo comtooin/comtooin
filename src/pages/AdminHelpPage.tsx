@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Container, Typography, Box, Accordion, AccordionSummary, AccordionDetails,
-  Grid, Card, CardContent, Divider, Stack
+  Grid, Card, CardContent, Divider, Stack, Dialog, DialogTitle, DialogContent, IconButton
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -13,11 +13,17 @@ import {
   Business as CustomerIcon,
   Computer as InventoryIcon,
   Receipt as QuoteIcon,
-  AutoAwesome as AiIcon
+  AutoAwesome as AiIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 
-const AdminHelpPage: React.FC = () => {
+interface AdminHelpProps {
+  isDialog?: boolean;
+  onClose?: () => void;
+}
+
+const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) => {
   const [expanded, setExpanded] = useState<string | false>(false);
 
   const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
@@ -89,9 +95,11 @@ const AdminHelpPage: React.FC = () => {
       icon: <InventoryIcon color="primary" />,
       desc: '거래처별 보유 컴퓨터 및 서버의 상세 하드웨어 스펙과 소프트웨어 자산을 수집하여 한눈에 파악합니다.',
       details: [
-        '하드웨어 정보 수집: 컴퓨터별 CPU 모델, RAM 용량, 디스크 개수 및 용량, 메인보드 모델명, 네트워크 IP 정보가 상세히 수집됩니다.',
-        '소프트웨어 자산 관리: 거래처 내 PC들에 설치된 각 소프트웨어 프로그램 종류와 라이선스 현황을 중앙에서 모니터링합니다.',
-        '전용 스크립트 대량 등록: COMTOOIN 전용 수집 스크립트(HTA)로 수집한 결과 파일을 CSV 업로드하면 번거로운 타이핑 없이 수백 대의 장비가 일괄 등록됩니다.',
+        '하드웨어 정보 수집 및 C드라이브 판별: 컴퓨터별 CPU 모델, RAM, 메인보드, GPU 정보가 수집되며, 다중 디스크 스캔 시 실제 OS가 탑재된 C드라이브 디스크를 자동 분류하여 가장 먼저 노출해 줍니다.',
+        '소프트웨어 자산 관리 및 목록 간소화: 거래처 PC에 설치된 소프트웨어 라이선스 목록을 모니터링하며, 테이블 뷰에서 가독성 저해 요소인 컴퓨터 이름 열을 제거하고 간소화하여 한눈에 파악이 쉬워졌습니다.',
+        'HTA 전용 수집 및 실시간 반영: 전용 IT 자산 수집 스크립트(HTA)를 다운로드해 실행하면 조사가 완료됨과 동시에 실시간 채널 및 5초 주기 백그라운드 갱신을 통해 새로고침 없이 대시보드에 즉시 자산이 등록됩니다.',
+        '직관적인 클릭 상세보기 UX: 자산 테이블에서 마우스 호버 및 클릭(cursor: pointer) 동작만으로 상세 사양 팝업을 즉시 오픈할 수 있으며, 여러 개의 저장 장치가 탑재된 경우 팝업에서 목록 형태로 분리 표기됩니다.',
+        '모바일 최적화 통계 토글: 모바일 기기로 접속 시 세로 스크롤 영역을 과도하게 차지하던 상단 차트 카드를 토글식 [통계 차트 펼치기/접기] 버튼으로 축소 제공하여 모바일 조회의 편의성을 강화했습니다.',
         'AI 기반 리포트 분석: 축적된 하드웨어 사양 데이터를 기반으로 AI를 구동하여, 업그레이드가 시급한 PC 판정 및 교체 제안서를 자동으로 완성해 주는 스마트 기능을 포함합니다.'
       ]
     },
@@ -102,6 +110,7 @@ const AdminHelpPage: React.FC = () => {
       desc: '복잡한 컴퓨터 부품 명세나 텍스트 리스트를 파싱하여 빠르게 마진율을 계산하고 고품질 PDF를 생성합니다.',
       details: [
         '텍스트 명세 자동 파싱: 컴퓨존, 조이젠 장바구니 등의 화면에서 부품 견적 리스트를 드래그해 복사한 뒤 자동 파싱 입력창에 넣으면 단가와 품목 수량이 자동으로 표에 배치됩니다.',
+        '수동 부품 추가 및 편집: 파싱되지 않은 특수 품목이나 직접 정의한 규격 사양(작업 공임비, 네트워크 설치비, 소프트웨어 구매 비용 등)을 [직접 수동 추가] 버튼을 통해 유연하게 리스트에 추가하거나, 기존 파싱된 항목의 품목명, 단가 및 수량을 즉시 자유롭게 편집할 수 있습니다.',
         '마진율 일괄 계산기: 기본 적용할 퍼센트(%) 마진율을 입력하고 마진율 설정을 누르면 공급가액, 부가세, 마진, 최종 소비자 단가가 전체 일괄 정렬 계산됩니다.',
         '견적서 템플릿 관리: 자주 출고되는 규격 사양 세트들을 템플릿으로 이름을 지정하여 저장하고, 추후 필요할 때 원클릭으로 다시 꺼내 쓰거나 상세 사양을 미리 볼 수 있습니다.',
         '오프스크린 A4 PDF 출력: 반응형 레이아웃이나 잘림 현상 없는 모바일 환경에서의 깔끔한 A4 규격 출력을 위해 별도 렌더링 파이프라인을 지원하여 완벽한 PDF 견적서를 즉시 저장 및 공유할 수 있습니다.'
@@ -120,27 +129,10 @@ const AdminHelpPage: React.FC = () => {
     }
   ];
 
-  return (
-    <Container maxWidth="lg">
-      <Helmet><title>시스템 도움말 | COMTOOIN</title></Helmet>
-
-      {/* 헤더 */}
-      <Box sx={{ mb: 4 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <HelpIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" fontWeight="bold">
-            시스템 도움말 및 사용 가이드
-          </Typography>
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          컴투인 IT 서비스 관리(ITSM) 플랫폼의 주요 기능과 직원용 사용 팁을 제공합니다.
-        </Typography>
-      </Box>
-
-      <Divider sx={{ mb: 4 }} />
-
+  const helpContent = (
+    <Box sx={{ p: isDialog ? 1 : 0 }}>
       {/* 바로가기 그리드 카드 */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid container spacing={isDialog ? 2 : 3} sx={{ mb: 4 }}>
         {sections.map((sec) => (
           <Grid item xs={12} sm={6} md={3} key={sec.id}>
             <Card 
@@ -157,11 +149,11 @@ const AdminHelpPage: React.FC = () => {
               }}
               onClick={() => setExpanded(expanded === sec.id ? false : sec.id)}
             >
-              <CardContent>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.2 }}>
                   {sec.icon}
-                  <Typography variant="subtitle2" fontWeight="bold" noWrap>
-                    {sec.title.split(' ')[0]}
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
+                    {sec.title}
                   </Typography>
                 </Stack>
                 <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>
@@ -178,7 +170,7 @@ const AdminHelpPage: React.FC = () => {
         상세 매뉴얼
       </Typography>
       
-      <Box sx={{ mb: 5 }}>
+      <Box sx={{ mb: 2 }}>
         {sections.map((sec) => (
           <Accordion 
             key={sec.id} 
@@ -219,6 +211,45 @@ const AdminHelpPage: React.FC = () => {
           </Accordion>
         ))}
       </Box>
+    </Box>
+  );
+
+  if (isDialog) {
+    return (
+      <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth style={{ zIndex: 1400 }}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <HelpIcon color="primary" />
+            <span>시스템 도움말 및 사용 가이드</span>
+          </Box>
+          <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3, bgcolor: '#f8fafc' }}>
+          {helpContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Container maxWidth="lg" sx={{ py: 4 }}>
+      <Helmet><title>시스템 도움말 | COMTOOIN</title></Helmet>
+
+      {/* 헤더 */}
+      <Box sx={{ mb: 4 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
+          <HelpIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
+          <Typography variant="h5" component="h1" fontWeight="bold">
+            시스템 도움말 및 사용 가이드
+          </Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary">
+          컴투인 IT 서비스 관리(ITSM) 플랫폼의 주요 기능과 직원용 사용 팁을 제공합니다.
+        </Typography>
+      </Box>
+
+      <Divider sx={{ mb: 4 }} />
+      {helpContent}
     </Container>
   );
 };

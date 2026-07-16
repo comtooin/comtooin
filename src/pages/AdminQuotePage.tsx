@@ -347,7 +347,7 @@ const AdminQuotePage: React.FC = () => {
   const totalMargin = totalFinal - totalCost;
 
   return (
-    <Container maxWidth="xl" sx={{ mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="lg" sx={{ mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 } }}>
       <Helmet><title>간편견적 | COMTOOIN</title></Helmet>
 
       {/* 표준 헤더 섹션 */}
@@ -465,35 +465,35 @@ const AdminQuotePage: React.FC = () => {
             </Box>
 
               <TableContainer sx={{ maxHeight: { xs: 500, sm: 400 }, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <Table size="small" stickyHeader sx={{ minWidth: 800 }}>
+                <Table size="small" stickyHeader sx={{ minWidth: 750 }}>
                   <TableHead>
                     <TableRow>
-                      <TableCell align="center" width="50">NO</TableCell>
-                      <TableCell align="center">분류</TableCell>
-                      <TableCell align="center">품목명</TableCell>
-                      <TableCell align="center">수량</TableCell>
-                      <TableCell align="right">원단가</TableCell>
-                      <TableCell align="center">마진(%)</TableCell>
-                      <TableCell align="right">견적단가</TableCell>
-                      <TableCell align="right">합계</TableCell>
-                      <TableCell align="center">삭제</TableCell>
+                      <TableCell align="center" width="40" sx={{ whiteSpace: 'nowrap' }}>NO</TableCell>
+                      <TableCell align="center" width="90" sx={{ whiteSpace: 'nowrap' }}>분류</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>품목명</TableCell>
+                      <TableCell align="center" width="75" sx={{ whiteSpace: 'nowrap' }}>수량</TableCell>
+                      <TableCell align="center" width="100" sx={{ whiteSpace: 'nowrap' }}>원단가</TableCell>
+                      <TableCell align="center" width="80" sx={{ whiteSpace: 'nowrap' }}>마진(%)</TableCell>
+                      <TableCell align="center" width="100" sx={{ whiteSpace: 'nowrap' }}>견적단가</TableCell>
+                      <TableCell align="center" width="110" sx={{ whiteSpace: 'nowrap' }}>합계</TableCell>
+                      <TableCell align="center" width="50" sx={{ whiteSpace: 'nowrap' }}>삭제</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {items.map((item, index) => (
                       <TableRow key={item.id}>
                         <TableCell align="center">{index + 1}</TableCell>
-                        <TableCell>
+                        <TableCell align="left">
                           <TextField
                             variant="standard"
                             value={item.category}
                             onChange={(e) => handleItemFieldChange(item.id, 'category', e.target.value)}
-                            sx={{ width: 80, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
+                            sx={{ width: 65, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
                             InputProps={{ style: { fontSize: '0.85rem' } }}
                             inputProps={{ style: { padding: '4px' } }}
                           />
                         </TableCell>
-                        <TableCell>
+                        <TableCell align="left">
                           <TextField
                             variant="standard"
                             value={item.name}
@@ -504,15 +504,18 @@ const AdminQuotePage: React.FC = () => {
                             inputProps={{ style: { padding: '4px' } }}
                           />
                         </TableCell>
-                        <TableCell align="center">
+                        <TableCell align="left">
                           <TextField
                             variant="standard"
                             type="number"
                             value={item.quantity}
                             onChange={(e) => handleItemQuantityChange(item.id, Number(e.target.value))}
-                            sx={{ width: 50, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
-                            InputProps={{ style: { fontSize: '0.85rem', textAlign: 'center' } }}
-                            inputProps={{ style: { textAlign: 'center', padding: '4px' }, min: 1 }}
+                            sx={{ 
+                              width: 55, 
+                              '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' }
+                            }}
+                            InputProps={{ style: { fontSize: '0.85rem' } }}
+                            inputProps={{ style: { padding: '4px' }, min: 1 }}
                           />
                         </TableCell>
                         <TableCell align="right">
@@ -521,20 +524,30 @@ const AdminQuotePage: React.FC = () => {
                             type="number"
                             value={item.costPrice === 0 ? '' : item.costPrice}
                             onChange={(e) => handleItemCostPriceChange(item.id, Number(e.target.value))}
-                            sx={{ width: 80, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
+                            sx={{ 
+                              width: 80, 
+                              ml: 'auto',
+                              display: 'flex',
+                              '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' },
+                              '& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button': { WebkitAppearance: 'none', margin: 0 },
+                              '& input[type=number]': { MozAppearance: 'textfield' }
+                            }}
                             InputProps={{ style: { fontSize: '0.85rem', textAlign: 'right' } }}
                             inputProps={{ style: { textAlign: 'right', padding: '4px' } }}
                           />
                         </TableCell>
-                        <TableCell align="center">
+                        <TableCell align="left">
                           <TextField
                             variant="standard"
                             type="number"
                             value={item.marginRate}
                             onChange={(e) => handleItemMarginChange(item.id, Number(e.target.value))}
-                            sx={{ width: 40, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
-                            InputProps={{ style: { fontSize: '0.85rem', textAlign: 'center' } }}
-                            inputProps={{ style: { textAlign: 'center', padding: '4px' } }}
+                            sx={{ 
+                              width: 60, 
+                              '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' }
+                            }}
+                            InputProps={{ style: { fontSize: '0.85rem' } }}
+                            inputProps={{ style: { padding: '4px' } }}
                           />
                         </TableCell>
                         <TableCell align="right" sx={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{item.finalPrice.toLocaleString()}</TableCell>
@@ -708,7 +721,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                   {/* 5행 */}
                   <TableRow>
                     <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem', borderBottom: '2px solid black' }}>합계금액<br/>(VAT포함)</TableCell>
-                    <TableCell rowSpan={2} sx={{ fontWeight: '950', fontSize: '2.4rem', textAlign: 'left', pl: 3, borderBottom: '2px solid black', whiteSpace: 'nowrap' }}>
+                    <TableCell rowSpan={2} sx={{ fontWeight: 'bold', fontSize: '1.25rem !important', textAlign: 'left', pl: 3, borderBottom: '2px solid black', whiteSpace: 'nowrap' }}>
                       {Math.round(totalFinal * 1.1).toLocaleString()} 원
                     </TableCell>
                     
@@ -742,8 +755,8 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                   {items.map((item, index) => (
                     <TableRow key={item.id}>
                       <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{index + 1}</TableCell>
-                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{item.category}</TableCell>
-                      <TableCell sx={{ fontSize: '0.85rem' }}>{item.name}</TableCell>
+                      <TableCell align="left" sx={{ whiteSpace: 'nowrap', pl: 1 }}>{item.category}</TableCell>
+                      <TableCell align="left" sx={{ fontSize: '0.85rem', pl: 1 }}>{item.name}</TableCell>
                       <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>{item.quantity}</TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{item.finalPrice.toLocaleString()}</TableCell>
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{(item.finalPrice * item.quantity).toLocaleString()}</TableCell>

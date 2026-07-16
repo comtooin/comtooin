@@ -28,12 +28,16 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import AdminProfilePage from '../pages/AdminProfilePage';
+import AdminHelpPage from '../pages/AdminHelpPage';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -73,7 +77,7 @@ const NavBar: React.FC = () => {
       <List>
         {isAdminLoggedIn ? (
           <>
-            <ListItem button component={RouterLink} to="/admin/profile">
+            <ListItem button onClick={() => { setProfileOpen(true); setDrawerOpen(false); }}>
               <ListItemIcon><AccountCircleIcon /></ListItemIcon>
               <ListItemText
                 primary={`${userName}님 (내 정보)`}
@@ -133,7 +137,7 @@ const NavBar: React.FC = () => {
                 />
               </ListItem>
             )}
-            <ListItem button component={RouterLink} to="/admin/help">
+            <ListItem button onClick={() => { setHelpOpen(true); setDrawerOpen(false); }}>
               <ListItemIcon><HelpOutlineIcon /></ListItemIcon>
               <ListItemText
                 primary="시스템 도움말"
@@ -253,13 +257,13 @@ const NavBar: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, pl: 1.5, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
                     <Typography 
                       variant="body2" 
-                      component={RouterLink}
-                      to="/admin/profile"
+                      onClick={() => setProfileOpen(true)}
                       sx={{ 
                         mr: 1, 
                         fontWeight: 500, 
                         color: 'inherit', 
                         textDecoration: 'none',
+                        cursor: 'pointer',
                         '&:hover': { textDecoration: 'underline' }
                       }}
                     >
@@ -267,8 +271,7 @@ const NavBar: React.FC = () => {
                     </Typography>
                     <IconButton 
                       color="inherit" 
-                      component={RouterLink}
-                      to="/admin/help"
+                      onClick={() => setHelpOpen(true)}
                       size="small" 
                       title="도움말"
                       sx={{ mr: 1, bgcolor: 'rgba(255,255,255,0.1)', '&:hover': { bgcolor: 'rgba(255,255,255,0.2)' } }}
@@ -300,6 +303,8 @@ const NavBar: React.FC = () => {
       >
         {drawer}
       </Drawer>
+      {profileOpen && <AdminProfilePage isDialog onClose={() => setProfileOpen(false)} />}
+      {helpOpen && <AdminHelpPage isDialog onClose={() => setHelpOpen(false)} />}
     </>
   );
 };

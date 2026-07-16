@@ -14,7 +14,8 @@ import {
   Edit as EditIcon,
   OpenInNew as OpenInNewIcon,
   DeleteSweep as DeleteSweepIcon,
-  AutoAwesome as AiIcon
+  AutoAwesome as AiIcon,
+  BarChart as BarChartIcon
 } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
@@ -24,6 +25,8 @@ import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, B
 interface Hardware {
   id: string;
   computer_name: string;
+  department?: string;
+  user_name?: string;
   ip_address: string;
   os: string;
   processor: string;
@@ -80,7 +83,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
   
   // 정렬 상태
   const [hwSortConfig, setHwSortConfig] = useState<{ key: keyof Hardware, direction: 'asc' | 'desc' } | null>(null);
-  const [swSortConfig, setSwSortConfig] = useState<{ key: 'computer_name' | 'count', direction: 'asc' | 'desc' } | null>(null);
+  const [swSortConfig, setSwSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
 
   // 컨테이너 참조 (스크롤 초기화)
   const hwTableRef = useRef<HTMLDivElement>(null);
@@ -92,13 +95,52 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const [swDetailPage, setSwDetailPage] = useState(1);
   const swDetailRowsPerPage = 15;
 
+  // 하드웨어 상세보기 팝업 상태
+  const [hwDetailOpen, setHwDetailOpen] = useState(false);
+  const [selectedHardware, setSelectedHardware] = useState<Hardware | null>(null);
+
+  // 모바일 통계 접기/펼치기 상태 (모바일 전용)
+  const [showStats, setShowStats] = useState(false);
+
   useEffect(() => {
-    if (id) fetchInventoryData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!id) return;
+    
+    fetchInventoryData();
+
+    // Supabase Realtime 구독 설정 (클라이언트 측에서 변경 즉시 silent 리로드)
+    const channel = supabase
+      .channel(`inventory_changes_${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customer_hardware'
+        },
+        () => {
+          fetchInventoryData(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'customer_software'
+        },
+        () => {
+          fetchInventoryData(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [id]);
 
-  const fetchInventoryData = async () => {
-    setLoading(true);
+  const fetchInventoryData = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       // 1. 고객사 정보
       const { data: customerData, error: customerError } = await supabase
@@ -128,7 +170,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
     } catch (err: any) {
       setError(err.message || '데이터를 불러오는데 실패했습니다.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -170,6 +212,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
             const inserts = validRows.map(row => ({
               customer_id: id,
               computer_name: getVal(row, ['컴퓨터이름', 'computername', 'pc명']) || 'Unknown',
+              department: getVal(row, ['부서', 'department', 'dept']),
+              user_name: getVal(row, ['사용자이름', '사용자', 'username', 'user', 'owner']),
               ip_address: getVal(row, ['ip주소', 'ipaddress', 'ip']),
               os: getVal(row, ['운영체제', 'os']),
               processor: getVal(row, ['프로세서', 'processor', 'cpu']),
@@ -208,6 +252,36 @@ const AdminCustomerInventoryPage: React.FC = () => {
     });
     
     event.target.value = '';
+  };
+
+  const handleDownloadHta = async () => {
+    try {
+      const response = await fetch(`/comtooin_scanner.hta?t=${new Date().getTime()}`);
+      if (!response.ok) throw new Error('조사용 프로그램을 로드하지 못했습니다.');
+      let text = await response.text();
+
+      // Supabase 설정 및 거래처 정보 동적 치환
+      const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
+      const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+
+      text = text.replace(/CUSTOMER_ID_PLACEHOLDER/g, id || '');
+      text = text.replace(/CUSTOMER_NAME_PLACEHOLDER/g, customer?.name || '고객사');
+      text = text.replace(/SUPABASE_URL_PLACEHOLDER/g, supabaseUrl);
+      text = text.replace(/SUPABASE_KEY_PLACEHOLDER/g, supabaseAnonKey);
+
+      const blob = new Blob([text], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `comtooin_scanner_${customer?.name || '고객사'}.hta`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`다운로드 실패: ${err.message}`);
+    }
   };
 
   const openEditModal = (row: any, type: 'hardware' | 'software') => {
@@ -494,20 +568,27 @@ const AdminCustomerInventoryPage: React.FC = () => {
   }, [hardware, hwSortConfig]);
 
   const sortedGroupedSoftware = useMemo(() => {
-    let sortable = [...groupedSoftware];
+    let sortable = groupedSoftware.map(group => {
+      const hwRecord = hardware.find(h => h.computer_name === group.computer_name);
+      return {
+        ...group,
+        department: hwRecord?.department || '',
+        user_name: hwRecord?.user_name || ''
+      };
+    });
     if (swSortConfig !== null) {
       sortable.sort((a, b) => {
         if (swSortConfig.key === 'count') {
           return swSortConfig.direction === 'asc' ? a.count - b.count : b.count - a.count;
         }
-        const aVal = String(a.computer_name || '');
-        const bVal = String(b.computer_name || '');
+        const aVal = String(a[swSortConfig.key as keyof typeof a] || '');
+        const bVal = String(b[swSortConfig.key as keyof typeof b] || '');
         const result = aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' });
         return swSortConfig.direction === 'asc' ? result : -result;
       });
     }
     return sortable;
-  }, [groupedSoftware, swSortConfig]);
+  }, [groupedSoftware, swSortConfig, hardware]);
 
   const handleHwSort = (key: keyof Hardware) => {
     let direction: 'asc' | 'desc' = 'asc';
@@ -517,7 +598,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
     setHwSortConfig({ key, direction });
   };
 
-  const handleSwSort = (key: 'computer_name' | 'count') => {
+  const handleSwSort = (key: string) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (swSortConfig && swSortConfig.key === key && swSortConfig.direction === 'asc') {
       direction = 'desc';
@@ -569,8 +650,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             variant="contained" 
             color="primary" 
             startIcon={<FileDownloadIcon />} 
-            href="/comtooin_scanner.hta" 
-            download
+            onClick={handleDownloadHta}
           >
             조사용 프로그램 다운로드
           </Button>
@@ -580,88 +660,103 @@ const AdminCustomerInventoryPage: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
 
+      {/* 모바일 통계 접기/펼치기 토글 버튼 */}
+      <Box sx={{ display: { xs: 'block', md: 'none' }, mb: 2 }}>
+        <Button 
+          fullWidth 
+          variant="outlined" 
+          size="small"
+          onClick={() => setShowStats(!showStats)}
+          startIcon={<BarChartIcon />}
+        >
+          {showStats ? '📊 통계 차트 접기' : '📊 통계 차트 펼치기'}
+        </Button>
+      </Box>
+
       {/* 맞춤형 동적 대시보드 */}
-      {tabValue === 0 ? (
-        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
-                등록된 PC 대수
-              </Typography>
-              <Typography variant="h2" fontWeight="bold" color="primary.main">
-                {hardware.length}
-              </Typography>
-            </Paper>
+      <Box sx={{ display: { xs: showStats ? 'block' : 'none', md: 'block' } }}>
+        {tabValue === 0 ? (
+          <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
+                  등록된 PC 대수
+                </Typography>
+                <Typography variant="h2" fontWeight="bold" color="primary.main">
+                  {hardware.length}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>메모리(RAM) 용량 분포</Typography>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px'}}>
+                      {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>CPU 등급별 분포</Typography>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={cpuStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 11}} />
+                    <RechartsTooltip />
+                    <Bar dataKey="count" fill="#0288d1" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-              <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>메모리(RAM) 용량 분포</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px'}}>
-                    {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
+        ) : (
+          <Grid container spacing={2} sx={{ mb: 2.5 }}>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
+                  설치된 프로그램 총 건수
+                </Typography>
+                <Typography variant="h2" fontWeight="bold" color="secondary.main">
+                  {software.length}
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>주요 상용 소프트웨어 설치 현황</Typography>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px', fontWeight: 'bold'}}>
+                      {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={['#d32f2f', '#1976d2', '#388e3c', '#f57c00'][index % 4]} />)}
+                    </Pie>
+                    <RechartsTooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>전체 Top 5 소프트웨어</Typography>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topSoftware} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
+                    <RechartsTooltip />
+                    <Bar dataKey="count" fill="#607d8b" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-              <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>CPU 등급별 분포</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cpuStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 11}} />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill="#0288d1" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-        </Grid>
-      ) : (
-        <Grid container spacing={2} sx={{ mb: 2.5 }}>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-              <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
-                설치된 프로그램 총 건수
-              </Typography>
-              <Typography variant="h2" fontWeight="bold" color="secondary.main">
-                {software.length}
-              </Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-              <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>주요 상용 소프트웨어 설치 현황</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px', fontWeight: 'bold'}}>
-                    {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={['#d32f2f', '#1976d2', '#388e3c', '#f57c00'][index % 4]} />)}
-                  </Pie>
-                  <RechartsTooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-              <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>전체 Top 5 소프트웨어</Typography>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topSoftware} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
-                  <RechartsTooltip />
-                  <Bar dataKey="count" fill="#607d8b" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </Paper>
-          </Grid>
-        </Grid>
-      )}
+        )}
+      </Box>
 
       <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 0, sm: 2 } }}>
@@ -692,13 +787,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <TableHead>
                     <TableRow>
                       {[
-                        { id: 'computer_name', label: '컴퓨터이름' },
-                        { id: 'ip_address', label: 'IP주소' },
+                        { id: 'department', label: '부서' },
+                        { id: 'user_name', label: '사용자이름' },
                         { id: 'os', label: '운영체제' },
-                        { id: 'processor', label: '프로세서' },
-                        { id: 'motherboard', label: '메인보드' },
+                        { id: 'processor', label: 'CPU' },
                         { id: 'memory', label: '메모리' },
-                        { id: 'graphic_card', label: '그래픽카드' },
                         { id: 'storage', label: '저장장치' }
                       ].map((col) => (
                         <TableCell key={col.id} sortDirection={hwSortConfig?.key === col.id ? hwSortConfig.direction : false} sx={{ whiteSpace: 'nowrap' }}>
@@ -711,31 +804,63 @@ const AdminCustomerInventoryPage: React.FC = () => {
                           </TableSortLabel>
                         </TableCell>
                       ))}
-                      <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>관리</TableCell>
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {sortedHardware.length > 0 ? sortedHardware.slice((hwPage - 1) * hwRowsPerPage, (hwPage - 1) * hwRowsPerPage + hwRowsPerPage).map((row) => (
-                      <TableRow key={row.id} hover>
-                        <TableCell sx={{ fontWeight: 'bold' }}>{row.computer_name}</TableCell>
-                        <TableCell>{row.ip_address}</TableCell>
-                        <TableCell>{row.os}</TableCell>
-                        <TableCell>{row.processor}</TableCell>
-                        <TableCell>{row.motherboard}</TableCell>
-                        <TableCell>{row.memory}</TableCell>
-                        <TableCell>{row.graphic_card}</TableCell>
-                        <TableCell>{row.storage}</TableCell>
-                        <TableCell align="center">
-                          <IconButton size="small" color="primary" onClick={() => openEditModal(row, 'hardware')}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                          <IconButton size="small" color="error" onClick={() => handleDelete(row.id, 'hardware')}>
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
+                      <TableRow 
+                        key={row.id} 
+                        hover 
+                        onClick={() => {
+                          setSelectedHardware(row);
+                          setHwDetailOpen(true);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.department || '-'}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.user_name || '-'}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.os}</TableCell>
+                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Tooltip title={row.processor || ''}>
+                            <span>{row.processor || '-'}</span>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.memory}</TableCell>
+                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          <Tooltip title={row.storage || ''}>
+                            <span>{row.storage || '-'}</span>
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                          <Tooltip title="정보 수정">
+                            <IconButton 
+                              size="small" 
+                              color="primary" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(row, 'hardware');
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="삭제">
+                            <IconButton 
+                              size="small" 
+                              color="error" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(row.id, 'hardware');
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </TableCell>
                       </TableRow>
                     )) : (
-                      <TableRow><TableCell colSpan={9} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -776,63 +901,62 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Table stickyHeader size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ width: '40%', whiteSpace: 'nowrap' }} sortDirection={swSortConfig?.key === 'computer_name' ? swSortConfig.direction : false}>
-                        <TableSortLabel
-                          active={swSortConfig?.key === 'computer_name'}
-                          direction={swSortConfig?.key === 'computer_name' ? swSortConfig.direction : 'asc'}
-                          onClick={() => handleSwSort('computer_name')}
+                      {[
+                        { id: 'department', label: '부서' },
+                        { id: 'user_name', label: '사용자이름' },
+                        { id: 'count', label: '설치된 프로그램 개수' }
+                      ].map((col) => (
+                        <TableCell 
+                          key={col.id}
+                          sortDirection={swSortConfig?.key === col.id ? swSortConfig.direction : false} 
+                          sx={{ whiteSpace: 'nowrap' }}
                         >
-                          컴퓨터 이름
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell sx={{ width: '30%', whiteSpace: 'nowrap' }} sortDirection={swSortConfig?.key === 'count' ? swSortConfig.direction : false}>
-                        <TableSortLabel
-                          active={swSortConfig?.key === 'count'}
-                          direction={swSortConfig?.key === 'count' ? swSortConfig.direction : 'asc'}
-                          onClick={() => handleSwSort('count')}
-                        >
-                          설치된 프로그램 개수
-                        </TableSortLabel>
-                      </TableCell>
-                      <TableCell align="right" sx={{ width: '30%', whiteSpace: 'nowrap' }}>관리</TableCell>
+                          <TableSortLabel
+                            active={swSortConfig?.key === col.id}
+                            direction={swSortConfig?.key === col.id ? swSortConfig.direction : 'asc'}
+                            onClick={() => handleSwSort(col.id)}
+                          >
+                            {col.label}
+                          </TableSortLabel>
+                        </TableCell>
+                      ))}
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {sortedGroupedSoftware.length > 0 ? sortedGroupedSoftware.slice((swPage - 1) * swRowsPerPage, (swPage - 1) * swRowsPerPage + swRowsPerPage).map((group) => (
-                      <TableRow key={group.computer_name} hover>
-                        <TableCell sx={{ fontWeight: 'bold' }}>{group.computer_name}</TableCell>
-                        <TableCell>{group.count} 개</TableCell>
-                        <TableCell align="right">
-                          <Tooltip title="상세 목록 보기">
-                            <Button 
-                              variant="outlined" 
-                              size="small" 
-                              startIcon={<OpenInNewIcon />}
-                              onClick={() => {
-                                setSelectedComputer(group.computer_name);
-                                setSwDetailPage(0);
-                                setSwDetailOpen(true);
-                              }}
-                              sx={{ mr: 1 }}
-                            >
-                              상세보기
-                            </Button>
-                          </Tooltip>
+                      <TableRow 
+                        key={group.computer_name} 
+                        hover 
+                        onClick={() => {
+                          setSelectedComputer(group.computer_name);
+                          setSwDetailPage(1);
+                          setSwDetailOpen(true);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.department || '-'}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.user_name || '-'}</TableCell>
+                        <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.count} 개</TableCell>
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                           <Tooltip title="이 PC의 모든 소프트웨어 삭제">
                             <Button 
                               variant="outlined" 
                               color="error" 
                               size="small" 
                               startIcon={<DeleteSweepIcon />}
-                              onClick={() => handleDeleteByComputer(group.computer_name)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteByComputer(group.computer_name);
+                              }}
                             >
-                              일괄 삭제
+                              초기화
                             </Button>
                           </Tooltip>
                         </TableCell>
                       </TableRow>
                     )) : (
-                      <TableRow><TableCell colSpan={3} align="center" sx={{py:3}}>소프트웨어 데이터가 없습니다.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} align="center" sx={{py:3}}>소프트웨어 데이터가 없습니다.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -940,6 +1064,130 @@ const AdminCustomerInventoryPage: React.FC = () => {
           <Button onClick={() => setSwDetailOpen(false)} variant="contained" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
+      {/* 하드웨어 상세 정보 팝업 */}
+      <Dialog open={hwDetailOpen} onClose={() => setHwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <ComputerIcon color="primary" />
+            <span>하드웨어 상세 사양 정보</span>
+          </Box>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 3 }}>
+          {selectedHardware && (
+            <Stack spacing={3.5}>
+              {/* 기본 정보 섹션 */}
+              <Box>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span>📌 기본 인프라 정보</span>
+                </Typography>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                  <Table size="small">
+                    <TableBody>
+                      {[
+                        { label: '부서', value: selectedHardware.department },
+                        { label: '사용자 이름', value: selectedHardware.user_name },
+                        { label: '컴퓨터 이름', value: selectedHardware.computer_name, highlight: true },
+                        { label: 'IP 주소', value: selectedHardware.ip_address },
+                        { label: '운영체제 (OS)', value: selectedHardware.os }
+                      ].map((item, idx) => (
+                        <TableRow key={idx} sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2 }}>
+                            {item.label}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.2, pl: 2, fontWeight: item.highlight ? 'bold' : 'inherit' }}>
+                            {item.value || '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Paper>
+              </Box>
+
+              {/* 하드웨어 사양 섹션 */}
+              <Box>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <span>⚙️ 상세 하드웨어 스펙</span>
+                </Typography>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                  <Table size="small">
+                    <TableBody>
+                      {[
+                        { label: '프로세서 (CPU)', value: selectedHardware.processor },
+                        { label: '메인보드 (Motherboard)', value: selectedHardware.motherboard },
+                        { label: '메모리 (RAM)', value: selectedHardware.memory },
+                        { label: '그래픽카드 (GPU)', value: selectedHardware.graphic_card },
+                        { 
+                          label: '저장장치 (Storage)', 
+                          value: selectedHardware.storage ? (
+                            <Stack spacing={0.5}>
+                              {selectedHardware.storage.split(',').map((drive, idx) => {
+                                const trimmedDrive = drive.trim();
+                                const isCDrive = trimmedDrive.includes('[C드라이브]');
+                                return (
+                                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.875rem' }}>
+                                    {isCDrive ? (
+                                      <span style={{ color: '#1976d2', fontWeight: 'bold' }}>{trimmedDrive}</span>
+                                    ) : (
+                                      <span style={{ color: '#475569' }}>{trimmedDrive}</span>
+                                    )}
+                                  </Box>
+                                );
+                              })}
+                            </Stack>
+                          ) : '-' 
+                        }
+                      ].map((item, idx) => (
+                        <TableRow key={idx} sx={{ '&:last-child td': { borderBottom: 0 } }}>
+                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2 }}>
+                            {item.label}
+                          </TableCell>
+                          <TableCell sx={{ py: 1.2, pl: 2, wordBreak: 'break-all' }}>
+                            {item.value}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Paper>
+              </Box>
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+          {selectedHardware && (
+            <>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                startIcon={<EditIcon />} 
+                onClick={() => {
+                  setHwDetailOpen(false);
+                  openEditModal(selectedHardware, 'hardware');
+                }}
+              >
+                정보 수정
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="error" 
+                startIcon={<DeleteIcon />}
+                onClick={() => {
+                  if (window.confirm('정말 이 하드웨어 정보를 삭제하시겠습니까?')) {
+                    handleDelete(selectedHardware.id, 'hardware');
+                    setHwDetailOpen(false);
+                  }
+                }}
+                sx={{ mr: 'auto' }}
+              >
+                삭제
+              </Button>
+            </>
+          )}
+          <Button variant="contained" onClick={() => setHwDetailOpen(false)}>닫기</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* AI 리포트 모달 */}
       <Dialog open={aiModalOpen} onClose={() => setAiModalOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
