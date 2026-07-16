@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Container, Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Stack } from '@mui/material';
 import { supabase } from '../api';
@@ -12,6 +12,15 @@ const AdminLoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+    
+    if (token && expiresAt && new Date().getTime() <= parseInt(expiresAt)) {
+      navigate('/');
+    }
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
