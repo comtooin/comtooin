@@ -11,6 +11,7 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import SaveIcon from '@mui/icons-material/Save';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import ReceiptIcon from '@mui/icons-material/Receipt';
+import AddIcon from '@mui/icons-material/Add';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
@@ -182,6 +183,32 @@ const AdminQuotePage: React.FC = () => {
 
   const handleItemQuantityChange = (id: string, value: number) => {
     setItems(prev => prev.map(item => item.id === id ? { ...item, quantity: value } : item));
+  };
+
+  const handleItemCostPriceChange = (id: string, value: number) => {
+    setItems(prev => prev.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          costPrice: value,
+          finalPrice: Math.round(value * (1 + item.marginRate / 100) / 10) * 10
+        };
+      }
+      return item;
+    }));
+  };
+
+  const handleAddItemManually = () => {
+    const newItem: QuoteItem = {
+      id: Date.now().toString() + Math.random().toString(),
+      category: '',
+      name: '',
+      quantity: 1,
+      costPrice: 0,
+      marginRate: globalMargin,
+      finalPrice: 0,
+    };
+    setItems(prev => [...prev, newItem]);
   };
 
  const handleDownloadPDF = async () => {
@@ -408,22 +435,33 @@ const AdminQuotePage: React.FC = () => {
               <Typography variant="subtitle1" fontWeight="bold">
                 견적 상세 내역
               </Typography>
-              <Button 
-                variant="outlined" 
-                color="error" 
-                size="small"
-                startIcon={<DeleteIcon />}
-                onClick={() => {
-                  if(window.confirm('입력된 모든 내역을 지우시겠습니까?')) {
-                    setItems([]);
-                    setCustomerName('');
-                    setGlobalMargin(15);
-                  }
-                }}
-                disabled={items.length === 0}
-              >
-                초기화
-              </Button>
+              <Stack direction="row" spacing={1.5}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddItemManually}
+                >
+                  항목 직접 추가
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => {
+                    if(window.confirm('입력된 모든 내역을 지우시겠습니까?')) {
+                      setItems([]);
+                      setCustomerName('');
+                      setGlobalMargin(15);
+                    }
+                  }}
+                  disabled={items.length === 0}
+                >
+                  초기화
+                </Button>
+              </Stack>
             </Box>
 
               <TableContainer sx={{ maxHeight: { xs: 500, sm: 400 }, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -477,7 +515,17 @@ const AdminQuotePage: React.FC = () => {
                             inputProps={{ style: { textAlign: 'center', padding: '4px' }, min: 1 }}
                           />
                         </TableCell>
-                        <TableCell align="right" sx={{ fontSize: '0.85rem' }}>{item.costPrice.toLocaleString()}</TableCell>
+                        <TableCell align="right">
+                          <TextField
+                            variant="standard"
+                            type="number"
+                            value={item.costPrice === 0 ? '' : item.costPrice}
+                            onChange={(e) => handleItemCostPriceChange(item.id, Number(e.target.value))}
+                            sx={{ width: 80, '& .MuiInput-root:before': { borderBottom: '1px dashed #ccc' } }}
+                            InputProps={{ style: { fontSize: '0.85rem', textAlign: 'right' } }}
+                            inputProps={{ style: { textAlign: 'right', padding: '4px' } }}
+                          />
+                        </TableCell>
                         <TableCell align="center">
                           <TextField
                             variant="standard"
