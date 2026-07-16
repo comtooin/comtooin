@@ -12,7 +12,6 @@ import {
   Computer as ComputerIcon,
   Delete as DeleteIcon,
   Edit as EditIcon,
-  OpenInNew as OpenInNewIcon,
   DeleteSweep as DeleteSweepIcon,
   AutoAwesome as AiIcon,
   BarChart as BarChartIcon
@@ -137,6 +136,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
     return () => {
       supabase.removeChannel(channel);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const fetchInventoryData = async (silent = false) => {
