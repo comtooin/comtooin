@@ -660,7 +660,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                   {/* 5행 */}
                   <TableRow>
                     <TableCell component="th" rowSpan={2} sx={{ bgcolor: '#f9f9f9', fontWeight: 'bold', textAlign: 'center', fontSize: '0.9rem', borderBottom: '2px solid black' }}>합계금액<br/>(VAT포함)</TableCell>
-                    <TableCell rowSpan={2} sx={{ fontWeight: '950', fontSize: '1.85rem', textAlign: 'left', pl: 3, borderBottom: '2px solid black', whiteSpace: 'nowrap' }}>
+                    <TableCell rowSpan={2} sx={{ fontWeight: '950', fontSize: '2.4rem', textAlign: 'left', pl: 3, borderBottom: '2px solid black', whiteSpace: 'nowrap' }}>
                       {Math.round(totalFinal * 1.1).toLocaleString()} 원
                     </TableCell>
                     
@@ -719,7 +719,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                       {items.reduce((sum, item) => sum + item.quantity, 0)}
                     </TableCell>
                     <TableCell></TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.1rem', whiteSpace: 'nowrap' }}>
+                    <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                       {totalFinal.toLocaleString()} 원
                     </TableCell>
                   </TableRow>
