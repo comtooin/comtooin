@@ -134,13 +134,6 @@ const NavBar: React.FC = () => {
                     primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
                   />
                 </ListItem>
-                <ListItem button component={RouterLink} to="/admin/quote">
-                  <ListItemIcon><ReceiptIcon /></ListItemIcon>
-                  <ListItemText
-                    primary="간편견적"
-                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-                  />
-                </ListItem>
                 <ListItem button component={RouterLink} to="/admin/customers">
                   <ListItemIcon><BusinessIcon /></ListItemIcon>
                   <ListItemText
@@ -157,6 +150,13 @@ const NavBar: React.FC = () => {
                     />
                   </ListItem>
                 )}
+                <ListItem button component={RouterLink} to="/admin/quote">
+                  <ListItemIcon><ReceiptIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="간편견적"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
               </>
             )}
             <ListItem button onClick={() => { setHelpOpen(true); setDrawerOpen(false); }}>
@@ -279,11 +279,11 @@ const NavBar: React.FC = () => {
                       <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
                       <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
                       <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
-                      <Button color="inherit" component={RouterLink} to="/admin/quote" sx={{ px: 1.5 }}>간편견적</Button>
                       <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
                       {userRole === 'admin' && (
                         <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
                       )}
+                      <Button color="inherit" component={RouterLink} to="/admin/quote" sx={{ px: 1.5 }}>간편견적</Button>
                     </>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, pl: 1.5, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
