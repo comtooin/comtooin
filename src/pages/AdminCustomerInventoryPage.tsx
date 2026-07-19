@@ -626,14 +626,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
         }
         .pdf-page h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
         .pdf-page .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
-        .pdf-page h2 { font-size: 18px; font-weight: bold; margin-top: 25px; margin-bottom: 12px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        .pdf-page h3 { font-size: 14px; font-weight: bold; margin-top: 18px; margin-bottom: 8px; color: #333; }
-        .pdf-page p { font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; text-align: justify; }
-        .pdf-page ul { padding-left: 20px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.7; }
-        .pdf-page li { margin-bottom: 6px; }
-        .pdf-page table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
-        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 8px; font-weight: bold; text-align: center; }
-        .pdf-page td { border: 1px solid #ddd; padding: 8px; line-height: 1.5; }
+        .pdf-page h2 { font-size: 18px; font-weight: bold; margin-top: 40px; margin-bottom: 20px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+        .pdf-page h3 { font-size: 14px; font-weight: bold; margin-top: 25px; margin-bottom: 15px; color: #333; }
+        .pdf-page p { font-size: 14px; line-height: 1.85; margin-bottom: 20px; text-align: justify; }
+        .pdf-page ul { padding-left: 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.85; }
+        .pdf-page li { margin-bottom: 10px; }
+        .pdf-page table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 13px; }
+        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 12px; font-weight: bold; text-align: center; }
+        .pdf-page td { border: 1px solid #ddd; padding: 12px; line-height: 1.6; }
         .pdf-page .page-number {
           position: absolute;
           bottom: 30px;
@@ -1588,14 +1588,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   '& h1': { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', mb: 1, color: '#111' },
                   '& .subtitle': { fontSize: '12px', textAlign: 'center', mb: 4, color: '#666666', borderBottom: '2px solid #673ab7', pb: 2 },
                   '& .pdf-header': { fontSize: '11px', color: '#999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
-                  '& h2': { fontSize: '18px', fontWeight: 'bold', mt: 3, mb: 1.5, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 1 },
-                  '& h3': { fontSize: '14px', fontWeight: 'bold', mt: 2, mb: 1, color: '#333' },
-                  '& p': { fontSize: '13.5px', lineHeight: 1.7, mb: 1.5, textAlign: 'justify' },
-                  '& ul': { pl: 2.5, mb: 1.5, fontSize: '13.5px', lineHeight: 1.7 },
-                  '& li': { mb: 0.8 },
-                  '& table': { width: '100%', borderCollapse: 'collapse', my: 2, fontSize: '13px' },
-                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1, fontWeight: 'bold', textAlign: 'center' },
-                  '& td': { border: '1px solid #ddd', p: 1, lineHeight: 1.5 }
+                  '& h2': { fontSize: '18px', fontWeight: 'bold', mt: 4, mb: 2, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 1 },
+                  '& h3': { fontSize: '14px', fontWeight: 'bold', mt: 2.5, mb: 1.5, color: '#333' },
+                  '& p': { fontSize: '14px', lineHeight: 1.85, mb: 2, textAlign: 'justify' },
+                  '& ul': { pl: 2.5, mb: 2, fontSize: '14px', lineHeight: 1.85 },
+                  '& li': { mb: 1 },
+                  '& table': { width: '100%', borderCollapse: 'collapse', my: 2.5, fontSize: '13px' },
+                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1.5, fontWeight: 'bold', textAlign: 'center' },
+                  '& td': { border: '1px solid #ddd', p: 1.5, lineHeight: 1.6 }
                 }}
               >
                 {/* Content */}
