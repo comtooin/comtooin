@@ -99,7 +99,13 @@ const AdminReportPage: React.FC = () => {
   const [allRequests, setAllRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState('all');
+  const userRole = localStorage.getItem('adminRole');
+  const [selectedCustomer, setSelectedCustomer] = useState(() => {
+    const role = localStorage.getItem('adminRole');
+    const name = localStorage.getItem('adminName');
+    if (role === 'customer' && name) return name;
+    return 'all';
+  });
   const [searchParams] = useSearchParams();
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const period = searchParams.get('period');
@@ -381,10 +387,18 @@ const AdminReportPage: React.FC = () => {
     setError('');
 
     try {
+      const role = localStorage.getItem('adminRole');
+      const customerName = localStorage.getItem('adminName');
+      
+      let targetCustomer = selectedCustomer;
+      if (role === 'customer' && customerName) {
+        targetCustomer = customerName;
+      }
+
       let requestsQuery = supabase.from('requests').select('*, comments(*)');
 
-      if (selectedCustomer !== 'all') {
-        requestsQuery = requestsQuery.eq('customer_name', selectedCustomer);
+      if (targetCustomer !== 'all') {
+        requestsQuery = requestsQuery.eq('customer_name', targetCustomer);
       }
       if (selectedMonth === 'today') {
         const d = new Date();
@@ -410,11 +424,51 @@ const AdminReportPage: React.FC = () => {
         setPage(1); // 필터 적용 시에만 페이지 리셋
       }
 
-      const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
-      setStatusData(statusSummaryData || []);
+      if (role === 'customer') {
+        // 거래처인 경우 다른 거래처 현황 데이터 노출 차단을 위해 클라이언트 측에서 해당 거래처 데이터만 집계
+        const statusCounts: Record<string, number> = {
+          'processing': 0,
+          'completed': 0
+        };
+        requestsData?.forEach(r => {
+          const s = r.status === 'pending' || r.status === 'processing' || r.status === '처리중' ? 'processing' : 'completed';
+          statusCounts[s] = (statusCounts[s] || 0) + 1;
+        });
+        setStatusData([
+          { status: 'processing', count: statusCounts.processing },
+          { status: 'completed', count: statusCounts.completed }
+        ]);
 
-      const { data: monthlySummaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
-      setMonthlyData(monthlySummaryData as MonthlySummary[] || []);
+        const monthCounts: Record<string, { total: number, pending: number, completed: number }> = {};
+        requestsData?.forEach(r => {
+          if (!r.created_at) return;
+          const m = r.created_at.substring(0, 7); // YYYY-MM
+          if (!monthCounts[m]) {
+            monthCounts[m] = { total: 0, pending: 0, completed: 0 };
+          }
+          monthCounts[m].total += 1;
+          if (r.status === 'pending' || r.status === 'processing' || r.status === '처리중') {
+            monthCounts[m].pending += 1;
+          } else {
+            monthCounts[m].completed += 1;
+          }
+        });
+        const sortedMonths = Object.keys(monthCounts).sort();
+        const clientMonthlyData = sortedMonths.map(m => ({
+          month: m,
+          total_requests: monthCounts[m].total,
+          pending_requests: monthCounts[m].pending,
+          completed_requests: monthCounts[m].completed,
+          cancelled_requests: 0
+        }));
+        setMonthlyData(clientMonthlyData);
+      } else {
+        const { data: statusSummaryData } = await supabase.rpc('get_status_summary', {});
+        setStatusData(statusSummaryData || []);
+
+        const { data: monthlySummaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
+        setMonthlyData(monthlySummaryData as MonthlySummary[] || []);
+      }
 
     } catch (err: any) {
       console.error("Filter apply error", err);
@@ -1065,10 +1119,17 @@ const AdminReportPage: React.FC = () => {
               fullWidth
               value={selectedCustomer} 
               onChange={(e) => setSelectedCustomer(e.target.value)} 
+              disabled={userRole === 'customer'}
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
-              <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 거래처</MenuItem>
-              {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
+              {userRole === 'customer' ? (
+                <MenuItem value={selectedCustomer} sx={{ fontSize: '0.8125rem' }}>{selectedCustomer}</MenuItem>
+              ) : (
+                <>
+                  <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 거래처</MenuItem>
+                  {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
+                </>
+              )}
             </TextField>
             <TextField 
               select 
@@ -1129,7 +1190,7 @@ const AdminReportPage: React.FC = () => {
                 AI 리포트
               </Button>
             </Grid>
-            <Grid item xs={4} sm="auto">
+            <Grid item xs={userRole === 'customer' ? 12 : 4} sm="auto">
               <Button 
                 fullWidth
                 variant="outlined" 
@@ -1141,31 +1202,35 @@ const AdminReportPage: React.FC = () => {
                 다운로드
               </Button>
             </Grid>
-            <Grid item xs={4} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="primary" 
-                startIcon={<FileUploadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
-                component="label"
-                sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
-              >
-                업로드
-                <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
-              </Button>
-            </Grid>
-            <Grid item xs={4} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="info" 
-                startIcon={<DescriptionIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
-                onClick={handleDownloadSampleCsv}
-                sx={{ fontWeight: 'bold', fontSize: { xs: '0.65rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
-              >
-                업로드양식
-              </Button>
-            </Grid>
+            {userRole !== 'customer' && (
+              <>
+                <Grid item xs={4} sm="auto">
+                  <Button 
+                    fullWidth
+                    variant="outlined" 
+                    color="primary" 
+                    startIcon={<FileUploadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                    component="label"
+                    sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+                  >
+                    업로드
+                    <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
+                  </Button>
+                </Grid>
+                <Grid item xs={4} sm="auto">
+                  <Button 
+                    fullWidth
+                    variant="outlined" 
+                    color="info" 
+                    startIcon={<DescriptionIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                    onClick={handleDownloadSampleCsv}
+                    sx={{ fontWeight: 'bold', fontSize: { xs: '0.65rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+                  >
+                    업로드양식
+                  </Button>
+                </Grid>
+              </>
+            )}
           </Grid>
         </Box>
       </Paper>
@@ -1343,7 +1408,7 @@ const AdminReportPage: React.FC = () => {
 
           {tabValue === 1 && (
             <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={userRole === 'customer' ? 6 : 4}>
                 <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <PieChartIcon color="action" fontSize="small" />
@@ -1355,19 +1420,21 @@ const AdminReportPage: React.FC = () => {
                 </Paper>
               </Grid>
 
-              <Grid item xs={12} md={4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
-                    <BusinessIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 점유율</Typography>
-                  </Stack>
-                  <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
-                    <Pie data={customerPieData} options={{ maintainAspectRatio: false }} />
-                  </Box>
-                </Paper>
-              </Grid>
+              {userRole !== 'customer' && (
+                <Grid item xs={12} md={4}>
+                  <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
+                    <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
+                      <BusinessIcon color="action" fontSize="small" />
+                      <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 점유율</Typography>
+                    </Stack>
+                    <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
+                      <Pie data={customerPieData} options={{ maintainAspectRatio: false }} />
+                    </Box>
+                  </Paper>
+                </Grid>
+              )}
 
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={userRole === 'customer' ? 6 : 4}>
                 <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
                     <BarChartIcon color="action" fontSize="small" />

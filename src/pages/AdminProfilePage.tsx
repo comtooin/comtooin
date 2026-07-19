@@ -46,21 +46,42 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인 정보가 없습니다.');
 
-      const { data: profile, error: profileError } = await supabase
-        .from('staff')
-        .select('*')
-        .eq('auth_user_id', user.id)
-        .single();
+      const role = localStorage.getItem('adminRole');
+      const customerId = localStorage.getItem('adminCustomerId');
 
-      if (profileError) throw profileError;
+      if (role === 'customer' && customerId) {
+        const { data: customerProfile, error: customerError } = await supabase
+          .from('customers')
+          .select('*')
+          .eq('id', customerId)
+          .single();
 
-      setUserInfo({
-        name: profile.name,
-        email: profile.email,
-        username: profile.username,
-        role: profile.role,
-        phone: profile.phone || ''
-      });
+        if (customerError) throw customerError;
+
+        setUserInfo({
+          name: customerProfile.name,
+          email: customerProfile.manager_email || '',
+          username: customerProfile.login_id || '',
+          role: 'customer',
+          phone: customerProfile.manager_phone || ''
+        });
+      } else {
+        const { data: profile, error: profileError } = await supabase
+          .from('staff')
+          .select('*')
+          .eq('auth_user_id', user.id)
+          .single();
+
+        if (profileError) throw profileError;
+
+        setUserInfo({
+          name: profile.name,
+          email: profile.email,
+          username: profile.username,
+          role: profile.role,
+          phone: profile.phone || ''
+        });
+      }
     } catch (err: any) {
       setError(err.message || '사용자 정보를 불러오는 중 오류가 발생했습니다.');
     } finally {
@@ -75,17 +96,29 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인 정보가 없습니다.');
 
-      const { error: updateError } = await supabase
-        .from('staff')
-        .update({ phone: userInfo.phone.trim() })
-        .eq('auth_user_id', user.id);
+      const role = localStorage.getItem('adminRole');
+      const customerId = localStorage.getItem('adminCustomerId');
 
-      if (updateError) throw updateError;
+      if (role === 'customer' && customerId) {
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update({ manager_phone: userInfo.phone.trim() })
+          .eq('id', customerId);
+
+        if (updateError) throw updateError;
+      } else {
+        const { error: updateError } = await supabase
+          .from('staff')
+          .update({ phone: userInfo.phone.trim() })
+          .eq('auth_user_id', user.id);
+
+        if (updateError) throw updateError;
+      }
       
-      alert('핸드폰 번호가 정상적으로 저장되었습니다.');
+      alert('연락처가 정상적으로 저장되었습니다.');
       fetchUserInfo();
     } catch (err: any) {
-      setError(err.message || '핸드폰 번호 저장 중 오류가 발생했습니다.');
+      setError(err.message || '연락처 저장 중 오류가 발생했습니다.');
     } finally {
       setSubmitting(false);
     }
@@ -187,7 +220,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
           />
           <TextField 
             label="권한" 
-            value={userInfo.role === 'admin' ? '관리자' : '멤버'} 
+            value={userInfo.role === 'admin' ? '관리자' : userInfo.role === 'customer' ? '거래처' : '멤버'} 
             fullWidth 
             variant="outlined" 
             size="small" 

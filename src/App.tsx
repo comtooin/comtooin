@@ -172,15 +172,26 @@ const theme = createTheme({
 const RootRoute = () => {
   const isAdminLoggedIn = !!localStorage.getItem('adminToken');
   const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+  const userRole = localStorage.getItem('adminRole');
   
   // 세션 만료 체크 (만료 시 세션 정리)
   if (expiresAt && new Date().getTime() > parseInt(expiresAt)) {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminSessionExpiresAt');
+    localStorage.removeItem('adminRole');
+    localStorage.removeItem('adminCustomerId');
+    localStorage.removeItem('adminName');
     return <Navigate to="/admin/login" replace />;
   }
 
-  return isAdminLoggedIn ? <HomePage /> : <Navigate to="/admin/login" replace />;
+  if (isAdminLoggedIn) {
+    if (userRole === 'customer') {
+      return <Navigate to="/admin/dashboard" replace />;
+    }
+    return <HomePage />;
+  }
+
+  return <Navigate to="/admin/login" replace />;
 };
 
 // 세션 만료를 감시하는 컴포넌트 (페이지 이동 및 타이머 기준)

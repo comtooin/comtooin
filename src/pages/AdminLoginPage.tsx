@@ -31,16 +31,28 @@ const AdminLoginPage: React.FC = () => {
 
       // 만약 입력값이 이메일 형식이 아니라면 (아이디 로그인 시도)
       if (!id.includes('@')) {
-        const { data: staffData, error: staffError } = await supabase
+        const { data: staffData } = await supabase
           .from('staff')
           .select('email')
           .eq('username', id)
           .single();
 
-        if (staffError || !staffData) {
-          throw new Error('존재하지 않는 아이디입니다.');
+        if (staffData) {
+          loginEmail = staffData.email;
+        } else {
+          // 2차 조회: 거래처(customers) 테이블에서 login_id로 이메일 조회
+          const { data: customerData } = await supabase
+            .from('customers')
+            .select('login_email')
+            .eq('login_id', id)
+            .single();
+
+          if (customerData?.login_email) {
+            loginEmail = customerData.login_email;
+          } else {
+            throw new Error('존재하지 않는 아이디입니다.');
+          }
         }
-        loginEmail = staffData.email;
       }
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -53,8 +65,8 @@ const AdminLoginPage: React.FC = () => {
       }
 
       if (data?.session) {
-        // 사용자 역할(role) 및 이름, 그리고 staff 테이블의 고유 ID 조회
-        const { data: profile } = await supabase
+        // 1. staff 테이블의 고유 ID 및 역할 조회
+        const { data: staffProfile } = await supabase
           .from('staff')
           .select('id, role, name')
           .eq('auth_user_id', data.session.user.id)
@@ -65,18 +77,39 @@ const AdminLoginPage: React.FC = () => {
         localStorage.setItem('adminToken', data.session.access_token);
         localStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
         
-        if (profile) {
-          localStorage.setItem('adminStaffId', profile.id);
-          localStorage.setItem('adminRole', profile.role);
-          localStorage.setItem('adminName', profile.name);
+        if (staffProfile) {
+          localStorage.setItem('adminStaffId', staffProfile.id);
+          localStorage.setItem('adminRole', staffProfile.role);
+          localStorage.setItem('adminName', staffProfile.name);
+          localStorage.removeItem('adminCustomerId'); // 이전에 저장되었을 수 있는 거래처 ID 명시적 제거
         } else {
-          // 프로필이 없는 경우 기본값 'member' (또는 상황에 따라 처리)
-          localStorage.setItem('adminRole', 'member');
-          localStorage.setItem('adminName', data.session.user.user_metadata?.name || '관리자');
+          // 2. staff가 아니라면 customers 테이블에서 거래처 계정 조회
+          const { data: customerProfile } = await supabase
+            .from('customers')
+            .select('id, name')
+            .eq('auth_user_id', data.session.user.id)
+            .single();
+
+          if (customerProfile) {
+            localStorage.setItem('adminRole', 'customer');
+            localStorage.setItem('adminName', customerProfile.name);
+            localStorage.setItem('adminCustomerId', customerProfile.id);
+            localStorage.removeItem('adminStaffId'); // 어드민 스태프 ID 제거
+          } else {
+            // 둘 다 정보가 없는 경우 기본 임시 회원 권한
+            localStorage.setItem('adminRole', 'member');
+            localStorage.setItem('adminName', data.session.user.user_metadata?.name || '관리자');
+            localStorage.removeItem('adminCustomerId');
+          }
         }
 
-        // Navigate to work record page (HomePage)
-        navigate('/');
+        // Navigate to dashboard if customer, else home page
+        const userRole = localStorage.getItem('adminRole');
+        if (userRole === 'customer') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/');
+        }
       } else {
         throw new Error('로그인 정보가 올바르지 않습니다.');
       }

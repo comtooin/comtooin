@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions
+  Dialog, DialogTitle, DialogContent, DialogActions, Menu, MenuItem, Checkbox, FormControlLabel
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -12,7 +12,9 @@ import {
   FiberNew as NewIcon,
   VerifiedUser as ActiveIcon,
   Computer as ComputerIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  VpnKey as VpnKeyIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api';
@@ -29,6 +31,9 @@ interface Customer {
   manager_phone_2?: string;
   manager_email_2?: string;
   created_at?: string;
+  auth_user_id?: string;
+  login_id?: string;
+  login_email?: string;
 }
 
 const AdminCustomerPage: React.FC = () => {
@@ -48,6 +53,12 @@ const AdminCustomerPage: React.FC = () => {
   const [newManagerPhone2, setNewManagerPhone2] = useState('');
   const [newManagerEmail2, setNewManagerEmail2] = useState('');
 
+  // 새 거래처 등록 팝업 모달 상태
+  const [registerOpen, setRegisterOpen] = useState(false);
+  const [createAccountOption, setCreateAccountOption] = useState(false);
+  const [newLoginId, setNewLoginId] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
   // 거래처 수정 모달 상태
   const [editOpen, setEditOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -59,6 +70,16 @@ const AdminCustomerPage: React.FC = () => {
   const [editManagerName2, setEditManagerName2] = useState('');
   const [editManagerPhone2, setEditManagerPhone2] = useState('');
   const [editManagerEmail2, setEditManagerEmail2] = useState('');
+
+  // 거래처 계정 관리 모달 상태
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [accountCustomer, setAccountCustomer] = useState<Customer | null>(null);
+  const [accountLoginId, setAccountLoginId] = useState('');
+  const [accountLoginEmail, setAccountLoginEmail] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [accountSubmitting, setAccountSubmitting] = useState(false);
+  const [accountError, setAccountError] = useState('');
+  const [accountSuccess, setAccountSuccess] = useState('');
 
   const isAdmin = localStorage.getItem('adminRole') === 'admin';
 
@@ -103,7 +124,7 @@ const AdminCustomerPage: React.FC = () => {
     setSubmitting(true);
     setError('');
     try {
-      const { error: insertError } = await supabase
+      const { data, error: insertError } = await supabase
         .from('customers')
         .insert([{ 
           name: newCustomerName.trim(),
@@ -114,11 +135,40 @@ const AdminCustomerPage: React.FC = () => {
           manager_name_2: newManagerName2.trim(),
           manager_phone_2: newManagerPhone2.trim(),
           manager_email_2: newManagerEmail2.trim(),
-        }]);
+        }])
+        .select();
 
       if (insertError) throw insertError;
 
-      // 등록 성공 시 폼 리셋
+      // 로그인 계정 정보 추가 옵션이 켜져 있고 유효한 값들이 입력된 경우 계정 생성
+      if (createAccountOption && newLoginId.trim() && newPassword.trim() && data && data[0]) {
+        const newCustomer = data[0];
+        const generatedEmail = `${newLoginId.trim()}@comtooin-customer.local`;
+        
+        const { error: funcError } = await supabase.functions.invoke('manage-users', {
+          body: {
+            action: 'create-customer',
+            userData: {
+              customerId: newCustomer.id,
+              loginId: newLoginId.trim(),
+              loginEmail: generatedEmail,
+              password: newPassword.trim(),
+              name: newCustomer.name
+            }
+          }
+        });
+
+        if (funcError) {
+          let errorMessage = funcError.message;
+          try {
+            const body = await funcError.context?.json();
+            if (body && body.error) errorMessage = body.error;
+          } catch (e) {}
+          alert(`거래처는 성공적으로 등록되었으나, 로그인 계정 생성에 실패했습니다: ${errorMessage}`);
+        }
+      }
+
+      // 등록 성공 시 폼 리셋 및 모달 닫기
       setNewCustomerName('');
       setNewAddress('');
       setNewManagerName1('');
@@ -127,6 +177,10 @@ const AdminCustomerPage: React.FC = () => {
       setNewManagerName2('');
       setNewManagerPhone2('');
       setNewManagerEmail2('');
+      setCreateAccountOption(false);
+      setNewLoginId('');
+      setNewPassword('');
+      setRegisterOpen(false);
       
       fetchCustomers();
     } catch (err: any) {
@@ -201,6 +255,150 @@ const AdminCustomerPage: React.FC = () => {
     }
   };
 
+  const handleOpenAccountDialog = (customer: Customer) => {
+    setAccountCustomer(customer);
+    setAccountLoginId(customer.login_id || '');
+    setAccountLoginEmail(customer.login_email || '');
+    setAccountPassword('');
+    setAccountError('');
+    setAccountSuccess('');
+    setAccountDialogOpen(true);
+  };
+
+  const handleCreateAccount = async () => {
+    const generatedEmail = `${accountLoginId.trim()}@comtooin-customer.local`;
+
+    if (!accountCustomer || !accountLoginId.trim() || !accountPassword.trim()) {
+      setAccountError('모든 필드를 입력해 주세요.');
+      return;
+    }
+    setAccountSubmitting(true);
+    setAccountError('');
+    setAccountSuccess('');
+    try {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'create-customer',
+          userData: {
+            customerId: accountCustomer.id,
+            loginId: accountLoginId.trim(),
+            loginEmail: generatedEmail,
+            password: accountPassword.trim(),
+            name: accountCustomer.name
+          }
+        }
+      });
+
+      if (funcError) {
+        let errorMessage = funcError.message;
+        try {
+          const body = await funcError.context?.json();
+          if (body && body.error) errorMessage = body.error;
+        } catch (e) {}
+        throw new Error(errorMessage);
+      }
+
+      setAccountSuccess('거래처 계정이 성공적으로 생성되었습니다.');
+      
+      // 즉시 로컬 데이터 갱신
+      setAccountCustomer(prev => prev ? {
+        ...prev,
+        auth_user_id: 'temp-auth-id', // 대화 상대 갱신용 임시값
+        login_id: accountLoginId.trim(),
+        login_email: accountLoginEmail.trim()
+      } : null);
+      
+      setAccountPassword('');
+      fetchCustomers();
+    } catch (err: any) {
+      setAccountError(err.message || '계정 생성 중 오류가 발생했습니다.');
+    } finally {
+      setAccountSubmitting(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!accountCustomer) return;
+    if (!window.confirm(`'${accountCustomer.name}' 거래처의 로그인 계정을 삭제하시겠습니까?`)) return;
+
+    setAccountSubmitting(true);
+    setAccountError('');
+    setAccountSuccess('');
+    try {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'delete-customer',
+          userData: {
+            customerId: accountCustomer.id,
+            authUserId: accountCustomer.auth_user_id
+          }
+        }
+      });
+
+      if (funcError) {
+        let errorMessage = funcError.message;
+        try {
+          const body = await funcError.context?.json();
+          if (body && body.error) errorMessage = body.error;
+        } catch (e) {}
+        throw new Error(errorMessage);
+      }
+
+      setAccountSuccess('거래처 계정이 삭제되었습니다.');
+      setAccountCustomer(prev => prev ? {
+        ...prev,
+        auth_user_id: undefined,
+        login_id: undefined,
+        login_email: undefined
+      } : null);
+      setAccountLoginId('');
+      setAccountLoginEmail('');
+      setAccountPassword('');
+      fetchCustomers();
+    } catch (err: any) {
+      setAccountError(err.message || '계정 삭제 중 오류가 발생했습니다.');
+    } finally {
+      setAccountSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (!accountCustomer || !accountPassword.trim()) {
+      setAccountError('새 비밀번호를 입력해 주세요.');
+      return;
+    }
+    setAccountSubmitting(true);
+    setAccountError('');
+    setAccountSuccess('');
+    try {
+      const { error: funcError } = await supabase.functions.invoke('manage-users', {
+        body: {
+          action: 'reset-customer-password',
+          userData: {
+            authUserId: accountCustomer.auth_user_id,
+            newPassword: accountPassword.trim()
+          }
+        }
+      });
+
+      if (funcError) {
+        let errorMessage = funcError.message;
+        try {
+          const body = await funcError.context?.json();
+          if (body && body.error) errorMessage = body.error;
+        } catch (e) {}
+        throw new Error(errorMessage);
+      }
+
+      setAccountSuccess('비밀번호가 성공적으로 변경되었습니다.');
+      setAccountPassword('');
+    } catch (err: any) {
+      setAccountError(err.message || '비밀번호 변경 중 오류가 발생했습니다.');
+    } finally {
+      setAccountSubmitting(false);
+    }
+  };
+
   return (
     <Container maxWidth="lg">
       <Helmet><title>거래처 | COMTOOIN</title></Helmet>
@@ -252,156 +450,28 @@ const AdminCustomerPage: React.FC = () => {
         ))}
       </Paper>
 
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        {/* 왼쪽: 등록 폼 */}
-        {isAdmin && (
-          <Grid item xs={12} md={5}>
-            <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-              <Box component="form" onSubmit={handleAddCustomer}>
-                <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <AddIcon fontSize="small" /> 새 거래처 등록
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                  새로운 유지보수 대상 고객사를 시스템에 등록합니다.
-                </Typography>
-                
-                <Stack spacing={2}>
-                  <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                    • 기본 정보
-                  </Typography>
-                  <TextField
-                    label="거래처 이름"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    disabled={submitting}
-                    placeholder="예: (주)컴투인"
-                    required
-                  />
-                  <TextField
-                    label="사업장 주소"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    value={newAddress}
-                    onChange={(e) => setNewAddress(e.target.value)}
-                    disabled={submitting}
-                    placeholder="예: 경기도 의정부시..."
-                  />
-                  
-                  <Divider />
-                  
-                  <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                    • 담당자 1 정보
-                  </Typography>
-                  <Grid container spacing={1.5}>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="이름"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerName1}
-                        onChange={(e) => setNewManagerName1(e.target.value)}
-                        disabled={submitting}
-                        placeholder="홍길동"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={8}>
-                      <TextField
-                        label="연락처"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerPhone1}
-                        onChange={(e) => setNewManagerPhone1(e.target.value)}
-                        disabled={submitting}
-                        placeholder="010-0000-0000"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="이메일"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerEmail1}
-                        onChange={(e) => setNewManagerEmail1(e.target.value)}
-                        disabled={submitting}
-                        placeholder="user@example.com"
-                      />
-                    </Grid>
-                  </Grid>
-
-                  <Divider />
-
-                  <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                    • 담당자 2 정보 (선택)
-                  </Typography>
-                  <Grid container spacing={1.5}>
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        label="이름 2"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerName2}
-                        onChange={(e) => setNewManagerName2(e.target.value)}
-                        disabled={submitting}
-                        placeholder="이몽룡"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={8}>
-                      <TextField
-                        label="연락처 2"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerPhone2}
-                        onChange={(e) => setNewManagerPhone2(e.target.value)}
-                        disabled={submitting}
-                        placeholder="010-1111-1111"
-                      />
-                    </Grid>
-                    <Grid item xs={12}>
-                      <TextField
-                        label="이메일 2"
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        value={newManagerEmail2}
-                        onChange={(e) => setNewManagerEmail2(e.target.value)}
-                        disabled={submitting}
-                        placeholder="user2@example.com"
-                      />
-                    </Grid>
-                  </Grid>
-
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    disabled={submitting || !newCustomerName.trim()}
-                    sx={{ py: 1, fontWeight: 'bold', borderRadius: 1, mt: 1 }}
-                  >
-                    거래처 추가하기
-                  </Button>
-                </Stack>
-              </Box>
-            </Paper>
-          </Grid>
-        )}
-
-        {/* 오른쪽: 목록 */}
-        <Grid item xs={12} md={isAdmin ? 7 : 12}>
-          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <BusinessIcon fontSize="small" /> 등록된 거래처 목록
-            </Typography>
+      <Grid container spacing={2}>
+        {/* 거래처 목록 */}
+        <Grid item xs={12}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '500px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BusinessIcon fontSize="small" /> 등록된 거래처 목록
+              </Typography>
+              {isAdmin && (
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  startIcon={<AddIcon />} 
+                  onClick={() => setRegisterOpen(true)}
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  새 거래처 등록
+                </Button>
+              )}
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              거래처명을 누르면 상세 정보 수정 팝업이 표시됩니다. 자산 관리 버튼으로 인프라를 조회할 수 있습니다.
+              고객사의 기본 정보관리, 자산관리 및 계정 로그인 부여 설정을 관리할 수 있습니다.
             </Typography>
             
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -424,6 +494,7 @@ const AdminCustomerPage: React.FC = () => {
                           borderRadius: 2,
                           border: '1px solid #e2e8f0',
                           transition: 'all 0.2s ease-in-out', 
+                          position: 'relative',
                           '&:hover': { 
                             boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
                             borderColor: 'primary.light',
@@ -434,25 +505,19 @@ const AdminCustomerPage: React.FC = () => {
                           alignItems: { xs: 'stretch', sm: 'center' },
                           justifyContent: 'space-between',
                           gap: 2,
-                          py: 2, px: 2.5
+                          py: { xs: 1.5, sm: 2 }, 
+                          px: { xs: 1.5, sm: 2.5 }
                         }}
                       >
-                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5, pr: { xs: 4, sm: 0 } }}>
                           <Typography 
                             variant="subtitle1"
                             sx={{ 
                               fontWeight: 'bold', 
-                              color: 'primary.main', 
-                              cursor: 'pointer', 
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 0.8,
-                              '&:hover': { textDecoration: 'underline' } 
+                              color: 'text.primary'
                             }}
-                            onClick={() => handleOpenEdit(customer)}
                           >
                             {customer.name}
-                            <EditIcon sx={{ fontSize: '1rem', opacity: 0.6 }} />
                           </Typography>
                           
                           {customer.address && (
@@ -477,19 +542,58 @@ const AdminCustomerPage: React.FC = () => {
                           )}
                         </Box>
                         
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ justifyContent: { xs: 'flex-end', sm: 'center' } }}>
+                        <Stack 
+                          direction={{ xs: 'column', sm: 'row' }} 
+                          spacing={1} 
+                          alignItems={{ xs: 'stretch', sm: 'center' }} 
+                          sx={{ 
+                            justifyContent: 'flex-end', 
+                            width: { xs: '100%', sm: 'auto' } 
+                          }}
+                        >
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<EditIcon fontSize="small" />}
+                            onClick={() => handleOpenEdit(customer)}
+                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          >
+                            {isAdmin ? '정보관리' : '정보조회'}
+                          </Button>
+                          <Button 
+                            variant="outlined" 
+                            size="small"
+                            color={customer.auth_user_id ? "success" : "warning"}
+                            startIcon={<VpnKeyIcon fontSize="small" />}
+                            onClick={() => handleOpenAccountDialog(customer)}
+                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          >
+                            {isAdmin ? '계정관리' : '계정조회'}
+                          </Button>
                           <Button 
                             variant="contained"
                             size="small"
+                            color="primary"
                             startIcon={<ComputerIcon fontSize="small" />}
                             onClick={() => navigate(`/admin/customers/${customer.id}/inventory`)}
-                            sx={{ fontWeight: 'bold', px: 2, py: 0.5, boxShadow: 0 }}
+                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', px: 1.5, py: 0.5, boxShadow: 0 }}
                           >
-                            자산 관리
+                            자산관리
                           </Button>
                           {isAdmin && (
-                            <Tooltip title="삭제">
-                              <IconButton size="small" aria-label="delete" onClick={() => handleDeleteCustomer(customer.id, customer.name)} sx={{ '&:hover': { color: 'error.main' } }}>
+                            <Tooltip title="거래처 삭제">
+                              <IconButton 
+                                size="small" 
+                                aria-label="delete" 
+                                onClick={() => handleDeleteCustomer(customer.id, customer.name)} 
+                                sx={{ 
+                                  position: { xs: 'absolute', sm: 'static' },
+                                  top: { xs: 8, sm: 'auto' },
+                                  right: { xs: 8, sm: 'auto' },
+                                  '&:hover': { color: 'error.main' }, 
+                                  ml: { sm: 0.5 } 
+                                }}
+                              >
                                 <DeleteIcon color="action" fontSize="small" />
                               </IconButton>
                             </Tooltip>
@@ -520,111 +624,426 @@ const AdminCustomerPage: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EditIcon /> 거래처 정보 수정
+          <EditIcon /> {isAdmin ? '거래처 정보 수정' : '거래처 정보 조회'}
         </DialogTitle>
         <DialogContent dividers>
           <Box component="form" onSubmit={handleEditCustomer} sx={{ mt: 1 }}>
-            <Stack spacing={2.5}>
-              <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                • 기본 정보
-              </Typography>
-              <TextField
-                label="거래처 이름"
-                fullWidth
-                size="small"
-                value={editCustomerName}
-                onChange={(e) => setEditCustomerName(e.target.value)}
-                required
-              />
-              <TextField
-                label="사업장 주소"
-                fullWidth
-                size="small"
-                value={editAddress}
-                onChange={(e) => setEditAddress(e.target.value)}
-              />
-              
-              <Divider />
-              
-              <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                • 담당자 1 정보
-              </Typography>
-              <Grid container spacing={1.5}>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    label="이름"
-                    fullWidth
-                    size="small"
-                    value={editManagerName1}
-                    onChange={(e) => setEditManagerName1(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8}>
-                  <TextField
-                    label="연락처"
-                    fullWidth
-                    size="small"
-                    value={editManagerPhone1}
-                    onChange={(e) => setEditManagerPhone1(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="이메일"
-                    fullWidth
-                    size="small"
-                    value={editManagerEmail1}
-                    onChange={(e) => setEditManagerEmail1(e.target.value)}
-                  />
-                </Grid>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 기본 정보
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="거래처 이름"
+                  fullWidth
+                  size="small"
+                  value={editCustomerName}
+                  onChange={(e) => setEditCustomerName(e.target.value)}
+                  disabled={!isAdmin}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="사업장 주소"
+                  fullWidth
+                  size="small"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  disabled={!isAdmin}
+                />
               </Grid>
               
-              <Divider />
-              
-              <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                • 담당자 2 정보 (선택)
-              </Typography>
-              <Grid container spacing={1.5}>
-                <Grid item xs={12} sm={4}>
-                  <TextField
-                    label="이름 2"
-                    fullWidth
-                    size="small"
-                    value={editManagerName2}
-                    onChange={(e) => setEditManagerName2(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12} sm={8}>
-                  <TextField
-                    label="연락처 2"
-                    fullWidth
-                    size="small"
-                    value={editManagerPhone2}
-                    onChange={(e) => setEditManagerPhone2(e.target.value)}
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    label="이메일 2"
-                    fullWidth
-                    size="small"
-                    value={editManagerEmail2}
-                    onChange={(e) => setEditManagerEmail2(e.target.value)}
-                  />
-                </Grid>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
               </Grid>
-            </Stack>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 담당자 1 정보
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="이름"
+                  fullWidth
+                  size="small"
+                  value={editManagerName1}
+                  onChange={(e) => setEditManagerName1(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  label="연락처"
+                  fullWidth
+                  size="small"
+                  value={editManagerPhone1}
+                  onChange={(e) => setEditManagerPhone1(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="이메일"
+                  fullWidth
+                  size="small"
+                  value={editManagerEmail1}
+                  onChange={(e) => setEditManagerEmail1(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 담당자 2 정보 (선택)
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="이름 2"
+                  fullWidth
+                  size="small"
+                  value={editManagerName2}
+                  onChange={(e) => setEditManagerName2(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  label="연락처 2"
+                  fullWidth
+                  size="small"
+                  value={editManagerPhone2}
+                  onChange={(e) => setEditManagerPhone2(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="이메일 2"
+                  fullWidth
+                  size="small"
+                  value={editManagerEmail2}
+                  onChange={(e) => setEditManagerEmail2(e.target.value)}
+                  disabled={!isAdmin}
+                />
+              </Grid>
+            </Grid>
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditOpen(false)} color="inherit">취소</Button>
+          {isAdmin ? (
+            <>
+              <Button onClick={() => setEditOpen(false)} color="inherit">취소</Button>
+              <Button 
+                variant="contained" 
+                onClick={handleEditCustomer} 
+                disabled={submitting || !editCustomerName.trim()}
+                sx={{ fontWeight: 'bold' }}
+              >
+                저장하기
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => setEditOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold' }}>닫기</Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* 거래처 계정 설정 Dialog */}
+      <Dialog 
+        open={accountDialogOpen} 
+        onClose={() => setAccountDialogOpen(false)} 
+        maxWidth="xs" 
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <VpnKeyIcon /> {accountCustomer?.name} 계정 {isAdmin ? '관리' : '조회'}
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ mt: 1 }}>
+            {accountCustomer?.auth_user_id ? (
+              <Alert severity="success" variant="outlined">
+                로그인 계정이 등록되어 있습니다.
+              </Alert>
+            ) : (
+              <Alert severity="warning" variant="outlined">
+                {isAdmin ? '계정이 없습니다. 새 로그인 아이디와 비밀번호를 부여하십시오.' : '등록된 로그인 계정이 없습니다.'}
+              </Alert>
+            )}
+
+            <TextField
+              label="로그인용 아이디"
+              fullWidth
+              size="small"
+              value={accountLoginId}
+              onChange={(e) => setAccountLoginId(e.target.value)}
+              disabled={accountSubmitting || !!accountCustomer?.auth_user_id || !isAdmin}
+              placeholder="예: user_samsung"
+            />
+            {isAdmin && (
+              <TextField
+                label={accountCustomer?.auth_user_id ? "새 비밀번호 (변경 시 입력)" : "초기 비밀번호"}
+                type="password"
+                fullWidth
+                size="small"
+                value={accountPassword}
+                onChange={(e) => setAccountPassword(e.target.value)}
+                disabled={accountSubmitting}
+                placeholder="최소 6자 이상"
+              />
+            )}
+
+            {accountError && <Alert severity="error">{accountError}</Alert>}
+            {accountSuccess && <Alert severity="success">{accountSuccess}</Alert>}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, display: 'flex', justifyContent: isAdmin ? 'space-between' : 'flex-end' }}>
+          {isAdmin ? (
+            <>
+              {accountCustomer?.auth_user_id ? (
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  onClick={handleDeleteAccount} 
+                  disabled={accountSubmitting}
+                >
+                  계정 삭제
+                </Button>
+              ) : <Box />}
+              
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button onClick={() => setAccountDialogOpen(false)} color="inherit">닫기</Button>
+                {accountCustomer?.auth_user_id ? (
+                  <Button 
+                    variant="contained" 
+                    onClick={handleResetPassword} 
+                    disabled={accountSubmitting || !accountPassword.trim()}
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    비밀번호 변경
+                  </Button>
+                ) : (
+                  <Button 
+                    variant="contained" 
+                    onClick={handleCreateAccount} 
+                    disabled={accountSubmitting || !accountLoginId.trim() || !accountPassword.trim()}
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    계정 생성
+                  </Button>
+                )}
+              </Box>
+            </>
+          ) : (
+            <Button onClick={() => setAccountDialogOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold' }}>닫기</Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* 새 거래처 등록 팝업 Dialog */}
+      <Dialog 
+        open={registerOpen} 
+        onClose={() => setRegisterOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        scroll="paper"
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: 1.5, sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AddIcon /> 새 거래처 등록
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleAddCustomer} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 기본 정보
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="거래처 이름"
+                  fullWidth
+                  size="small"
+                  value={newCustomerName}
+                  onChange={(e) => setNewCustomerName(e.target.value)}
+                  placeholder="예: (주)컴투인"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="사업장 주소"
+                  fullWidth
+                  size="small"
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  placeholder="예: 경기도 의정부시..."
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 담당자 1 정보
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="이름"
+                  fullWidth
+                  size="small"
+                  value={newManagerName1}
+                  onChange={(e) => setNewManagerName1(e.target.value)}
+                  placeholder="홍길동"
+                />
+              </Grid>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  label="연락처"
+                  fullWidth
+                  size="small"
+                  value={newManagerPhone1}
+                  onChange={(e) => setNewManagerPhone1(e.target.value)}
+                  placeholder="010-0000-0000"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="이메일"
+                  fullWidth
+                  size="small"
+                  value={newManagerEmail1}
+                  onChange={(e) => setNewManagerEmail1(e.target.value)}
+                  placeholder="user@example.com"
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold">
+                  • 담당자 2 정보 (선택)
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="이름 2"
+                  fullWidth
+                  size="small"
+                  value={newManagerName2}
+                  onChange={(e) => setNewManagerName2(e.target.value)}
+                  placeholder="이몽룡"
+                />
+              </Grid>
+              <Grid item xs={12} sm={8}>
+                <TextField
+                  label="연락처 2"
+                  fullWidth
+                  size="small"
+                  value={newManagerPhone2}
+                  onChange={(e) => setNewManagerPhone2(e.target.value)}
+                  placeholder="010-1111-1111"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="이메일 2"
+                  fullWidth
+                  size="small"
+                  value={newManagerEmail2}
+                  onChange={(e) => setNewManagerEmail2(e.target.value)}
+                  placeholder="user2@example.com"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={createAccountOption}
+                      onChange={(e) => setCreateAccountOption(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" fontWeight="bold">
+                      등록과 동시에 로그인 계정(아이디/비밀번호) 생성하기
+                    </Typography>
+                  }
+                />
+              </Grid>
+
+              {createAccountOption && (
+                <>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="로그인용 아이디"
+                      fullWidth
+                      size="small"
+                      value={newLoginId}
+                      onChange={(e) => setNewLoginId(e.target.value)}
+                      placeholder="예: user_samsung"
+                      required={createAccountOption}
+                      inputProps={{
+                        autoComplete: 'new-username',
+                        form: {
+                          autoComplete: 'off',
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="초기 비밀번호"
+                      type="password"
+                      fullWidth
+                      size="small"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="최소 6자 이상"
+                      required={createAccountOption}
+                      inputProps={{
+                        autoComplete: 'new-password'
+                      }}
+                    />
+                  </Grid>
+                </>
+              )}
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setRegisterOpen(false)} color="inherit">취소</Button>
           <Button 
             variant="contained" 
-            onClick={handleEditCustomer} 
-            disabled={submitting || !editCustomerName.trim()}
+            onClick={handleAddCustomer} 
+            disabled={submitting || !newCustomerName.trim() || (createAccountOption && (!newLoginId.trim() || !newPassword.trim()))}
             sx={{ fontWeight: 'bold' }}
           >
-            저장하기
+            등록하기
           </Button>
         </DialogActions>
       </Dialog>

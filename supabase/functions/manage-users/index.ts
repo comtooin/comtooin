@@ -144,6 +144,89 @@ serve(async (req) => {
         });
       }
 
+      case "create-customer": {
+        const { customerId, loginId, loginEmail, password, name } = userData;
+        if (password.length < 6) {
+          throw new Error("Password must be at least 6 characters long.");
+        }
+
+        // 1. Auth 사용자 생성
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: loginEmail,
+          password: password,
+          email_confirm: true,
+          user_metadata: { name, role: 'customer' }
+        });
+
+        if (authError) throw new Error("Auth error: " + authError.message);
+
+        // 2. customers 테이블 정보 업데이트
+        const { error: customerError } = await supabase
+          .from("customers")
+          .update({
+            auth_user_id: authData.user.id,
+            login_id: loginId,
+            login_email: loginEmail
+          })
+          .eq("id", customerId);
+
+        if (customerError) {
+          // 롤백: Auth 사용자 삭제
+          await supabase.auth.admin.deleteUser(authData.user.id);
+          throw new Error("Database error: " + customerError.message);
+        }
+
+        return new Response(JSON.stringify({ success: true, user: authData.user }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      case "delete-customer": {
+        const { customerId, authUserId } = userData;
+
+        // 1. Auth 사용자 삭제
+        if (authUserId) {
+          const { error: authError } = await supabase.auth.admin.deleteUser(authUserId);
+          if (authError) throw new Error("Auth delete error: " + authError.message);
+        }
+
+        // 2. customers 테이블 인증 컬럼 초기화
+        const { error: customerError } = await supabase
+          .from("customers")
+          .update({
+            auth_user_id: null,
+            login_id: null,
+            login_email: null
+          })
+          .eq("id", customerId);
+
+        if (customerError) throw new Error("Database update error: " + customerError.message);
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      case "reset-customer-password": {
+        const { authUserId, newPassword } = userData;
+        if (newPassword.length < 6) {
+          throw new Error("New password must be at least 6 characters long.");
+        }
+
+        const { error: authError } = await supabase.auth.admin.updateUserById(authUserId, {
+          password: newPassword
+        });
+
+        if (authError) throw new Error("Password reset error: " + authError.message);
+
+        return new Response(JSON.stringify({ success: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
       default:
         throw new Error("Invalid action: " + action);
     }

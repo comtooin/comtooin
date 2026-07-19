@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Typography, Box, Paper, TextField, Button, List, ListItem, ListItemText,
+  Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, FormControl, InputLabel,
   Tooltip
@@ -43,6 +43,9 @@ const AdminStaffPage: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [newRole, setNewRole] = useState<'admin' | 'member'>('member');
   const [newPhone, setNewPhone] = useState('');
+
+  // 새 멤버 등록 팝업 모달 상태
+  const [registerOpen, setRegisterOpen] = useState(false);
 
   // 수정 다이얼로그 상태
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -97,18 +100,14 @@ const AdminStaffPage: React.FC = () => {
       });
 
       if (funcError) {
-        // Edge Function에서 반환한 상세 에러 메시지 추출 시도
         let errorMessage = funcError.message;
         try {
           const body = await funcError.context?.json();
           if (body && body.error) errorMessage = body.error;
-        } catch (e) {
-          // JSON 파싱 실패 시 기존 에러 메시지 유지
-        }
+        } catch (e) {}
         throw new Error(errorMessage);
       }
 
-      // Edge Function 배포가 누락되었을 경우를 대비해 프론트엔드에서 직접 전화번호 업데이트 시도
       if (newPhone.trim()) {
         await supabase.from('staff').update({ phone: newPhone.trim() }).eq('email', newEmail.trim());
       }
@@ -119,6 +118,7 @@ const AdminStaffPage: React.FC = () => {
       setNewPassword('');
       setNewRole('member');
       setNewPhone('');
+      setRegisterOpen(false);
       setSuccess('새로운 멤버가 등록되었습니다.');
       fetchStaffs();
     } catch (err: any) {
@@ -158,7 +158,6 @@ const AdminStaffPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      // Edge Function 배포가 누락되었을 경우를 대비해 프론트엔드에서 직접 전화번호 업데이트 시도
       if (editingStaff.phone !== undefined) {
         await supabase.from('staff').update({ phone: editingStaff.phone.trim() }).eq('id', editingStaff.id);
       }
@@ -241,6 +240,8 @@ const AdminStaffPage: React.FC = () => {
     }
   };
 
+  const isAdmin = localStorage.getItem('adminRole') === 'admin';
+
   // 통계 계산
   const stats = {
     total: staffs.length,
@@ -305,102 +306,26 @@ const AdminStaffPage: React.FC = () => {
         ))}
       </Paper>
 
-      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-        {/* 왼쪽: 등록 폼 */}
-        <Grid item xs={12} md={5}>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', height: '100%' }}>
-            <Box component="form" onSubmit={handleAddStaff}>
-              <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PersonAddIcon fontSize="small" /> 새 멤버 등록
+      <Grid container spacing={2}>
+        {/* 멤버 목록 */}
+        <Grid item xs={12}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '500px' }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+              <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BadgeIcon fontSize="small" /> 등록된 멤버 목록
               </Typography>
-              <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                <TextField
-                  label="사용자 아이디"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  disabled={submitting}
-                  placeholder="아이디 (로그인용)"
-                  required
-                />
-                <TextField
-                  label="비밀번호"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  disabled={submitting}
-                  placeholder="초기 비밀번호"
-                  required
-                />
-                <TextField
-                  label="이름"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  disabled={submitting}
-                  placeholder="실명"
-                  required
-                />
-                <TextField
-                  label="이메일 주소"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={newEmail}
-                  onChange={(e) => setNewEmail(e.target.value)}
-                  disabled={submitting}
-                  placeholder="example@comtooin.com"
-                  type="email"
-                  required
-                />
-                <TextField
-                  label="연락처"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
-                  disabled={submitting}
-                  placeholder="010-0000-0000"
-                />
-                <FormControl fullWidth size="small">
-                  <InputLabel>권한</InputLabel>
-                  <Select
-                    value={newRole}
-                    label="권한"
-                    onChange={(e) => setNewRole(e.target.value as 'admin' | 'member')}
-                    disabled={submitting}
-                  >
-                    <MenuItem value="member">일반 멤버</MenuItem>
-                    <MenuItem value="admin">관리자</MenuItem>
-                  </Select>
-                </FormControl>
-                <Button
-                  type="submit"
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  disabled={submitting || !newName.trim() || !newEmail.trim() || !newUsername.trim() || !newPassword.trim()}
-                  sx={{ py: 1, mt: 1, fontWeight: 'bold', borderRadius: 1 }}
-                >
-                  멤버 추가하기
-                </Button>
-              </Stack>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<AddIcon />} 
+                onClick={() => setRegisterOpen(true)}
+                sx={{ fontWeight: 'bold' }}
+              >
+                새 멤버 등록
+              </Button>
             </Box>
-          </Paper>
-        </Grid>
-
-        {/* 오른쪽: 목록 */}
-        <Grid item xs={12} md={7}>
-          <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '400px' }}>
-            <Typography variant="h6" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <BadgeIcon fontSize="small" /> 등록된 멤버 목록
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              시스템을 이용하는 일반 멤버 및 어드민 관리자 계정 정보를 관리합니다.
             </Typography>
             
             {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -409,68 +334,108 @@ const AdminStaffPage: React.FC = () => {
             {loading ? (
               <Box sx={{ textAlign: 'center', py: 10 }}><CircularProgress /></Box>
             ) : (
-              <List sx={{ bgcolor: 'grey.50', borderRadius: 1, p: 1 }}>
+              <List sx={{ bgcolor: 'transparent', p: 0, maxHeight: 800, overflowY: 'auto' }}>
                 {staffs.length === 0 ? (
                   <Typography color="text.secondary" align="center" sx={{ py: 10 }}>
                     등록된 멤버가 없습니다.
                   </Typography>
                 ) : (
-                  staffs.map((staff, index) => (
+                  staffs.map((staff) => (
                     <React.Fragment key={staff.id}>
                       <ListItem
-                        secondaryAction={
-                          <Stack direction="row" spacing={0.5}>
+                        sx={{ 
+                          mb: 1.5,
+                          bgcolor: '#ffffff',
+                          borderRadius: 2,
+                          border: '1px solid #e2e8f0',
+                          transition: 'all 0.2s ease-in-out', 
+                          position: 'relative',
+                          '&:hover': { 
+                            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                            borderColor: 'primary.light',
+                            transform: 'translateY(-2px)'
+                          },
+                          display: 'flex',
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          alignItems: { xs: 'stretch', sm: 'center' },
+                          justifyContent: 'space-between',
+                          gap: 2,
+                          py: { xs: 1.5, sm: 2 }, 
+                          px: { xs: 1.5, sm: 2.5 }
+                        }}
+                      >
+                        {/* 왼쪽: 멤버 정보 */}
+                        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5, pr: { xs: 4, sm: 0 } }}>
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Typography fontWeight="bold" color="text.primary">{staff.name}</Typography>
+                            <Typography variant="caption" sx={{ bgcolor: staff.role === 'admin' ? 'primary.light' : 'grey.300', color: 'white', px: 0.8, py: 0.1, borderRadius: 1 }}>
+                              {staff.role === 'admin' ? '관리자' : '멤버'}
+                            </Typography>
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                            <strong>아이디:</strong> {staff.username} &nbsp;|&nbsp; <strong>이메일:</strong> {staff.email}
+                          </Typography>
+                          {staff.phone && (
+                            <Typography variant="caption" color="text.secondary">
+                              <strong>연락처:</strong> {staff.phone}
+                            </Typography>
+                          )}
+                        </Box>
+                        
+                        {/* 오른쪽: 버튼 스택 */}
+                        <Stack 
+                          direction={{ xs: 'column', sm: 'row' }} 
+                          spacing={1} 
+                          alignItems={{ xs: 'stretch', sm: 'center' }} 
+                          sx={{ 
+                            justifyContent: 'flex-end', 
+                            width: { xs: '100%', sm: 'auto' } 
+                          }}
+                        >
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<EditIcon fontSize="small" />}
+                            onClick={() => {
+                              setEditingStaff({...staff});
+                              setEditDialogOpen(true);
+                            }}
+                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          >
+                            정보관리
+                          </Button>
+                          <Button 
+                            variant="outlined" 
+                            size="small"
+                            color="success"
+                            startIcon={<LockResetIcon fontSize="small" />}
+                            onClick={() => {
+                              setResettingStaff(staff);
+                              setResetDialogOpen(true);
+                            }}
+                            disabled={!staff.auth_user_id}
+                            sx={{ fontWeight: 'bold', fontSize: '0.75rem', px: 1.5, py: 0.5 }}
+                          >
+                            계정관리
+                          </Button>
+                          <Tooltip title="멤버 삭제">
                             <IconButton 
                               size="small" 
-                              onClick={() => {
-                                setEditingStaff({...staff});
-                                setEditDialogOpen(true);
-                              }}
-                              title="수정"
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <Tooltip title={!staff.auth_user_id ? "로그인 계정이 없는 기존 멤버는 비밀번호를 초기화할 수 없습니다." : "비밀번호 초기화"}>
-                              <span>
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => {
-                                    setResettingStaff(staff);
-                                    setResetDialogOpen(true);
-                                  }}
-                                  disabled={!staff.auth_user_id}
-                                >
-                                  <LockResetIcon fontSize="small" />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                            <IconButton 
-                              edge="end" 
                               aria-label="delete" 
                               onClick={() => handleDeleteStaff(staff)} 
-                              sx={{ '&:hover': { color: 'error.main' } }}
-                              title="삭제"
+                              sx={{ 
+                                position: { xs: 'absolute', sm: 'static' },
+                                top: { xs: 8, sm: 'auto' },
+                                right: { xs: 8, sm: 'auto' },
+                                '&:hover': { color: 'error.main' }, 
+                                ml: { sm: 0.5 } 
+                              }}
                             >
-                              <DeleteIcon fontSize="small" />
+                              <DeleteIcon color="action" fontSize="small" />
                             </IconButton>
-                          </Stack>
-                        }
-                        sx={{ transition: 'bgcolor 0.2s', '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}
-                      >
-                        <ListItemText 
-                          primary={
-                            <Stack direction="row" spacing={1} alignItems="center">
-                              <Typography fontWeight="bold" color="text.primary">{staff.name}</Typography>
-                              <Typography variant="caption" sx={{ bgcolor: staff.role === 'admin' ? 'primary.light' : 'grey.300', color: 'white', px: 0.8, py: 0.1, borderRadius: 1 }}>
-                                {staff.role === 'admin' ? '관리자' : '멤버'}
-                              </Typography>
-                            </Stack>
-                          }
-                          secondary={`${staff.username} (${staff.email})`}
-                          secondaryTypographyProps={{ variant: 'caption' }}
-                        />
+                          </Tooltip>
+                        </Stack>
                       </ListItem>
-                      {index < staffs.length - 1 && <Divider component="li" />}
                     </React.Fragment>
                   ))
                 )}
@@ -481,54 +446,70 @@ const AdminStaffPage: React.FC = () => {
       </Grid>
 
       {/* 수정 다이얼로그 */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="xs">
+      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
         <DialogTitle fontWeight="bold">멤버 정보 수정</DialogTitle>
-        <DialogContent>
-          <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField
-              label="이름"
-              fullWidth
-              size="small"
-              value={editingStaff?.name || ''}
-              onChange={(e) => setEditingStaff(prev => prev ? {...prev, name: e.target.value} : null)}
-            />
-            <TextField
-              label="사용자 아이디"
-              fullWidth
-              size="small"
-              value={editingStaff?.username || ''}
-              onChange={(e) => setEditingStaff(prev => prev ? {...prev, username: e.target.value} : null)}
-            />
-            <TextField
-              label="이메일 주소"
-              fullWidth
-              size="small"
-              value={editingStaff?.email || ''}
-              onChange={(e) => setEditingStaff(prev => prev ? {...prev, email: e.target.value} : null)}
-            />
-            <TextField
-              label="연락처"
-              fullWidth
-              size="small"
-              value={editingStaff?.phone || ''}
-              onChange={(e) => setEditingStaff(prev => prev ? {...prev, phone: e.target.value} : null)}
-            />
-            <FormControl fullWidth size="small">
-              <InputLabel>권한</InputLabel>
-              <Select
-                value={editingStaff?.role || 'member'}
-                label="권한"
-                onChange={(e) => setEditingStaff(prev => prev ? {...prev, role: e.target.value as 'admin' | 'member'} : null)}
-              >
-                <MenuItem value="member">일반 멤버</MenuItem>
-                <MenuItem value="admin">관리자</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={(e) => { e.preventDefault(); handleUpdateStaff(); }} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="이름"
+                  fullWidth
+                  size="small"
+                  value={editingStaff?.name || ''}
+                  onChange={(e) => setEditingStaff(prev => prev ? {...prev, name: e.target.value} : null)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="사용자 아이디"
+                  fullWidth
+                  size="small"
+                  value={editingStaff?.username || ''}
+                  onChange={(e) => setEditingStaff(prev => prev ? {...prev, username: e.target.value} : null)}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="이메일 주소"
+                  fullWidth
+                  size="small"
+                  value={editingStaff?.email || ''}
+                  onChange={(e) => setEditingStaff(prev => prev ? {...prev, email: e.target.value} : null)}
+                  type="email"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="연락처"
+                  fullWidth
+                  size="small"
+                  value={editingStaff?.phone || ''}
+                  onChange={(e) => setEditingStaff(prev => prev ? {...prev, phone: e.target.value} : null)}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>권한</InputLabel>
+                  <Select
+                    value={editingStaff?.role || 'member'}
+                    label="권한"
+                    onChange={(e) => setEditingStaff(prev => prev ? {...prev, role: e.target.value as 'admin' | 'member'} : null)}
+                  >
+                    <MenuItem value="member">일반 멤버</MenuItem>
+                    <MenuItem value="admin">관리자</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setEditDialogOpen(false)}>취소</Button>
-          <Button variant="contained" onClick={handleUpdateStaff} disabled={submitting}>저장하기</Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setEditDialogOpen(false)} color="inherit">취소</Button>
+          <Button variant="contained" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold' }}>저장하기</Button>
         </DialogActions>
       </Dialog>
 
@@ -555,6 +536,125 @@ const AdminStaffPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* 새 멤버 등록 팝업 Dialog */}
+      <Dialog 
+        open={registerOpen} 
+        onClose={() => setRegisterOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        scroll="paper"
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: 1.5, sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PersonAddIcon /> 새 멤버 등록
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleAddStaff} sx={{ mt: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="사용자 아이디"
+                  fullWidth
+                  size="small"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  disabled={submitting}
+                  placeholder="아이디 (로그인용)"
+                  required
+                  inputProps={{
+                    autoComplete: 'new-username',
+                    form: {
+                      autoComplete: 'off',
+                    },
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="비밀번호"
+                  fullWidth
+                  size="small"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={submitting}
+                  placeholder="초기 비밀번호"
+                  required
+                  inputProps={{
+                    autoComplete: 'new-password'
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="이름"
+                  fullWidth
+                  size="small"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  disabled={submitting}
+                  placeholder="실명"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="이메일 주소"
+                  fullWidth
+                  size="small"
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  disabled={submitting}
+                  placeholder="example@comtooin.com"
+                  type="email"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="연락처"
+                  fullWidth
+                  size="small"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                  disabled={submitting}
+                  placeholder="010-0000-0000"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>권한</InputLabel>
+                  <Select
+                    value={newRole}
+                    label="권한"
+                    onChange={(e) => setNewRole(e.target.value as 'admin' | 'member')}
+                    disabled={submitting}
+                  >
+                    <MenuItem value="member">일반 멤버</MenuItem>
+                    <MenuItem value="admin">관리자</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setRegisterOpen(false)} color="inherit">취소</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleAddStaff} 
+            disabled={submitting || !newName.trim() || !newEmail.trim() || !newUsername.trim() || !newPassword.trim()}
+            sx={{ fontWeight: 'bold' }}
+          >
+            등록하기
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

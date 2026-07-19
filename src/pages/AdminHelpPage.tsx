@@ -30,7 +30,10 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     setExpanded(isExpanded ? panel : false);
   };
 
-  const sections = [
+  const userRole = localStorage.getItem('adminRole');
+  const isCustomer = userRole === 'customer';
+
+  const allSections = [
     {
       id: 'request',
       title: '업무 기록 (유지보수 일지 등록)',
@@ -52,6 +55,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
         '실시간 통계 현황 확인: 대시보드 상단 수치 카드를 통해 현재 누적된 전체 업무량과 처리 진행률(처리중, 완료)을 실시간으로 확인합니다.',
         '거래처별 비중 분석: 원형(파이) 차트를 호버하여 특정 거래처가 차지하는 고장 접수 비중을 직관적으로 파악하고 리소스를 적절히 안배합니다.',
         '연간 업무 추이 파악: 막대그래프를 통해 월별 유지보수 처리 건수의 변화 추이를 보고 특정 시기의 업무 과밀도를 미리 대비합니다.',
+        'AI 성능 분석 및 실적 요약 리포트: [AI 리포트 생성] 기능을 활용하면, 우리 회사의 과거 고장/장애 조치 이력 데이터를 AI가 정밀 분석하여 핵심 고장 원인 추이와 개선 권고사항이 요약된 맞춤형 보고서를 제공받을 수 있습니다.',
         '엑셀 보고서 다운로드 및 일괄 업로드: 하단 테이블의 거래처 및 월별 검색 필터를 거쳐 정제된 리스트를 [리포트 다운로드(CSV)]로 일괄 저장해 엑셀로 활용할 수 있으며, 이전에 기록된 많은 로그들은 양식에 맞춰 [CSV 업로드]로 일괄 가져오기가 가능합니다.'
       ]
     },
@@ -82,11 +86,12 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
       id: 'customer',
       title: '거래처 정보 관리',
       icon: <CustomerIcon color="primary" />,
-      desc: '계약 중인 유지보수 회원사 목록, 사업장 정보 및 각 사의 실무 담당자 연락처망을 체계적으로 갱신하는 방법입니다.',
+      desc: '계약 중인 유지보수 회원사 목록, 담당자 정보, 로그인 계정 정보를 관리 및 조회하는 방법입니다.',
       details: [
-        '신규 거래처 등록: 새 고객사가 추가되면 [거래처 추가] 기능을 열어 기본 상호명, 사업장 주소, 유지보수 계약 종료일 정보를 등록합니다.',
+        '신규 거래처 및 로그인 계정 일괄 등록: 새 거래처 등록 시 [등록과 동시에 로그인 계정(아이디/비밀번호) 생성하기] 옵션을 활성화하면, 거래처 기본 정보와 로그인 연동 계정을 한 번에 간편하게 생성할 수 있습니다.',
+        '브라우저 자동완성 오입력 차단: 로그인 폼 및 등록 다이얼로그 내에 자동완성 방지(Autofill Prevention) 옵션이 내장되어 있어, 브라우저가 관리자의 개인 로그인 정보를 거래처 입력 필드에 강제 기입하는 현상을 원천 방지합니다.',
+        '권한 등급별 안전한 조회 및 제어 분기: 최고 관리자 계정은 [정보관리] 및 [계정관리] 버튼을 통해 모든 정보를 수정·삭제할 수 있으며, 일반 멤버(Staff) 계정은 [정보조회] 및 [계정조회] 버튼으로 안전한 읽기 전용(Read-Only) 모드로만 조회 가능합니다.',
         '다중 고객 담당자 연동: 한 업체에 여러 담당자가 있는 경우 최대 2명(주담당자/부담당자)까지 이름, 직책, 개별 연락처 및 이메일 주소를 연동하여 관리 장부에 기재할 수 있습니다.',
-        '간편 수정 다이얼로그: 거래처 이름만 클릭하면 모바일에서도 터치하기 쉬운 수정용 다이얼로그 창이 바로 표시되어 주소나 계약일 등 변동 사항을 간편하게 편집합니다.',
         '중요 자산 삭제 보호 장치: 거래처 이력 유실 등 치명적인 실수를 예방하기 위해 [거래처 삭제] 권한은 시스템 내에 최고 관리자(Admin) 권한 등급을 가진 계정에게만 표시 및 활성화됩니다.'
       ]
     },
@@ -129,6 +134,10 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
       ]
     }
   ];
+
+  const sections = isCustomer 
+    ? allSections.filter(sec => sec.id === 'dashboard' || sec.id === 'inventory')
+    : allSections;
 
   const helpContent = (
     <Box sx={{ p: isDialog ? 1 : 0 }}>
@@ -245,7 +254,10 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
-          컴투인 IT 서비스 관리(ITSM) 플랫폼의 주요 기능과 직원용 사용 팁을 제공합니다.
+          {isCustomer 
+            ? '컴투인 IT 서비스 관리(ITSM) 플랫폼의 주요 기능과 거래처용 사용 가이드를 제공합니다.'
+            : '컴투인 IT 서비스 관리(ITSM) 플랫폼의 주요 기능과 직원용 사용 팁을 제공합니다.'
+          }
         </Typography>
       </Box>
 

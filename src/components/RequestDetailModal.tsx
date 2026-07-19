@@ -13,6 +13,7 @@ import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 
 
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
+  const userRole = localStorage.getItem('adminRole');
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ content: '', requester_name: '', comments: [] as any[] });
@@ -199,19 +200,21 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
                 <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
                     <Typography variant="caption" color="text.secondary">{new Date(c.created_at).toLocaleString()}</Typography>
-                    <Stack direction="row" spacing={0.5}>
-                      {editingCommentId === c.id ? (
-                        <>
-                          <Button size="small" variant="text" color="primary" onClick={() => handleEditComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>저장</Button>
-                          <Button size="small" variant="text" color="inherit" onClick={() => setEditingCommentId(null)} sx={{ minWidth: 'auto', p: 0.5 }}>취소</Button>
-                        </>
-                      ) : (
-                        <>
-                          <Button size="small" variant="text" color="primary" onClick={() => { setEditingCommentId(c.id); setEditingCommentContent(c.comment); }} sx={{ minWidth: 'auto', p: 0.5 }}>수정</Button>
-                          <Button size="small" variant="text" color="error" onClick={() => handleDeleteComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>삭제</Button>
-                        </>
-                      )}
-                    </Stack>
+                    {userRole !== 'customer' && (
+                      <Stack direction="row" spacing={0.5}>
+                        {editingCommentId === c.id ? (
+                          <>
+                            <Button size="small" variant="text" color="primary" onClick={() => handleEditComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>저장</Button>
+                            <Button size="small" variant="text" color="inherit" onClick={() => setEditingCommentId(null)} sx={{ minWidth: 'auto', p: 0.5 }}>취소</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="small" variant="text" color="primary" onClick={() => { setEditingCommentId(c.id); setEditingCommentContent(c.comment); }} sx={{ minWidth: 'auto', p: 0.5 }}>수정</Button>
+                            <Button size="small" variant="text" color="error" onClick={() => handleDeleteComment(c.id)} sx={{ minWidth: 'auto', p: 0.5 }}>삭제</Button>
+                          </>
+                        )}
+                      </Stack>
+                    )}
                   </Stack>
                   {editingCommentId === c.id ? (
                     <TextField multiline rows={2} fullWidth size="small" value={editingCommentContent} onChange={(e) => setEditingCommentContent(e.target.value)} />
@@ -249,28 +252,38 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
 
           <Divider sx={{ my: 0.5 }} />
           
-          <FormControl fullWidth>
-            <InputLabel>상태 변경</InputLabel>
-            <Select value={newStatus} label="상태 변경" onChange={(e) => setNewStatus(e.target.value as string)}>
-              <MenuItem value="processing">처리중</MenuItem>
-              <MenuItem value="completed">처리완료</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField 
-            label={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리내용 입력" : "새로운 처리내용 추가"} 
-            multiline rows={3} fullWidth variant="outlined" value={newComment} onChange={(e) => setNewComment(e.target.value)} 
-            placeholder={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리 내용을 입력해 주세요." : "추가할 처리 내용을 입력해 주세요."} 
-          />
+          {userRole !== 'customer' && (
+            <>
+              <FormControl fullWidth>
+                <InputLabel>상태 변경</InputLabel>
+                <Select value={newStatus} label="상태 변경" onChange={(e) => setNewStatus(e.target.value as string)}>
+                  <MenuItem value="processing">처리중</MenuItem>
+                  <MenuItem value="completed">처리완료</MenuItem>
+                </Select>
+              </FormControl>
+              <TextField 
+                label={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리내용 입력" : "새로운 처리내용 추가"} 
+                multiline rows={3} fullWidth variant="outlined" value={newComment} onChange={(e) => setNewComment(e.target.value)} 
+                placeholder={(!selectedRequest.comments || selectedRequest.comments.length === 0) ? "처리 내용을 입력해 주세요." : "추가할 처리 내용을 입력해 주세요."} 
+              />
+            </>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'center' }}>
         <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', minWidth: 'auto' }}>삭제</Button>
-          <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
-          <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>{isEditing ? '취소' : '수정'}</Button>
-          <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', minWidth: 'auto' }}>
-            {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
-          </Button>
+          {userRole === 'customer' ? (
+            <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', minWidth: 100 }}>닫기</Button>
+          ) : (
+            <>
+              <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', minWidth: 'auto' }}>삭제</Button>
+              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
+              <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>{isEditing ? '취소' : '수정'}</Button>
+              <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', minWidth: 'auto' }}>
+                {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
+              </Button>
+            </>
+          )}
         </Stack>
       </DialogActions>
     </Dialog>

@@ -85,57 +85,79 @@ const NavBar: React.FC = () => {
               />
             </ListItem>
             <Divider sx={{ my: 1 }} />
-            <ListItem button component={RouterLink} to="/">
-              <ListItemIcon><EditNoteIcon /></ListItemIcon>
-              <ListItemText
-                primary="업무 기록"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            <ListItem button component={RouterLink} to="/admin/dashboard">
-              <ListItemIcon><DashboardIcon /></ListItemIcon>
-              <ListItemText
-                primary="대시보드"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-
-            <ListItem button component={RouterLink} to="/admin/schedule">
-              <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
-              <ListItemText
-                primary="스케줄"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            <ListItem button component={RouterLink} to="/admin/archive">
-              <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
-              <ListItemText
-                primary="자료실"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            <ListItem button component={RouterLink} to="/admin/customers">
-              <ListItemIcon><BusinessIcon /></ListItemIcon>
-              <ListItemText
-                primary="거래처"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            <ListItem button component={RouterLink} to="/admin/quote">
-              <ListItemIcon><ReceiptIcon /></ListItemIcon>
-              <ListItemText
-                primary="간편견적"
-                primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-              />
-            </ListItem>
-            {userRole === 'admin' && (
-              <ListItem button component={RouterLink} to="/admin/staff">
-                <ListItemIcon><PeopleIcon /></ListItemIcon>
-                <ListItemText
-                  primary="멤버"
-                  primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
-                />
-              </ListItem>
+            {userRole === 'customer' ? (
+              <>
+                <ListItem button component={RouterLink} to="/admin/dashboard">
+                  <ListItemIcon><DashboardIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="대시보드"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                {localStorage.getItem('adminCustomerId') && (
+                  <ListItem button component={RouterLink} to={`/admin/customers/${localStorage.getItem('adminCustomerId')}/inventory`}>
+                    <ListItemIcon><BusinessIcon /></ListItemIcon>
+                    <ListItemText
+                      primary="자산관리"
+                      primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                    />
+                  </ListItem>
+                )}
+              </>
+            ) : (
+              <>
+                <ListItem button component={RouterLink} to="/">
+                  <ListItemIcon><EditNoteIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="업무 기록"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                <ListItem button component={RouterLink} to="/admin/dashboard">
+                  <ListItemIcon><DashboardIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="대시보드"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                <ListItem button component={RouterLink} to="/admin/schedule">
+                  <ListItemIcon><CalendarMonthIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="스케줄"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                <ListItem button component={RouterLink} to="/admin/archive">
+                  <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="자료실"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                <ListItem button component={RouterLink} to="/admin/quote">
+                  <ListItemIcon><ReceiptIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="간편견적"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                <ListItem button component={RouterLink} to="/admin/customers">
+                  <ListItemIcon><BusinessIcon /></ListItemIcon>
+                  <ListItemText
+                    primary="거래처"
+                    primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                  />
+                </ListItem>
+                {userRole === 'admin' && (
+                  <ListItem button component={RouterLink} to="/admin/staff">
+                    <ListItemIcon><PeopleIcon /></ListItemIcon>
+                    <ListItemText
+                      primary="멤버"
+                      primaryTypographyProps={{ fontWeight: 500, fontSize: '1rem' }}
+                    />
+                  </ListItem>
+                )}
+              </>
             )}
             <ListItem button onClick={() => { setHelpOpen(true); setDrawerOpen(false); }}>
               <ListItemIcon><HelpOutlineIcon /></ListItemIcon>
@@ -244,15 +266,25 @@ const NavBar: React.FC = () => {
             <Box sx={{ display: 'flex', gap: 1 }}>
               {isAdminLoggedIn ? (
                 <>
-                  <Button color="inherit" component={RouterLink} to="/" sx={{ px: 1.5 }}>업무 기록</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
-
-                  <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
-                  <Button color="inherit" component={RouterLink} to="/admin/quote" sx={{ px: 1.5 }}>간편견적</Button>
-                  {userRole === 'admin' && (
-                    <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
+                  {userRole === 'customer' ? (
+                    <>
+                      <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
+                      {localStorage.getItem('adminCustomerId') && (
+                        <Button color="inherit" component={RouterLink} to={`/admin/customers/${localStorage.getItem('adminCustomerId')}/inventory`} sx={{ px: 1.5 }}>자산관리</Button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Button color="inherit" component={RouterLink} to="/" sx={{ px: 1.5 }}>업무 기록</Button>
+                      <Button color="inherit" component={RouterLink} to="/admin/dashboard" sx={{ px: 1.5 }}>대시보드</Button>
+                      <Button color="inherit" component={RouterLink} to="/admin/schedule" sx={{ px: 1.5 }}>스케줄</Button>
+                      <Button color="inherit" component={RouterLink} to="/admin/archive" sx={{ px: 1.5 }}>자료실</Button>
+                      <Button color="inherit" component={RouterLink} to="/admin/quote" sx={{ px: 1.5 }}>간편견적</Button>
+                      <Button color="inherit" component={RouterLink} to="/admin/customers" sx={{ px: 1.5 }}>거래처</Button>
+                      {userRole === 'admin' && (
+                        <Button color="inherit" component={RouterLink} to="/admin/staff" sx={{ px: 1.5 }}>멤버</Button>
+                      )}
+                    </>
                   )}
                   <Box sx={{ display: 'flex', alignItems: 'center', ml: 1, pl: 1.5, borderLeft: '1px solid rgba(255,255,255,0.2)' }}>
                     <Typography 
