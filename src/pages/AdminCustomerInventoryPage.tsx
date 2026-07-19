@@ -228,7 +228,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 780;
+      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
 
       let children = Array.from(parserDiv.childNodes);
       if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
@@ -243,6 +243,16 @@ const AdminCustomerInventoryPage: React.FC = () => {
           continue;
         }
 
+        const currentPageHasContent = Array.from(currentPage.children).some(
+          node => {
+            const el = node as HTMLElement;
+            return el.className !== 'page-number' && 
+                   el.tagName.toLowerCase() !== 'h1' && 
+                   el.className !== 'subtitle' && 
+                   el.className !== 'pdf-header';
+          }
+        );
+
         // 1. 수동 page-break 식별 및 카테고리별(2., 3., 4. 등) 강제 페이지 분할
         if (child.nodeType === Node.ELEMENT_NODE) {
           const el = child as HTMLElement;
@@ -256,7 +266,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || isNewCategory) {
+          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
             currentPageNum++;
             currentPage = createNewPage(currentPageNum);
             if (isPageBreak) {
@@ -700,7 +710,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 780; // 마진 포함 실 높이 제한
+      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
 
       // 최상위 래퍼 div가 단일로 존재할 경우 내부 자식들을 직접 가져오도록 언래핑
       let children = Array.from(parserDiv.childNodes);
@@ -716,6 +726,16 @@ const AdminCustomerInventoryPage: React.FC = () => {
           continue;
         }
 
+        const currentPageHasContent = Array.from(currentPage.children).some(
+          node => {
+            const el = node as HTMLElement;
+            return el.className !== 'page-number' && 
+                   el.tagName.toLowerCase() !== 'h1' && 
+                   el.className !== 'subtitle' && 
+                   el.className !== 'pdf-header';
+          }
+        );
+
         // 1. 수동 page-break 식별 및 카테고리별(2., 3., 4. 등) 강제 페이지 분할
         if (child.nodeType === Node.ELEMENT_NODE) {
           const el = child as HTMLElement;
@@ -729,7 +749,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || isNewCategory) {
+          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
             currentPageNum++;
             currentPage = createNewPage(currentPageNum);
             if (isPageBreak) {
