@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Menu, MenuItem, Checkbox, FormControlLabel
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControlLabel
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -13,8 +13,7 @@ import {
   VerifiedUser as ActiveIcon,
   Computer as ComputerIcon,
   Edit as EditIcon,
-  VpnKey as VpnKeyIcon,
-  MoreVert as MoreVertIcon
+  VpnKey as VpnKeyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api';

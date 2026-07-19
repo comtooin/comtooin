@@ -240,8 +240,6 @@ const AdminStaffPage: React.FC = () => {
     }
   };
 
-  const isAdmin = localStorage.getItem('adminRole') === 'admin';
-
   // 통계 계산
   const stats = {
     total: staffs.length,
