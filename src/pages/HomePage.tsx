@@ -2,7 +2,8 @@ import { format } from 'date-fns';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip, InputAdornment
+  Typography, TextField, Button, Box, Paper, IconButton, Grid, Divider, Stack, Alert, MenuItem, CircularProgress, Container, List, ListItem, ListItemText, Chip, InputAdornment,
+  Autocomplete
 } from '@mui/material';
 import { 
   PhotoCamera, Delete, Mic as MicIcon, AutoAwesome as AutoAwesomeIcon, EditNote as EditNoteIcon,
@@ -370,9 +371,27 @@ const HomePage: React.FC = () => {
                     />
                   </Grid>
                   <Grid item xs={12} sm={4}>
-                    <TextField select label="거래처명" fullWidth required variant="outlined" size="small" value={customerName} onChange={(e) => setCustomerName(e.target.value)} disabled={loading || submitting}>
-                      {customerOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-                    </TextField>
+                    <Autocomplete
+                      freeSolo
+                      options={customerOptions}
+                      value={customerName}
+                      onChange={(event, newValue) => {
+                        setCustomerName(newValue || '');
+                      }}
+                      onInputChange={(event, newInputValue) => {
+                        setCustomerName(newInputValue || '');
+                      }}
+                      disabled={loading || submitting}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="거래처명"
+                          required
+                          variant="outlined"
+                          size="small"
+                        />
+                      )}
+                    />
                   </Grid>
                   <Grid item xs={12} sm={4}>
                     <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={loading || submitting}>

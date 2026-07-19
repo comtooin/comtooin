@@ -28,6 +28,8 @@ import {
   Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title
 } from 'chart.js';
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
@@ -138,7 +140,7 @@ const AdminReportPage: React.FC = () => {
   const [aiModalOpen, setAiModalOpen] = useState(false);
   const [aiReportContent, setAiReportContent] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  const [previewPages, setPreviewPages] = useState<string[]>([]);
 
   const currentYear = new Date().getFullYear();
 
@@ -192,6 +194,165 @@ const AdminReportPage: React.FC = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  useEffect(() => {
+    if (aiModalOpen && aiReportContent) {
+      // 1. 임시 컨테이너 생성 (layout 계산용 오프스크린 렌더링)
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '794px';
+      container.style.boxSizing = 'border-box';
+      
+      const styleSheet = document.createElement("style");
+      styleSheet.innerText = `
+        .pdf-page-preview {
+          width: 794px;
+          height: 1123px;
+          background-color: #ffffff;
+          padding: 60px 50px 80px 50px;
+          box-sizing: border-box;
+          font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+          color: #333333;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .pdf-page-preview h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
+        .pdf-page-preview .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
+        .pdf-page-preview h2 { font-size: 18px; font-weight: bold; margin-top: 25px; margin-bottom: 12px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+        .pdf-page-preview h3 { font-size: 14px; font-weight: bold; margin-top: 18px; margin-bottom: 8px; color: #333; }
+        .pdf-page-preview p { font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; text-align: justify; }
+        .pdf-page-preview ul { padding-left: 20px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.7; }
+        .pdf-page-preview li { margin-bottom: 6px; }
+        .pdf-page-preview table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
+        .pdf-page-preview th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 8px; font-weight: bold; text-align: center; }
+        .pdf-page-preview td { border: 1px solid #ddd; padding: 8px; line-height: 1.5; }
+      `;
+      container.appendChild(styleSheet);
+      document.body.appendChild(container);
+
+      const parserDiv = document.createElement('div');
+      parserDiv.innerHTML = aiReportContent;
+
+      const pageDivs: HTMLDivElement[] = [];
+      const customerNameLabel = selectedCustomer || '전체';
+      const monthLabel = selectedMonth || '전체';
+      const titleText = `유지보수 분석 리포트 - ${customerNameLabel}`;
+      const subtitleText = `대상 기간: ${monthLabel} | 작성 일자: ${new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+      const createNewPage = (pageNum: number) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page-preview';
+        
+        if (pageNum === 1) {
+          const title = document.createElement('h1');
+          title.innerText = titleText;
+          pageDiv.appendChild(title);
+
+          const sub = document.createElement('div');
+          sub.className = 'subtitle';
+          sub.innerText = subtitleText;
+          pageDiv.appendChild(sub);
+        } else {
+          const header = document.createElement('div');
+          header.className = 'pdf-header';
+          header.style.fontSize = '11px';
+          header.style.color = '#999';
+          header.style.borderBottom = '1px solid #eee';
+          header.style.paddingBottom = '5px';
+          header.style.marginBottom = '20px';
+          header.innerText = `${titleText} - 이어짐`;
+          pageDiv.appendChild(header);
+        }
+        
+        container.appendChild(pageDiv);
+        pageDivs.push(pageDiv);
+        return pageDiv;
+      };
+
+      const getElementFullHeight = (el: HTMLElement): number => {
+        const rectHeight = el.getBoundingClientRect().height;
+        const style = window.getComputedStyle(el);
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+        return rectHeight + marginTop + marginBottom;
+      };
+
+      let currentPageNum = 1;
+      let currentPage = createNewPage(currentPageNum);
+      const MAX_CONTENT_HEIGHT = 780;
+
+      let children = Array.from(parserDiv.childNodes);
+      if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
+        const firstChild = children[0] as HTMLElement;
+        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+          children = Array.from(firstChild.childNodes);
+        }
+      }
+
+      for (const child of children) {
+        if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
+          continue;
+        }
+
+        // 1. 수동 page-break 식별 및 카테고리별(2., 3., 4. 등) 강제 페이지 분할
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const el = child as HTMLElement;
+          const tagName = el.tagName.toLowerCase();
+          
+          const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
+          
+          let isNewCategory = false;
+          if (tagName === 'h2') {
+            const text = el.innerText || el.textContent || '';
+            isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
+          }
+
+          if (isPageBreak || isNewCategory) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
+            if (isPageBreak) {
+              continue;
+            }
+          }
+        }
+
+        const clone = child.cloneNode(true) as HTMLElement;
+        currentPage.appendChild(clone);
+        void currentPage.offsetHeight;
+
+        let contentHeight = 0;
+        for (const node of Array.from(currentPage.children)) {
+          const el = node as HTMLElement;
+          contentHeight += getElementFullHeight(el);
+        }
+
+        const contentChildrenCount = Array.from(currentPage.children).filter(
+          node => {
+            const el = node as HTMLElement;
+            return el.tagName.toLowerCase() !== 'h1' && 
+                   el.className !== 'subtitle' && 
+                   el.className !== 'pdf-header';
+          }
+        ).length;
+
+        if (contentHeight > MAX_CONTENT_HEIGHT && contentChildrenCount > 1) {
+          currentPage.removeChild(clone);
+          currentPageNum++;
+          currentPage = createNewPage(currentPageNum);
+          currentPage.appendChild(clone);
+          void currentPage.offsetHeight;
+        }
+      }
+
+      const resultHtmls = pageDivs.map(div => div.innerHTML);
+      document.body.removeChild(container);
+      setPreviewPages(resultHtmls);
+    }
+  }, [aiModalOpen, aiReportContent, selectedCustomer, selectedMonth]);
 
   useEffect(() => {
     const period = searchParams.get('period');
@@ -545,7 +706,17 @@ const AdminReportPage: React.FC = () => {
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
-      setAiReportContent(data.report);
+      let cleanReport = data.report || '';
+      cleanReport = cleanReport.replace(/추가적인 기술 지원 및 장애 문의 사항은 서비스 데스크로 즉시 연락해 주시기 바랍니다\.?/gi, '');
+      cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎ \(문의: [^)]+\)/gi, '');
+      cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎/gi, '');
+      cleanReport = cleanReport.replace(/기술지원\s*문의\s*:\s*.*$/gim, '');
+      cleanReport = cleanReport.replace(/기술\s*지원\s*문의\s*:\s*.*$/gim, '');
+      cleanReport = cleanReport.replace(/기술지원문의\s*:\s*.*$/gim, '');
+      cleanReport = cleanReport.replace(/문의\s*:\s*\d{2,4}[-\s]?\d{3,4}[-\s]?(?:\d{4}|XXXX)/gi, '');
+      cleanReport = cleanReport.replace(/문의\s*전화\s*:\s*.*$/gim, '');
+
+      setAiReportContent(cleanReport);
       setAiModalOpen(true);
     } catch (err: any) {
       console.error("AI Report Generation Error:", err);
@@ -555,37 +726,220 @@ const AdminReportPage: React.FC = () => {
     }
   };
 
-  const handleSaveAiReport = async () => {
+  const handleDownloadAiReport = async () => {
+    if (!aiReportContent) return;
     try {
-      setIsSaving(true);
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
+      const customerNameLabel = selectedCustomer || '전체';
+      const monthLabel = selectedMonth || '전체';
+      const filename = `${customerNameLabel}_유지보수_분석리포트_${monthLabel}.pdf`;
 
-      const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/generate-ai-report`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          customerName: selectedCustomer,
-          month: selectedMonth,
-          action: 'save',
-          content: aiReportContent
-        }),
+      // 1. 임시 컨테이너 생성 (layout 계산을 위해 absolute 및 left -9999px로 오프스크린 렌더링)
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '794px';
+      container.style.boxSizing = 'border-box';
+      
+      const styleSheet = document.createElement("style");
+      styleSheet.innerText = `
+        .pdf-page {
+          width: 794px;
+          height: 1123px;
+          background-color: #ffffff;
+          padding: 60px 50px 80px 50px;
+          box-sizing: border-box;
+          font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+          color: #333333;
+          position: relative;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .pdf-page h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
+        .pdf-page .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
+        .pdf-page h2 { font-size: 18px; font-weight: bold; margin-top: 25px; margin-bottom: 12px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
+        .pdf-page h3 { font-size: 14px; font-weight: bold; margin-top: 18px; margin-bottom: 8px; color: #333; }
+        .pdf-page p { font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; text-align: justify; }
+        .pdf-page ul { padding-left: 20px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.7; }
+        .pdf-page li { margin-bottom: 6px; }
+        .pdf-page table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
+        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 8px; font-weight: bold; text-align: center; }
+        .pdf-page td { border: 1px solid #ddd; padding: 8px; line-height: 1.5; }
+        .pdf-page .page-number {
+          position: absolute;
+          bottom: 30px;
+          left: 0;
+          right: 0;
+          text-align: center;
+          font-size: 11px;
+          color: #999999;
+        }
+      `;
+      container.appendChild(styleSheet);
+      document.body.appendChild(container);
+
+      // HTML을 임시 파서 엘리먼트에 파싱
+      const parserDiv = document.createElement('div');
+      parserDiv.innerHTML = aiReportContent;
+      
+      const pages: HTMLDivElement[] = [];
+      const titleText = `유지보수 분석 리포트 - ${customerNameLabel}`;
+      const subtitleText = `대상 기간: ${monthLabel} | 작성 일자: ${new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+
+      const createNewPage = (pageNum: number) => {
+        const pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page';
+        
+        if (pageNum === 1) {
+          const title = document.createElement('h1');
+          title.innerText = titleText;
+          pageDiv.appendChild(title);
+
+          const sub = document.createElement('div');
+          sub.className = 'subtitle';
+          sub.innerText = subtitleText;
+          pageDiv.appendChild(sub);
+        } else {
+          const header = document.createElement('div');
+          header.className = 'pdf-header';
+          header.style.fontSize = '11px';
+          header.style.color = '#999';
+          header.style.borderBottom = '1px solid #eee';
+          header.style.paddingBottom = '5px';
+          header.style.marginBottom = '20px';
+          header.innerText = `${titleText} - 이어짐`;
+          pageDiv.appendChild(header);
+        }
+        
+        const pageNumDiv = document.createElement('div');
+        pageNumDiv.className = 'page-number';
+        pageNumDiv.innerText = `- ${pageNum} -`;
+        pageDiv.appendChild(pageNumDiv);
+        
+        container.appendChild(pageDiv);
+        pages.push(pageDiv);
+        return pageDiv;
+      };
+
+      const getElementFullHeight = (el: HTMLElement): number => {
+        const rectHeight = el.getBoundingClientRect().height;
+        const style = window.getComputedStyle(el);
+        const marginTop = parseFloat(style.marginTop) || 0;
+        const marginBottom = parseFloat(style.marginBottom) || 0;
+        return rectHeight + marginTop + marginBottom;
+      };
+
+      let currentPageNum = 1;
+      let currentPage = createNewPage(currentPageNum);
+      const MAX_CONTENT_HEIGHT = 780; // 마진 포함 실 높이 제한
+
+      // 최상위 래퍼 div가 단일로 존재할 경우 내부 자식들을 직접 가져오도록 언래핑
+      let children = Array.from(parserDiv.childNodes);
+      if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
+        const firstChild = children[0] as HTMLElement;
+        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+          children = Array.from(firstChild.childNodes);
+        }
+      }
+      
+      for (const child of children) {
+        if (child.nodeType === Node.TEXT_NODE && !child.textContent?.trim()) {
+          continue;
+        }
+
+        // 1. 수동 page-break 식별 및 카테고리별(2., 3., 4. 등) 강제 페이지 분할
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          const el = child as HTMLElement;
+          const tagName = el.tagName.toLowerCase();
+          
+          const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
+          
+          let isNewCategory = false;
+          if (tagName === 'h2') {
+            const text = el.innerText || el.textContent || '';
+            isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
+          }
+
+          if (isPageBreak || isNewCategory) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
+            if (isPageBreak) {
+              continue;
+            }
+          }
+        }
+
+        // 2. 임시 렌더 및 자동 높이 초과 여부 측정
+        const clone = child.cloneNode(true) as HTMLElement;
+        currentPage.appendChild(clone);
+        
+        // 브라우저 렌더 트리 강제 갱신(reflow)
+        void currentPage.offsetHeight;
+
+        let contentHeight = 0;
+        for (const node of Array.from(currentPage.children)) {
+          const el = node as HTMLElement;
+          if (el.className !== 'page-number') {
+            contentHeight += getElementFullHeight(el);
+          }
+        }
+
+        // 현재 페이지에 포함된 실 콘텐츠 개수 측정 (헤더/페이지 번호 제외)
+        const contentChildrenCount = Array.from(currentPage.children).filter(
+          node => {
+            const el = node as HTMLElement;
+            return el.className !== 'page-number' && 
+                   el.tagName.toLowerCase() !== 'h1' && 
+                   el.className !== 'subtitle' && 
+                   el.className !== 'pdf-header';
+          }
+        ).length;
+
+        // 높이가 기준치를 초과하고 페이지에 이미 콘텐츠가 있는 경우에만 다음 페이지로 넘김
+        if (contentHeight > MAX_CONTENT_HEIGHT && contentChildrenCount > 1) {
+          currentPage.removeChild(clone);
+          currentPageNum++;
+          currentPage = createNewPage(currentPageNum);
+          currentPage.appendChild(clone);
+          void currentPage.offsetHeight;
+        }
+      }
+
+      // 최종 페이지 번호 텍스트 일괄 갱신 (- 1 / 3 -)
+      pages.forEach((page, idx) => {
+        const pageNumEl = page.querySelector('.page-number') as HTMLDivElement;
+        if (pageNumEl) {
+          pageNumEl.innerText = `- ${idx + 1} / ${pages.length} -`;
+        }
       });
 
-      const data = await response.json();
-      if (data.error) throw new Error(data.error);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
 
-      alert('리포트가 자료실에 성공적으로 저장되었습니다.');
-      setAiModalOpen(false);
+      for (let i = 0; i < pages.length; i++) {
+        if (i > 0) pdf.addPage();
+        
+        const canvas = await html2canvas(pages[i], {
+          scale: 2.2,
+          useCORS: true,
+          width: 794,
+          height: 1123,
+          windowWidth: 794,
+          windowHeight: 1123,
+          backgroundColor: '#ffffff'
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      }
+
+      document.body.removeChild(container);
+      pdf.save(filename);
     } catch (err: any) {
-      console.error("AI Report Save Error:", err);
-      alert(`저장 실패: ${err.message}`);
-    } finally {
-      setIsSaving(false);
+      console.error("AI Report PDF Generation Error:", err);
+      alert(`PDF 다운로드 실패: ${err.message}`);
     }
   };
 
@@ -1012,41 +1366,98 @@ const AdminReportPage: React.FC = () => {
       {/* AI 리포트 미리보기 모달 */}
       <Dialog 
         open={aiModalOpen} 
-        onClose={() => !isSaving && setAiModalOpen(false)}
-        maxWidth="md"
+        onClose={() => setAiModalOpen(false)}
+        maxWidth="lg"
         fullWidth
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
           <AiIcon color="secondary" />
-          AI 분석 리포트 초안 (미리보기)
+          AI 유지보수 분석 리포트 미리보기 (A4 레이아웃)
         </DialogTitle>
-        <DialogContent dividers>
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 2, display: 'block' }}>
-            * AI가 생성한 내용입니다. 필요시 내용을 수정한 후 저장하세요. 자료실(Google Drive)에 Google Doc 형식으로 저장됩니다.
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={15}
-            value={aiReportContent}
-            onChange={(e) => setAiReportContent(e.target.value)}
-            variant="outlined"
-            sx={{ 
-              '& .MuiOutlinedInput-root': { fontSize: '0.9rem', lineHeight: 1.6, fontFamily: 'monospace' }
-            }}
-          />
+        <DialogContent dividers sx={{ p: 0, bgcolor: '#f1f5f9' }}>
+          <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, overflowY: 'auto', maxHeight: '70vh' }}>
+            {previewPages.map((pageHtml, idx) => (
+              <Paper 
+                key={idx}
+                elevation={3}
+                sx={{ 
+                  width: '794px',
+                  height: '1123px',
+                  bgcolor: '#ffffff',
+                  padding: '60px 50px 80px 50px',
+                  boxSizing: 'border-box',
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  fontFamily: "'Malgun Gothic', '맑은 고딕', sans-serif",
+                  color: '#333333',
+                  flexShrink: 0,
+                  transformOrigin: 'top center',
+                  '@media (max-width: 850px)': {
+                    transform: 'scale(0.8)',
+                    mb: -25
+                  },
+                  '@media (max-width: 600px)': {
+                    transform: 'scale(0.5)',
+                    mb: -56
+                  },
+                  '& h1': { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', mb: 1, color: '#111' },
+                  '& .subtitle': { fontSize: '12px', textAlign: 'center', mb: 4, color: '#666666', borderBottom: '2px solid #673ab7', pb: 2 },
+                  '& .pdf-header': { fontSize: '11px', color: '#999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
+                  '& h2': { fontSize: '18px', fontWeight: 'bold', mt: 3, mb: 1.5, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 1 },
+                  '& h3': { fontSize: '14px', fontWeight: 'bold', mt: 2, mb: 1, color: '#333' },
+                  '& p': { fontSize: '13.5px', lineHeight: 1.7, mb: 1.5, textAlign: 'justify' },
+                  '& ul': { pl: 2.5, mb: 1.5, fontSize: '13.5px', lineHeight: 1.7 },
+                  '& li': { mb: 0.8 },
+                  '& table': { width: '100%', borderCollapse: 'collapse', my: 2, fontSize: '13px' },
+                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1, fontWeight: 'bold', textAlign: 'center' },
+                  '& td': { border: '1px solid #ddd', p: 1, lineHeight: 1.5 }
+                }}
+              >
+                {/* Content */}
+                <Box sx={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: pageHtml }} />
+
+                {/* Page Number */}
+                <Box 
+                  sx={{ 
+                    position: 'absolute',
+                    bottom: '30px',
+                    left: 0,
+                    right: 0,
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    color: '#999999'
+                  }}
+                >
+                  - {idx + 1} / {previewPages.length} -
+                </Box>
+              </Paper>
+            ))}
+          </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setAiModalOpen(false)} disabled={isSaving}>취소</Button>
+        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>닫기</Button>
           <Button 
             variant="contained" 
-            color="secondary" 
-            onClick={handleSaveAiReport}
-            disabled={isSaving}
-            startIcon={isSaving && <CircularProgress size={16} color="inherit" />}
-            sx={{ fontWeight: 'bold', px: 3, bgcolor: '#673ab7', '&:hover': { bgcolor: '#512da8' } }}
+            color="success" 
+            onClick={handleDownloadAiReport}
+            sx={{ fontWeight: 'bold', px: 3, borderRadius: 2 }}
           >
-            {isSaving ? '저장 중...' : '자료실에 저장'}
+            PC에 다운로드 (PDF)
+          </Button>
+          <Button 
+            variant="contained" 
+            color="secondary"
+            onClick={() => {
+              // HTML 태그 제거하여 텍스트만 복사
+              const tempElement = document.createElement('div');
+              tempElement.innerHTML = aiReportContent;
+              navigator.clipboard.writeText(tempElement.innerText || tempElement.textContent || '');
+              alert('리포트 내용이 클립보드에 복사되었습니다.');
+            }}
+            sx={{ fontWeight: 'bold', px: 3, borderRadius: 2 }}
+          >
+            내용 복사
           </Button>
         </DialogActions>
       </Dialog>
