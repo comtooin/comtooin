@@ -424,8 +424,8 @@ const AdminReportPage: React.FC = () => {
         setPage(1); // 필터 적용 시에만 페이지 리셋
       }
 
-      if (role === 'customer') {
-        // 거래처인 경우 다른 거래처 현황 데이터 노출 차단을 위해 클라이언트 측에서 해당 거래처 데이터만 집계
+      if (role === 'customer' || targetCustomer !== 'all') {
+        // 거래처인 경우 혹은 특정 거래처 필터가 선택된 경우 다른 거래처 현황 데이터 노출 차단/필터링을 위해 클라이언트 측에서 해당 거래처 데이터만 집계
         const statusCounts: Record<string, number> = {
           'processing': 0,
           'completed': 0
@@ -443,6 +443,7 @@ const AdminReportPage: React.FC = () => {
         requestsData?.forEach(r => {
           if (!r.created_at) return;
           const m = r.created_at.substring(0, 7); // YYYY-MM
+          if (currentYear && !m.startsWith(currentYear.toString())) return;
           if (!monthCounts[m]) {
             monthCounts[m] = { total: 0, pending: 0, completed: 0 };
           }
