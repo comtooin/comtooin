@@ -145,7 +145,11 @@ serve(async (req) => {
       }
 
       case "create-customer": {
-        const { customerId, loginId, loginEmail, password, name } = userData;
+        const customerId = userData.customerId || userData.customer_id;
+        const loginId = userData.loginId || userData.login_id;
+        const loginEmail = userData.loginEmail || userData.login_email;
+        const password = userData.password;
+        const name = userData.name;
         if (password.length < 6) {
           throw new Error("Password must be at least 6 characters long.");
         }
@@ -183,7 +187,8 @@ serve(async (req) => {
       }
 
       case "delete-customer": {
-        const { customerId, authUserId } = userData;
+        const customerId = userData.customerId || userData.customer_id;
+        const authUserId = userData.authUserId || userData.auth_user_id;
 
         // 1. Auth 사용자 삭제
         if (authUserId) {
@@ -210,7 +215,8 @@ serve(async (req) => {
       }
 
       case "reset-customer-password": {
-        const { authUserId, newPassword } = userData;
+        const authUserId = userData.authUserId || userData.auth_user_id;
+        const newPassword = userData.newPassword || userData.new_password;
         if (newPassword.length < 6) {
           throw new Error("New password must be at least 6 characters long.");
         }

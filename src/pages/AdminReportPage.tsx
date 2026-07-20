@@ -1123,14 +1123,15 @@ const AdminReportPage: React.FC = () => {
               disabled={userRole === 'customer'}
               sx={{ '& .MuiInputBase-root': { fontSize: '0.8125rem' } }}
             >
-              {userRole === 'customer' ? (
+              {userRole === 'customer' && (
                 <MenuItem value={selectedCustomer} sx={{ fontSize: '0.8125rem' }}>{selectedCustomer}</MenuItem>
-              ) : (
-                <>
-                  <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 거래처</MenuItem>
-                  {customers.map((name: string) => <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>)}
-                </>
               )}
+              {userRole !== 'customer' && (
+                <MenuItem value="all" sx={{ fontSize: '0.8125rem' }}>전체 거래처</MenuItem>
+              )}
+              {userRole !== 'customer' && customers.map((name: string) => (
+                <MenuItem key={name} value={name} sx={{ fontSize: '0.8125rem' }}>{name}</MenuItem>
+              ))}
             </TextField>
             <TextField 
               select 

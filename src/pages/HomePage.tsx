@@ -16,7 +16,10 @@ import { Helmet } from 'react-helmet-async';
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [customerOptions, setCustomerOptions] = useState<string[]>([]); 
-  const [staffOptions, setStaffOptions] = useState<string[]>([]); 
+  const [staffOptions, setStaffOptions] = useState<string[]>(() => {
+    const storedName = localStorage.getItem('adminName');
+    return storedName ? [storedName] : [];
+  });
   const [customerName, setCustomerName] = useState('');
   const [userName, setUserName] = useState('');
   const [requesterName, setRequesterName] = useState('');
