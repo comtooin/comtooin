@@ -1196,17 +1196,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {tabValue === 0 && (
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
-                {userRole !== 'customer' && (
-                  <>
-                    <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' } }}>
-                      전체 초기화
-                    </Button>
-                    <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
-                      CSV 업로드
-                      <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'hardware')} />
-                    </Button>
-                  </>
-                )}
+                <>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' } }}>
+                    전체 초기화
+                  </Button>
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
+                    CSV 업로드
+                    <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'hardware')} />
+                  </Button>
+                </>
                 <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('hardware')}>
                   엑셀 다운로드
                 </Button>
@@ -1233,7 +1231,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                           </TableSortLabel>
                         </TableCell>
                       ))}
-                      {userRole !== 'customer' && <TableCell align="center" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>}
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1261,37 +1259,35 @@ const AdminCustomerInventoryPage: React.FC = () => {
                             <span>{row.storage || '-'}</span>
                           </Tooltip>
                         </TableCell>
-                        {userRole !== 'customer' && (
-                          <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
-                            <Tooltip title="정보 수정">
-                              <IconButton 
-                                size="small" 
-                                color="primary" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEditModal(row, 'hardware');
-                                }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip title="삭제">
-                              <IconButton 
-                                size="small" 
-                                color="error" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDelete(row.id, 'hardware');
-                                }}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </TableCell>
-                        )}
+                        <TableCell align="center" sx={{ whiteSpace: 'nowrap' }}>
+                          <Tooltip title="정보 수정">
+                            <IconButton 
+                              size="small" 
+                              color="primary" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(row, 'hardware');
+                              }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="삭제">
+                            <IconButton 
+                              size="small" 
+                              color="error" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(row.id, 'hardware');
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     )) : (
-                      <TableRow><TableCell colSpan={userRole === 'customer' ? 6 : 7} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={7} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -1317,17 +1313,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {tabValue === 1 && (
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
-                {userRole !== 'customer' && (
-                  <>
-                    <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' } }}>
-                      전체 초기화
-                    </Button>
-                    <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
-                      CSV 업로드
-                      <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'software')} />
-                    </Button>
-                  </>
-                )}
+                <>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' } }}>
+                    전체 초기화
+                  </Button>
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
+                    CSV 업로드
+                    <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'software')} />
+                  </Button>
+                </>
                 <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('software')}>
                   엑셀 전체 다운로드
                 </Button>
@@ -1355,7 +1349,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                           </TableSortLabel>
                         </TableCell>
                       ))}
-                      {userRole !== 'customer' && <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>}
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap', width: 100 }}>관리</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -1373,27 +1367,25 @@ const AdminCustomerInventoryPage: React.FC = () => {
                         <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.department || '-'}</TableCell>
                         <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.user_name || '-'}</TableCell>
                         <TableCell sx={{ whiteSpace: 'nowrap' }}>{group.count} 개</TableCell>
-                        {userRole !== 'customer' && (
-                          <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                            <Tooltip title="이 PC의 모든 소프트웨어 삭제">
-                              <Button 
-                                variant="outlined" 
-                                color="error" 
-                                size="small" 
-                                startIcon={<DeleteSweepIcon />}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteByComputer(group.computer_name);
-                                }}
-                              >
-                                초기화
-                              </Button>
-                            </Tooltip>
-                          </TableCell>
-                        )}
+                        <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                          <Tooltip title="이 PC의 모든 소프트웨어 삭제">
+                            <Button 
+                              variant="outlined" 
+                              color="error" 
+                              size="small" 
+                              startIcon={<DeleteSweepIcon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteByComputer(group.computer_name);
+                              }}
+                            >
+                              초기화
+                            </Button>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     )) : (
-                      <TableRow><TableCell colSpan={userRole === 'customer' ? 3 : 4} align="center" sx={{py:3}}>소프트웨어 데이터가 없습니다.</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={4} align="center" sx={{py:3}}>소프트웨어 데이터가 없습니다.</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -1461,7 +1453,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>프로그램명</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>버전</TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>공급자</TableCell>
-                  {userRole !== 'customer' && <TableCell align="center" sx={{ width: 100, whiteSpace: 'nowrap' }}>관리</TableCell>}
+                  <TableCell align="center" sx={{ width: 100, whiteSpace: 'nowrap' }}>관리</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1470,19 +1462,17 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     <TableCell>{row.program_name}</TableCell>
                     <TableCell>{row.program_version}</TableCell>
                     <TableCell>{row.publisher}</TableCell>
-                    {userRole !== 'customer' && (
-                      <TableCell align="center">
-                        <IconButton size="small" color="primary" onClick={() => openEditModal(row, 'software')}>
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton size="small" color="error" onClick={() => handleDelete(row.id, 'software')}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    )}
+                    <TableCell align="center">
+                      <IconButton size="small" color="primary" onClick={() => openEditModal(row, 'software')}>
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDelete(row.id, 'software')}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 )) : (
-                  <TableRow><TableCell colSpan={userRole === 'customer' ? 3 : 4} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={4} align="center" sx={{py:3}}>데이터가 없습니다.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
