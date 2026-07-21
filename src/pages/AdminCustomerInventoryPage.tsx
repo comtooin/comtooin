@@ -1509,7 +1509,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>📌 기본 인프라 정보</span>
                 </Typography>
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflowX: 'auto' }}>
                   <Table size="small">
                     <TableBody>
                       {[
@@ -1520,10 +1520,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
                         { label: '운영체제 (OS)', value: selectedHardware.os }
                       ].map((item, idx) => (
                         <TableRow key={idx} sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2 }}>
+                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2, whiteSpace: 'nowrap' }}>
                             {item.label}
                           </TableCell>
-                          <TableCell sx={{ py: 1.2, pl: 2, fontWeight: item.highlight ? 'bold' : 'inherit' }}>
+                          <TableCell sx={{ py: 1.2, pl: 2, fontWeight: item.highlight ? 'bold' : 'inherit', whiteSpace: 'nowrap' }}>
                             {item.value || '-'}
                           </TableCell>
                         </TableRow>
@@ -1538,7 +1538,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
                   <span>⚙️ 상세 하드웨어 스펙</span>
                 </Typography>
-                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflow: 'hidden' }}>
+                <Paper variant="outlined" sx={{ borderRadius: 1.5, overflowX: 'auto' }}>
                   <Table size="small">
                     <TableBody>
                       {[
@@ -1554,7 +1554,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                                 const trimmedDrive = drive.trim();
                                 const isCDrive = trimmedDrive.includes('[C드라이브]');
                                 return (
-                                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.875rem' }}>
+                                  <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                                     {isCDrive ? (
                                       <span style={{ color: '#1976d2', fontWeight: 'bold' }}>{trimmedDrive}</span>
                                     ) : (
@@ -1568,10 +1568,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
                         }
                       ].map((item, idx) => (
                         <TableRow key={idx} sx={{ '&:last-child td': { borderBottom: 0 } }}>
-                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2 }}>
+                          <TableCell sx={{ width: 160, fontWeight: 'bold', bgcolor: '#f8fafc', borderRight: '1px solid #e2e8f0', py: 1.2, whiteSpace: 'nowrap' }}>
                             {item.label}
                           </TableCell>
-                          <TableCell sx={{ py: 1.2, pl: 2, wordBreak: 'break-all' }}>
+                          <TableCell sx={{ py: 1.2, pl: 2, whiteSpace: 'nowrap' }}>
                             {item.value}
                           </TableCell>
                         </TableRow>
@@ -1583,23 +1583,25 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', gap: 0.5 }}>
           {selectedHardware && (
             <>
               <Button 
                 variant="outlined" 
                 color="primary" 
+                size="small"
                 startIcon={<EditIcon />} 
                 onClick={() => {
                   setHwDetailOpen(false);
                   openEditModal(selectedHardware, 'hardware');
                 }}
               >
-                정보 수정
+                수정
               </Button>
               <Button 
                 variant="outlined" 
                 color="error" 
+                size="small"
                 startIcon={<DeleteIcon />}
                 onClick={() => {
                   if (window.confirm('정말 이 하드웨어 정보를 삭제하시겠습니까?')) {
@@ -1613,7 +1615,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
               </Button>
             </>
           )}
-          <Button variant="contained" onClick={() => setHwDetailOpen(false)}>닫기</Button>
+          <Button variant="contained" size="small" onClick={() => setHwDetailOpen(false)}>닫기</Button>
         </DialogActions>
       </Dialog>
 

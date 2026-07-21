@@ -804,45 +804,48 @@ const AdminCustomerPage: React.FC = () => {
             {accountSuccess && <Alert severity="success">{accountSuccess}</Alert>}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2, display: 'flex', justifyContent: isAdmin ? 'space-between' : 'flex-end' }}>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, display: 'flex', justifyContent: isAdmin ? 'space-between' : 'flex-end', gap: 1 }}>
           {isAdmin ? (
             <>
               {accountCustomer?.auth_user_id ? (
                 <Button 
                   variant="outlined" 
                   color="error" 
+                  size="small"
                   onClick={handleDeleteAccount} 
                   disabled={accountSubmitting}
                 >
-                  계정 삭제
+                  삭제
                 </Button>
               ) : <Box />}
               
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={() => setAccountDialogOpen(false)} color="inherit">닫기</Button>
+                <Button onClick={() => setAccountDialogOpen(false)} color="inherit" size="small">닫기</Button>
                 {accountCustomer?.auth_user_id ? (
                   <Button 
                     variant="contained" 
                     onClick={handleResetPassword} 
                     disabled={accountSubmitting || !accountPassword.trim()}
+                    size="small"
                     sx={{ fontWeight: 'bold' }}
                   >
-                    비밀번호 변경
+                    비번 변경
                   </Button>
                 ) : (
                   <Button 
                     variant="contained" 
                     onClick={handleCreateAccount} 
                     disabled={accountSubmitting || !accountLoginId.trim() || !accountPassword.trim()}
+                    size="small"
                     sx={{ fontWeight: 'bold' }}
                   >
-                    계정 생성
+                    생성
                   </Button>
                 )}
               </Box>
             </>
           ) : (
-            <Button onClick={() => setAccountDialogOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold' }}>닫기</Button>
+            <Button onClick={() => setAccountDialogOpen(false)} variant="contained" color="primary" size="small" sx={{ fontWeight: 'bold' }}>닫기</Button>
           )}
         </DialogActions>
       </Dialog>
