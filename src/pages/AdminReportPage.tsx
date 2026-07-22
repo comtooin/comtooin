@@ -1458,7 +1458,14 @@ const AdminReportPage: React.FC = () => {
         onClose={() => setAiModalOpen(false)}
         maxWidth="lg"
         fullWidth
-        fullScreen={isMobile}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'lg' }
+          }
+        }}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
           <AiIcon color="secondary" />
@@ -1559,7 +1566,14 @@ const AdminReportPage: React.FC = () => {
         maxWidth="lg" 
         fullWidth
         scroll="paper"
-        fullScreen={isMobile}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'lg' }
+          }
+        }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <FileUploadIcon color="primary" />

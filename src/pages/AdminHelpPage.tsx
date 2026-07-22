@@ -28,11 +28,12 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [activeTab, setActiveTab] = useState('request');
-  const [expandedTab, setExpandedTab] = useState<string | false>('request');
-
   const userRole = localStorage.getItem('adminRole');
   const isCustomer = userRole === 'customer';
+
+  const defaultTab = isCustomer ? 'dashboard' : 'request';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [expandedTab, setExpandedTab] = useState<string | false>(defaultTab);
 
   const allSections = [
     {
@@ -144,8 +145,10 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     }
   ];
 
-  // Show all help menus to everyone to avoid role mismatches and provide full system guidance
-  const sections = allSections;
+  // Filter help menus for customers to show only their relevant pages
+  const sections = isCustomer
+    ? allSections.filter(sec => sec.id === 'dashboard' || sec.id === 'inventory')
+    : allSections;
 
   const activeSection = sections.find(sec => sec.id === activeTab) || sections[0];
 
@@ -380,7 +383,21 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
 
   if (isDialog) {
     return (
-      <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
+      <Dialog 
+        open={true} 
+        onClose={onClose} 
+        maxWidth="lg" 
+        fullWidth 
+        style={{ zIndex: 1400 }}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'lg' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1}>
             <HelpIcon color="action" sx={{ fontSize: '1.25rem' }} />

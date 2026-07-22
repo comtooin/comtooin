@@ -160,7 +160,20 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   if (!selectedRequest) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={isMobile}>
+    <Dialog 
+      open={open} 
+      onClose={onClose} 
+      fullWidth 
+      maxWidth="md"
+      sx={{
+        '& .MuiDialog-paper': {
+          m: { xs: '12px 8px', sm: 3 },
+          maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+          width: { xs: 'calc(100% - 16px)' },
+          maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+        }
+      }}
+    >
       <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 정보</DialogTitle>
       <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
         <Stack spacing={1.5}>

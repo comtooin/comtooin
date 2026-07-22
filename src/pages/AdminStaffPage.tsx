@@ -451,11 +451,12 @@ const AdminStaffPage: React.FC = () => {
         onClose={() => setEditDialogOpen(false)} 
         fullWidth 
         maxWidth="sm"
-        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
-            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
           }
         }}
       >
@@ -528,7 +529,20 @@ const AdminStaffPage: React.FC = () => {
       </Dialog>
 
       {/* 비밀번호 초기화 다이얼로그 */}
-      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} fullWidth maxWidth="xs" fullScreen={isMobile}>
+      <Dialog 
+        open={resetDialogOpen} 
+        onClose={() => setResetDialogOpen(false)} 
+        fullWidth 
+        maxWidth="xs"
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <LockResetIcon color="action" sx={{ fontSize: '1.25rem' }} /> 비밀번호 초기화
         </DialogTitle>
@@ -559,11 +573,12 @@ const AdminStaffPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
-        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
-            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
           }
         }}
       >

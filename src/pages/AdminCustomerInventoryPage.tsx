@@ -1437,7 +1437,21 @@ const AdminCustomerInventoryPage: React.FC = () => {
       </Paper>
 
       {/* 정보 수정 팝업 (하드웨어/소프트웨어 공통) */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
+      <Dialog 
+        open={openModal} 
+        onClose={() => setOpenModal(false)} 
+        maxWidth="sm" 
+        fullWidth 
+        style={{ zIndex: 1400 }}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           {modalType === 'hardware' ? (
             <ComputerIcon color="action" sx={{ fontSize: '1.25rem' }} />
@@ -1477,7 +1491,21 @@ const AdminCustomerInventoryPage: React.FC = () => {
       </Dialog>
 
       {/* 소프트웨어 상세 목록 팝업 */}
-      <Dialog open={swDetailOpen} onClose={() => setSwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }} fullScreen={isMobile}>
+      <Dialog 
+        open={swDetailOpen} 
+        onClose={() => setSwDetailOpen(false)} 
+        maxWidth="md" 
+        fullWidth 
+        style={{ zIndex: 1300 }}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <SettingsIcon color="action" sx={{ fontSize: '1.25rem' }} />
           <span>[{selectedComputer}] 설치된 소프트웨어 상세</span>
@@ -1531,7 +1559,21 @@ const AdminCustomerInventoryPage: React.FC = () => {
         </DialogActions>
       </Dialog>
       {/* 하드웨어 상세 정보 팝업 */}
-      <Dialog open={hwDetailOpen} onClose={() => setHwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }} fullScreen={isMobile}>
+      <Dialog 
+        open={hwDetailOpen} 
+        onClose={() => setHwDetailOpen(false)} 
+        maxWidth="md" 
+        fullWidth 
+        style={{ zIndex: 1300 }}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
           <Box display="flex" alignItems="center" gap={1}>
             <ComputerIcon color="action" sx={{ fontSize: '1.25rem' }} />
@@ -1657,7 +1699,20 @@ const AdminCustomerInventoryPage: React.FC = () => {
       </Dialog>
 
       {/* AI 리포트 모달 */}
-      <Dialog open={aiModalOpen} onClose={() => setAiModalOpen(false)} maxWidth="lg" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={aiModalOpen} 
+        onClose={() => setAiModalOpen(false)} 
+        maxWidth="lg" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'lg' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <AiIcon color="action" sx={{ fontSize: '1.25rem' }} /> AI 자산 분석 리포트 미리보기 (A4 레이아웃)
         </DialogTitle>

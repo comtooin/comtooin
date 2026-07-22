@@ -279,7 +279,20 @@ const SubmissionDetailPage: React.FC = () => {
       </Paper>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={openDeleteDialog} 
+        onClose={() => setOpenDeleteDialog(false)} 
+        maxWidth="sm" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold' }}>접수 내역 삭제</DialogTitle>
         <DialogContent dividers>
           <DialogContentText sx={{ mb: 2 }}>

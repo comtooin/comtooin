@@ -425,7 +425,20 @@ const AdminSchedulePage: React.FC = () => {
       </Paper>
 
       {/* 등록 팝업 */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={open} 
+        onClose={() => setOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'md' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
           <span>{formData.id ? '일정 수정' : `${formData.date} 일정 등록`}</span>
@@ -496,7 +509,20 @@ const AdminSchedulePage: React.FC = () => {
       </Dialog>
 
       {/* 상세 보기 팝업 */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={detailOpen} 
+        onClose={() => setDetailOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+          }
+        }}
+      >
         {selectedEvent && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -309,7 +309,14 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
         maxWidth="xs"
         fullWidth
         style={{ zIndex: 2100 }}
-        fullScreen={isMobile}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+          }
+        }}
       >
         <DialogTitle fontWeight="bold">비밀번호 변경 완료</DialogTitle>
         <DialogContent>
@@ -334,7 +341,21 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
 
   if (isDialog) {
     return (
-      <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
+      <Dialog 
+        open={true} 
+        onClose={onClose} 
+        maxWidth="sm" 
+        fullWidth 
+        style={{ zIndex: 1400 }}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1}>
             <AccountCircleIcon color="action" sx={{ fontSize: '1.25rem' }} />

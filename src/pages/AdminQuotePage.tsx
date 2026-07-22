@@ -603,7 +603,20 @@ const AdminQuotePage: React.FC = () => {
       </Box>
 
       {/* 텍스트 견적 자동입력 모달 */}
-      <Dialog open={pasteDialogOpen} onClose={() => setPasteDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={pasteDialogOpen} 
+        onClose={() => setPasteDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold' }}>텍스트 견적 자동입력</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="text.secondary" gutterBottom sx={{ lineHeight: 1.5 }}>
@@ -644,7 +657,20 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       </Dialog>
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="lg" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={previewOpen} 
+        onClose={() => setPreviewOpen(false)} 
+        maxWidth="lg" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'lg' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           견적서 인쇄 미리보기
         </DialogTitle>
@@ -815,7 +841,20 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       </Dialog>
 
       {/* Save Template Dialog */}
-      <Dialog open={!!newTemplateName || saveDialogOpen} onClose={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} maxWidth="xs" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={!!newTemplateName || saveDialogOpen} 
+        onClose={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} 
+        maxWidth="xs" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold' }}>견적 템플릿 저장</DialogTitle>
         <DialogContent dividers>
           <TextField
@@ -835,7 +874,20 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       </Dialog>
 
       {/* Load Template Dialog */}
-      <Dialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
+      <Dialog 
+        open={loadDialogOpen} 
+        onClose={() => setLoadDialogOpen(false)} 
+        maxWidth="sm" 
+        fullWidth
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'sm' }
+          }
+        }}
+      >
         <DialogTitle sx={{ fontWeight: 'bold' }}>저장된 견적 템플릿</DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
           {templates.length === 0 ? (

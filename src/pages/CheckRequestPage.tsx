@@ -233,7 +233,20 @@ const CheckRequestPage: React.FC = () => {
       )}
 
       {/* 상세 보기 다이얼로그 (표준화) */}
-      <Dialog open={selectedRequest !== null} onClose={() => setSelectedRequest(null)} fullWidth maxWidth="md" fullScreen={isMobile}>
+      <Dialog 
+        open={selectedRequest !== null} 
+        onClose={() => setSelectedRequest(null)} 
+        fullWidth 
+        maxWidth="md"
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '12px 8px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 16px)' },
+            maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+          }
+        }}
+      >
         {selectedRequest && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

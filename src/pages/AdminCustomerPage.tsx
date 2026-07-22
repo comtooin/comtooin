@@ -625,11 +625,12 @@ const AdminCustomerPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
-        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
-            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
           }
         }}
       >
@@ -774,7 +775,14 @@ const AdminCustomerPage: React.FC = () => {
         onClose={() => setAccountDialogOpen(false)} 
         maxWidth="xs" 
         fullWidth
-        fullScreen={isMobile}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+          }
+        }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <VpnKeyIcon color="action" sx={{ fontSize: '1.25rem' }} /> {accountCustomer?.name} 계정 {isAdmin ? '관리' : '조회'}
@@ -870,11 +878,12 @@ const AdminCustomerPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
-        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
-            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
           }
         }}
       >
