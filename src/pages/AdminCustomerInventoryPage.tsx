@@ -1080,24 +1080,37 @@ const AdminCustomerInventoryPage: React.FC = () => {
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
 
       {/* PC 자산 수집기 안내 */}
-      <Paper variant="outlined" sx={{ p: 1.8, mb: 3, borderRadius: 2, bgcolor: '#f8fafc', borderLeft: '4px solid #1976d2' }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <InfoIcon color="primary" sx={{ fontSize: 18 }} />
-            <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary', whiteSpace: 'nowrap' }}>
-              자산 수집 가이드:
+      <Paper variant="outlined" sx={{ p: 1.5, mb: 3, borderRadius: 2, bgcolor: '#f8fafc', borderLeft: '4px solid #1976d2' }}>
+        {/* 데스크톱/태블릿 화면 */}
+        <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Stack direction="row" spacing={1} alignItems="center">
+              <InfoIcon color="primary" sx={{ fontSize: 18 }} />
+              <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary', whiteSpace: 'nowrap' }}>
+                자산 수집 가이드:
+              </Typography>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              1. <strong>[자산 수집기 다운로드]</strong> 버튼 클릭
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              2. 파일 실행 (크롬 경고 시 <strong>[다운로드 허용/유지]</strong> 선택)
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              3. 완료 시 5초 내 대시보드 실시간 자동 등록
             </Typography>
           </Stack>
-          <Typography variant="caption" color="text.secondary">
-            1. 우측 상단 <strong>[자산 수집기 다운로드]</strong> 실행
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            2. 파일 실행 (크롬 경고 시 <strong>[다운로드 허용/유지]</strong> 선택)
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            3. 분석 완료 시 5초 내 대시보드 실시간 자동 등록
-          </Typography>
-        </Stack>
+        </Box>
+
+        {/* 모바일 화면 */}
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <InfoIcon color="primary" sx={{ fontSize: 18, flexShrink: 0 }} />
+            <Typography variant="caption" color="text.secondary">
+              수집기 실행은 <strong>Windows PC</strong>에서 가능하며, 완료 시 5초 내에 목록이 자동 등록됩니다.
+            </Typography>
+          </Stack>
+        </Box>
       </Paper>
 
       {/* 모바일 통계 접기/펼치기 토글 버튼 */}
