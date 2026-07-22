@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
   DialogContent, TextField, DialogActions, MenuItem, Select, FormControl, 
-  InputLabel, CircularProgress, Alert, Divider, Stack, Chip, useMediaQuery, useTheme,
+  InputLabel, Alert, Divider, Stack, Chip, useMediaQuery, useTheme,
   Checkbox, FormControlLabel, Autocomplete, Grid, Tooltip
 } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
