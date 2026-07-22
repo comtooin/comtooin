@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControlLabel,
-  useTheme, useMediaQuery
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControlLabel
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -39,8 +38,6 @@ interface Customer {
 }
 
 const AdminCustomerPage: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);

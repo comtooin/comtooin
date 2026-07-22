@@ -3,7 +3,7 @@ import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, FormControl, InputLabel,
-  Tooltip, useTheme, useMediaQuery
+  Tooltip
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -30,8 +30,6 @@ interface Staff {
 }
 
 const AdminStaffPage: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [staffs, setStaffs] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

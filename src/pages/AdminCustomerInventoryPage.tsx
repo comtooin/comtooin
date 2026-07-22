@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, Stack, Button, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel,
-  useTheme, useMediaQuery
+  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -56,8 +55,6 @@ interface Customer {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const AdminCustomerInventoryPage: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   

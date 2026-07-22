@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Typography, Box, Paper, CircularProgress, Button,
-  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider,
-  useTheme, useMediaQuery
+  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider
 } from '@mui/material';
 import {
   Assignment as AssignmentIcon,
@@ -14,8 +13,6 @@ import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 
 
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userRole = localStorage.getItem('adminRole');
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);

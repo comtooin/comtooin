@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Paper, TextField, Button, Stack, Alert, CircularProgress, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
-  useTheme, useMediaQuery
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton
 } from '@mui/material';
 import { AccountCircle as AccountCircleIcon, Lock as LockIcon, Close as CloseIcon, Person as PersonIcon } from '@mui/icons-material';
 import { supabase } from '../api';
@@ -15,8 +14,6 @@ interface AdminProfileProps {
 }
 
 const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClose }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');

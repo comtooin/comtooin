@@ -3,8 +3,7 @@ import {
   Container, Typography, Box, Paper, TextField, Button, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Grid, Divider, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, ListItemText, ListItemButton, Collapse, Stack,
-  useTheme, useMediaQuery
+  List, ListItem, ListItemText, ListItemButton, Collapse, Stack
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -30,8 +29,6 @@ interface QuoteItem {
 }
 
 const AdminQuotePage: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [rawText, setRawText] = useState('');
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [globalMargin, setGlobalMargin] = useState<number>(15);
