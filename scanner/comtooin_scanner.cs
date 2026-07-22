@@ -73,16 +73,29 @@ namespace ComtooinScanner
 
     public class ScannerForm : Form
     {
-        private static readonly string LOGO_BASE64 = "LOGO_BASE64_PLACEHOLDER";
-
         private static Image GetLogoImage()
         {
             try
             {
-                byte[] imageBytes = Convert.FromBase64String(LOGO_BASE64);
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(imageBytes))
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (System.IO.Stream stream = assembly.GetManifestResourceStream("comtooin_favicon.png"))
                 {
-                    return Image.FromStream(ms);
+                    if (stream != null)
+                    {
+                        using (Bitmap srcBmp = new Bitmap(stream))
+                        {
+                            Bitmap destBmp = new Bitmap(30, 30, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                            using (Graphics g = Graphics.FromImage(destBmp))
+                            {
+                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                g.DrawImage(srcBmp, 0, 0, 30, 30);
+                            }
+                            return destBmp;
+                        }
+                    }
                 }
             }
             catch { }
@@ -93,13 +106,25 @@ namespace ComtooinScanner
         {
             try
             {
-                byte[] imageBytes = Convert.FromBase64String(LOGO_BASE64);
-                using (System.IO.MemoryStream ms = new System.IO.MemoryStream(imageBytes))
+                System.Reflection.Assembly assembly = System.Reflection.Assembly.GetExecutingAssembly();
+                using (System.IO.Stream stream = assembly.GetManifestResourceStream("comtooin_favicon.png"))
                 {
-                    using (Bitmap bmp = new Bitmap(ms))
+                    if (stream != null)
                     {
-                        IntPtr hicon = bmp.GetHicon();
-                        return Icon.FromHandle(hicon);
+                        using (Bitmap srcBmp = new Bitmap(stream))
+                        {
+                            Bitmap destBmp = new Bitmap(16, 16, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+                            using (Graphics g = Graphics.FromImage(destBmp))
+                            {
+                                g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.HighQualityBicubic;
+                                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.HighQuality;
+                                g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.HighQuality;
+                                g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighQuality;
+                                g.DrawImage(srcBmp, 0, 0, 16, 16);
+                            }
+                            IntPtr hicon = destBmp.GetHicon();
+                            return Icon.FromHandle(hicon);
+                        }
                     }
                 }
             }
@@ -124,7 +149,7 @@ namespace ComtooinScanner
             this.customerId = custId;
             this.customerName = custName;
 
-            this.Text = "컴투인 (COMTOOIN) PC 자산 조사";
+            this.Text = "컴투인 (COMTOOIN) PC 자산 수집기";
             this.Size = new Size(460, 480);
             this.StartPosition = FormStartPosition.CenterScreen;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
@@ -160,7 +185,7 @@ namespace ComtooinScanner
 
             // Title Label
             Label lblTitle = new Label();
-            lblTitle.Text = "컴투인 PC 자산 조사";
+            lblTitle.Text = "컴투인 PC 자산 수집기";
             lblTitle.Font = new Font("Malgun Gothic", 15F, FontStyle.Bold);
             lblTitle.ForeColor = Color.FromArgb(30, 58, 138); // #1e3a8a
             lblTitle.Location = new Point(56, 22);
@@ -245,7 +270,7 @@ namespace ComtooinScanner
 
             // Scan Button
             btnScan = new Button();
-            btnScan.Text = "PC 자산 조사 및 등록 시작";
+            btnScan.Text = "PC 자산수집 및 등록 시작";
             btnScan.BackColor = Color.FromArgb(37, 99, 235); // #2563eb
             btnScan.ForeColor = Color.White;
             btnScan.Font = new Font("Malgun Gothic", 10F, FontStyle.Bold);

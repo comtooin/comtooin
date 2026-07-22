@@ -22,6 +22,7 @@ import {
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import Papa from 'papaparse';
+import JSZip from 'jszip';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -448,7 +449,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const handleDownloadExe = async () => {
     try {
       const response = await fetch(`/comtooin_scanner.exe?t=${new Date().getTime()}`);
-      if (!response.ok) throw new Error('조사용 프로그램을 로드하지 못했습니다.');
+      if (!response.ok) throw new Error('자산 수집기 파일을 로드하지 못했습니다.');
       const arrayBuffer = await response.arrayBuffer();
 
       // Supabase 설정 및 거래처 정보 동적 치환
@@ -472,7 +473,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `comtooin_scanner_${customerName}.exe`;
+      link.download = `comtooin_collector_${customerName}.exe`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1070,7 +1071,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             startIcon={<FileDownloadIcon />} 
             onClick={handleDownloadExe}
           >
-            조사용 프로그램 다운로드
+            자산 수집기 다운로드
           </Button>
         </Stack>
       </Box>
@@ -1078,30 +1079,24 @@ const AdminCustomerInventoryPage: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccess('')}>{success}</Alert>}
 
-      {/* PC 자산 조사용 수집 프로그램 안내 */}
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 2, bgcolor: '#f8fafc', borderLeft: '5px solid #1976d2' }}>
-        <Stack direction="row" spacing={2} alignItems="flex-start">
-          <InfoIcon color="primary" sx={{ mt: 0.3 }} />
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              PC 자산 조사용 수집 프로그램 안내
+      {/* PC 자산 수집기 안내 */}
+      <Paper variant="outlined" sx={{ p: 1.8, mb: 3, borderRadius: 2, bgcolor: '#f8fafc', borderLeft: '4px solid #1976d2' }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <InfoIcon color="primary" sx={{ fontSize: 18 }} />
+            <Typography variant="body2" fontWeight="bold" sx={{ color: 'text.primary', whiteSpace: 'nowrap' }}>
+              자산 수집 가이드:
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, lineHeight: 1.6 }}>
-              사내 PC의 소프트웨어 라이선스 및 하드웨어 사양 정보를 자동으로 수집하기 위한 프로그램입니다.<br />
-              다운로드하여 아래 3단계에 따라 실행하시면 이 페이지에 자동으로 PC 자산 목록이 등록 및 반영됩니다.
-            </Typography>
-            <Stack spacing={0.8} sx={{ pl: 0.5 }}>
-              <Typography variant="caption" color="text.secondary" display="block">
-                • <strong>Step 1.</strong> 우측 상단의 <strong>[조사용 프로그램 다운로드]</strong> 버튼을 클릭하여 파일(<code>comtooin_scanner.exe</code>)을 저장합니다.
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block">
-                • <strong>Step 2.</strong> 다운로드된 파일을 더블 클릭하여 실행합니다. (실행 시 백신이나 OS 보안 경고가 발생하는 경우 '실행' 또는 '허용'을 선택해 주십시오.)
-              </Typography>
-              <Typography variant="caption" color="text.secondary" display="block">
-                • <strong>Step 3.</strong> 프로그램이 자동으로 분석을 마친 뒤 결과를 전송하며, 본 페이지의 자산관리 대시보드에 즉시 갱신됩니다.
-              </Typography>
-            </Stack>
-          </Box>
+          </Stack>
+          <Typography variant="caption" color="text.secondary">
+            1. 우측 상단 <strong>[자산 수집기 다운로드]</strong> 실행
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            2. 파일 실행 (크롬 경고 시 <strong>[다운로드 허용/유지]</strong> 선택)
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            3. 분석 완료 시 5초 내 대시보드 실시간 자동 등록
+          </Typography>
         </Stack>
       </Paper>
 
