@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Typography, TextField, Button, Box, Paper, CircularProgress, Alert, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText, Stack, Container
+  Dialog, DialogTitle, DialogContent, DialogActions, Grid, Chip, List, ListItem, ListItemText, DialogContentText, Stack, Container,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { ReceiptLong as ReceiptLongIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
 import { supabase } from '../api';
@@ -29,6 +30,8 @@ interface IRequest {
 }
 
 const CheckRequestPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [password, setPassword] = useState('');
@@ -230,7 +233,7 @@ const CheckRequestPage: React.FC = () => {
       )}
 
       {/* 상세 보기 다이얼로그 (표준화) */}
-      <Dialog open={selectedRequest !== null} onClose={() => setSelectedRequest(null)} fullWidth maxWidth="md">
+      <Dialog open={selectedRequest !== null} onClose={() => setSelectedRequest(null)} fullWidth maxWidth="md" fullScreen={isMobile}>
         {selectedRequest && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

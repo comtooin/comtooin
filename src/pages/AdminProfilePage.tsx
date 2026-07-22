@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, Box, Paper, TextField, Button, Stack, Alert, CircularProgress, Divider,
-  Dialog, DialogTitle, DialogContent, DialogActions, IconButton
+  Dialog, DialogTitle, DialogContent, DialogActions, IconButton,
+  useTheme, useMediaQuery
 } from '@mui/material';
-import { AccountCircle as AccountCircleIcon, Lock as LockIcon, Close as CloseIcon } from '@mui/icons-material';
+import { AccountCircle as AccountCircleIcon, Lock as LockIcon, Close as CloseIcon, Person as PersonIcon } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,8 @@ interface AdminProfileProps {
 }
 
 const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClose }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -174,7 +177,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
     navigate('/admin/login');
   };
 
-  if (loading) {
+  if (loading && !isDialog) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '30vh' }}>
         <CircularProgress />
@@ -187,8 +190,8 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
       {error && <Alert severity="error" variant="outlined">{error}</Alert>}
 
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
-        <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, color: 'primary.main' }}>
-          👤 기본 회원 정보
+        <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
+          <PersonIcon color="action" sx={{ fontSize: '1.15rem' }} /> 기본 회원 정보
         </Typography>
         <Stack spacing={2}>
           <TextField 
@@ -254,7 +257,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
 
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
         <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
-          <LockIcon fontSize="small" /> 비밀번호 변경
+          <LockIcon color="action" sx={{ fontSize: '1.15rem' }} /> 비밀번호 변경
         </Typography>
 
         {isAdminAccount ? (
@@ -306,6 +309,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
         maxWidth="xs"
         fullWidth
         style={{ zIndex: 2100 }}
+        fullScreen={isMobile}
       >
         <DialogTitle fontWeight="bold">비밀번호 변경 완료</DialogTitle>
         <DialogContent>
@@ -330,16 +334,22 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
 
   if (isDialog) {
     return (
-      <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth style={{ zIndex: 1400 }}>
+      <Dialog open={true} onClose={onClose} maxWidth="sm" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1}>
-            <AccountCircleIcon color="primary" />
+            <AccountCircleIcon color="action" sx={{ fontSize: '1.25rem' }} />
             <span>내 정보 및 보안 설정</span>
           </Box>
           <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 2.5, bgcolor: '#f8fafc' }}>
-          {profileContent}
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '20vh' }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            profileContent
+          )}
         </DialogContent>
       </Dialog>
     );

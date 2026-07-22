@@ -3,7 +3,7 @@ import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid,
   Dialog, DialogTitle, DialogContent, DialogActions, MenuItem, Select, FormControl, InputLabel,
-  Tooltip
+  Tooltip, useTheme, useMediaQuery
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -30,6 +30,8 @@ interface Staff {
 }
 
 const AdminStaffPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [staffs, setStaffs] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -118,8 +120,8 @@ const AdminStaffPage: React.FC = () => {
       setNewPassword('');
       setNewRole('member');
       setNewPhone('');
+      alert('새로운 멤버가 등록되었습니다.');
       setRegisterOpen(false);
-      setSuccess('새로운 멤버가 등록되었습니다.');
       fetchStaffs();
     } catch (err: any) {
       setError(err.message || '멤버 추가 중 오류가 발생했습니다.');
@@ -162,8 +164,8 @@ const AdminStaffPage: React.FC = () => {
         await supabase.from('staff').update({ phone: editingStaff.phone.trim() }).eq('id', editingStaff.id);
       }
 
+      alert('멤버 정보가 수정되었습니다.');
       setEditDialogOpen(false);
-      setSuccess('멤버 정보가 수정되었습니다.');
       fetchStaffs();
     } catch (err: any) {
       setError(err.message || '멤버 수정 중 오류가 발생했습니다.');
@@ -197,10 +199,10 @@ const AdminStaffPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      const tempPassword = resetPassword; 
+      const tempPassword = resetPassword;
+      alert(`'${resettingStaff?.name}' 멤버의 비밀번호가 [ ${tempPassword} ] (으)로 초기화되었습니다.`);
       setResetDialogOpen(false);
       setResetPassword('');
-      setSuccess(`'${resettingStaff?.name}' 멤버의 비밀번호가 [ ${tempPassword} ] (으)로 초기화되었습니다.`);
     } catch (err: any) {
       setError(err.message || '비밀번호 초기화 중 오류가 발생했습니다.');
     } finally {
@@ -233,7 +235,7 @@ const AdminStaffPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      setSuccess('멤버가 삭제되었습니다.');
+      alert('멤버가 삭제되었습니다.');
       fetchStaffs();
     } catch (err: any) {
       setError(err.message || '멤버 삭제 중 오류가 발생했습니다.');
@@ -444,8 +446,22 @@ const AdminStaffPage: React.FC = () => {
       </Grid>
 
       {/* 수정 다이얼로그 */}
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)} fullWidth maxWidth="sm">
-        <DialogTitle fontWeight="bold">멤버 정보 수정</DialogTitle>
+      <Dialog 
+        open={editDialogOpen} 
+        onClose={() => setEditDialogOpen(false)} 
+        fullWidth 
+        maxWidth="sm"
+        fullScreen={isMobile}
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
+            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <PeopleIcon color="action" sx={{ fontSize: '1.25rem' }} /> 멤버 정보 수정
+        </DialogTitle>
         <DialogContent dividers>
           <Box component="form" onSubmit={(e) => { e.preventDefault(); handleUpdateStaff(); }} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
@@ -505,15 +521,17 @@ const AdminStaffPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setEditDialogOpen(false)} color="inherit">취소</Button>
-          <Button variant="contained" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold' }}>저장하기</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setEditDialogOpen(false)} variant="outlined" color="inherit">취소</Button>
+          <Button variant="contained" color="primary" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold' }}>저장</Button>
         </DialogActions>
       </Dialog>
 
       {/* 비밀번호 초기화 다이얼로그 */}
-      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} fullWidth maxWidth="xs">
-        <DialogTitle fontWeight="bold">비밀번호 초기화</DialogTitle>
+      <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} fullWidth maxWidth="xs" fullScreen={isMobile}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <LockResetIcon color="action" sx={{ fontSize: '1.25rem' }} /> 비밀번호 초기화
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2" sx={{ mb: 2, mt: 1 }}>
             <strong>{resettingStaff?.name}</strong> 멤버의 새로운 비밀번호를 입력하세요.
@@ -541,15 +559,16 @@ const AdminStaffPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
+        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: 1.5, sm: 3 },
-            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
+            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
           }
         }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <PersonAddIcon /> 새 멤버 등록
+          <PeopleIcon color="action" sx={{ fontSize: '1.25rem' }} /> 새 멤버 등록
         </DialogTitle>
         <DialogContent dividers>
           <Box component="form" onSubmit={handleAddStaff} sx={{ mt: 1 }}>
@@ -641,15 +660,16 @@ const AdminStaffPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setRegisterOpen(false)} color="inherit">취소</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">취소</Button>
           <Button 
             variant="contained" 
+            color="primary"
             onClick={handleAddStaff} 
             disabled={submitting || !newName.trim() || !newEmail.trim() || !newUsername.trim() || !newPassword.trim()}
             sx={{ fontWeight: 'bold' }}
           >
-            등록하기
+            저장
           </Button>
         </DialogActions>
       </Dialog>

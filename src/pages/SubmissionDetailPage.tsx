@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, CircularProgress, Alert,
-  Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Stack, Divider
+  Grid, Chip, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, TextField, Stack, Divider,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { 
   CheckCircle as CheckCircleIcon,
@@ -50,6 +51,8 @@ const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' => {
 };
 
 const SubmissionDetailPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [request, setRequest] = useState<IRequest | null>(null);
@@ -276,7 +279,7 @@ const SubmissionDetailPage: React.FC = () => {
       </Paper>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog open={openDeleteDialog} onClose={() => setOpenDeleteDialog(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>접수 내역 삭제</DialogTitle>
         <DialogContent dividers>
           <DialogContentText sx={{ mb: 2 }}>

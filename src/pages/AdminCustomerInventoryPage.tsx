@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   Container, Typography, Box, Paper, Stack, Button, Tabs, Tab,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel
+  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -15,7 +16,8 @@ import {
   DeleteSweep as DeleteSweepIcon,
   AutoAwesome as AiIcon,
   BarChart as BarChartIcon,
-  Info as InfoIcon
+  Info as InfoIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
@@ -54,6 +56,8 @@ interface Customer {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 const AdminCustomerInventoryPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
@@ -146,8 +150,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
       )
       .subscribe();
 
+    // 실시간 CDC 미지원 또는 웹소켓 차단 환경 대비 5초 주기 폴링
+    const pollInterval = setInterval(() => {
+      fetchInventoryData(true);
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollInterval);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -435,27 +445,34 @@ const AdminCustomerInventoryPage: React.FC = () => {
     event.target.value = '';
   };
 
-  const handleDownloadHta = async () => {
+  const handleDownloadExe = async () => {
     try {
-      const response = await fetch(`/comtooin_scanner.hta?t=${new Date().getTime()}`);
+      const response = await fetch(`/comtooin_scanner.exe?t=${new Date().getTime()}`);
       if (!response.ok) throw new Error('조사용 프로그램을 로드하지 못했습니다.');
-      let text = await response.text();
+      const arrayBuffer = await response.arrayBuffer();
 
       // Supabase 설정 및 거래처 정보 동적 치환
       const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
       const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || '';
+      const customerId = id || '';
+      const customerName = customer?.name || '고객사';
 
-      text = text.replace(/CUSTOMER_ID_PLACEHOLDER/g, id || '');
-      text = text.replace(/CUSTOMER_NAME_PLACEHOLDER/g, customer?.name || '고객사');
-      text = text.replace(/SUPABASE_URL_PLACEHOLDER/g, supabaseUrl);
-      text = text.replace(/SUPABASE_KEY_PLACEHOLDER/g, supabaseAnonKey);
+      const configStr = `\nCT_CONFIG_START|${supabaseUrl}|${supabaseAnonKey}|${customerId}|${customerName}|CT_CONFIG_END`;
+      
+      const encoder = new TextEncoder();
+      const configBytes = encoder.encode(configStr);
+      
+      const exeBytes = new Uint8Array(arrayBuffer);
+      const finalBytes = new Uint8Array(exeBytes.length + configBytes.length);
+      finalBytes.set(exeBytes, 0);
+      finalBytes.set(configBytes, exeBytes.length);
 
-      const blob = new Blob([text], { type: 'application/octet-stream' });
+      const blob = new Blob([finalBytes], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
       
       const link = document.createElement('a');
       link.href = url;
-      link.download = `comtooin_scanner_${customer?.name || '고객사'}.hta`;
+      link.download = `comtooin_scanner_${customerName}.exe`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -483,7 +500,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       const { error: updateError } = await supabase.from(table).update(updateData).eq('id', itemId);
       if (updateError) throw updateError;
       
-      setSuccess('정보 수정이 정상적으로 완료되었습니다.');
+      alert('정보 수정이 정상적으로 완료되었습니다.');
       setOpenModal(false);
       fetchInventoryData(); // 새로고침
     } catch (err: any) {
@@ -492,7 +509,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
   };
 
   const handleDelete = async (itemId: string, type: 'hardware' | 'software') => {
-    if (!window.confirm('정말 삭제하시겠습니까?')) return;
+    if (!window.confirm('정말 삭제하시겠습니까?')) return false;
     try {
       const table = type === 'hardware' ? 'customer_hardware' : 'customer_software';
       const { error: delError } = await supabase.from(table).delete().eq('id', itemId);
@@ -500,8 +517,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
       
       if (type === 'hardware') setHardware(prev => prev.filter(h => h.id !== itemId));
       else setSoftware(prev => prev.filter(s => s.id !== itemId));
+      alert('삭제가 완료되었습니다.');
+      return true;
     } catch (err: any) {
       setError(`삭제 실패: ${err.message}`);
+      return false;
     }
   };
 
@@ -1048,7 +1068,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             variant="contained" 
             color="primary" 
             startIcon={<FileDownloadIcon />} 
-            onClick={handleDownloadHta}
+            onClick={handleDownloadExe}
           >
             조사용 프로그램 다운로드
           </Button>
@@ -1072,7 +1092,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Typography>
             <Stack spacing={0.8} sx={{ pl: 0.5 }}>
               <Typography variant="caption" color="text.secondary" display="block">
-                • <strong>Step 1.</strong> 우측 상단의 <strong>[조사용 프로그램 다운로드]</strong> 버튼을 클릭하여 파일(<code>comtooin_scanner.hta</code>)을 저장합니다.
+                • <strong>Step 1.</strong> 우측 상단의 <strong>[조사용 프로그램 다운로드]</strong> 버튼을 클릭하여 파일(<code>comtooin_scanner.exe</code>)을 저장합니다.
               </Typography>
               <Typography variant="caption" color="text.secondary" display="block">
                 • <strong>Step 2.</strong> 다운로드된 파일을 더블 클릭하여 실행합니다. (실행 시 백신이나 OS 보안 경고가 발생하는 경우 '실행' 또는 '허용'을 선택해 주십시오.)
@@ -1410,8 +1430,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
       </Paper>
 
       {/* 정보 수정 팝업 (하드웨어/소프트웨어 공통) */}
-      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth style={{ zIndex: 1400 }}>
-        <DialogTitle>{modalType === 'hardware' ? '하드웨어' : '소프트웨어'} 정보 수정</DialogTitle>
+      <Dialog open={openModal} onClose={() => setOpenModal(false)} maxWidth="sm" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          {modalType === 'hardware' ? (
+            <ComputerIcon color="action" sx={{ fontSize: '1.25rem' }} />
+          ) : (
+            <SettingsIcon color="action" sx={{ fontSize: '1.25rem' }} />
+          )}
+          <span>{modalType === 'hardware' ? '하드웨어' : '소프트웨어'} 정보 수정</span>
+        </DialogTitle>
         <DialogContent dividers>
           <Grid container spacing={2}>
             <Grid item xs={12}>
@@ -1436,15 +1463,18 @@ const AdminCustomerInventoryPage: React.FC = () => {
             )}
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenModal(false)}>취소</Button>
-          <Button variant="contained" onClick={handleEditSubmit}>저장</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setOpenModal(false)} variant="outlined" color="inherit">취소</Button>
+          <Button variant="contained" color="primary" onClick={handleEditSubmit} sx={{ fontWeight: 'bold' }}>저장</Button>
         </DialogActions>
       </Dialog>
 
       {/* 소프트웨어 상세 목록 팝업 */}
-      <Dialog open={swDetailOpen} onClose={() => setSwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }}>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>[{selectedComputer}] 설치된 소프트웨어 상세</DialogTitle>
+      <Dialog open={swDetailOpen} onClose={() => setSwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }} fullScreen={isMobile}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <SettingsIcon color="action" sx={{ fontSize: '1.25rem' }} />
+          <span>[{selectedComputer}] 설치된 소프트웨어 상세</span>
+        </DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
           <TableContainer>
             <Table stickyHeader size="small">
@@ -1494,10 +1524,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
         </DialogActions>
       </Dialog>
       {/* 하드웨어 상세 정보 팝업 */}
-      <Dialog open={hwDetailOpen} onClose={() => setHwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }}>
+      <Dialog open={hwDetailOpen} onClose={() => setHwDetailOpen(false)} maxWidth="md" fullWidth style={{ zIndex: 1300 }} fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
           <Box display="flex" alignItems="center" gap={1}>
-            <ComputerIcon color="primary" />
+            <ComputerIcon color="action" sx={{ fontSize: '1.25rem' }} />
             <span>하드웨어 상세 사양 정보</span>
           </Box>
         </DialogTitle>
@@ -1506,8 +1536,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
             <Stack spacing={3.5}>
               {/* 기본 정보 섹션 */}
               <Box>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <span>📌 기본 인프라 정보</span>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <InfoIcon sx={{ fontSize: '1.1rem' }} /> 기본 인프라 정보
                 </Typography>
                 <Paper variant="outlined" sx={{ borderRadius: 1.5, overflowX: 'auto' }}>
                   <Table size="small">
@@ -1535,8 +1565,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
               {/* 하드웨어 사양 섹션 */}
               <Box>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <span>⚙️ 상세 하드웨어 스펙</span>
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <ComputerIcon sx={{ fontSize: '1.1rem' }} /> 상세 하드웨어 스펙
                 </Typography>
                 <Paper variant="outlined" sx={{ borderRadius: 1.5, overflowX: 'auto' }}>
                   <Table size="small">
@@ -1583,46 +1613,46 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', gap: 0.5 }}>
-          {selectedHardware && (
-            <>
+        <DialogActions sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+          {selectedHardware ? (
+            <Button 
+              variant="outlined" 
+              color="error" 
+              size="small"
+              onClick={async () => {
+                const success = await handleDelete(selectedHardware.id, 'hardware');
+                if (success) {
+                  setHwDetailOpen(false);
+                }
+              }}
+            >
+              삭제
+            </Button>
+          ) : <Box />}
+          <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+            <Button variant="outlined" color="inherit" size="small" onClick={() => setHwDetailOpen(false)} sx={{ bgcolor: 'white' }}>닫기</Button>
+            {selectedHardware && (
               <Button 
-                variant="outlined" 
+                variant="contained" 
                 color="primary" 
                 size="small"
-                startIcon={<EditIcon />} 
                 onClick={() => {
                   setHwDetailOpen(false);
                   openEditModal(selectedHardware, 'hardware');
                 }}
+                sx={{ fontWeight: 'bold' }}
               >
                 수정
               </Button>
-              <Button 
-                variant="outlined" 
-                color="error" 
-                size="small"
-                startIcon={<DeleteIcon />}
-                onClick={() => {
-                  if (window.confirm('정말 이 하드웨어 정보를 삭제하시겠습니까?')) {
-                    handleDelete(selectedHardware.id, 'hardware');
-                    setHwDetailOpen(false);
-                  }
-                }}
-                sx={{ mr: 'auto' }}
-              >
-                삭제
-              </Button>
-            </>
-          )}
-          <Button variant="contained" size="small" onClick={() => setHwDetailOpen(false)}>닫기</Button>
+            )}
+          </Stack>
         </DialogActions>
       </Dialog>
 
       {/* AI 리포트 모달 */}
-      <Dialog open={aiModalOpen} onClose={() => setAiModalOpen(false)} maxWidth="lg" fullWidth>
+      <Dialog open={aiModalOpen} onClose={() => setAiModalOpen(false)} maxWidth="lg" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AiIcon color="secondary" /> AI 자산 분석 리포트 미리보기 (A4 레이아웃)
+          <AiIcon color="action" sx={{ fontSize: '1.25rem' }} /> AI 자산 분석 리포트 미리보기 (A4 레이아웃)
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0, bgcolor: '#f1f5f9' }}>
           <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, overflowY: 'auto', maxHeight: '70vh' }}>

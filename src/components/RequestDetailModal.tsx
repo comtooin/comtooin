@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions,
   Typography, Box, Paper, CircularProgress, Button,
-  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider
+  Select, MenuItem, InputLabel, FormControl, Grid, TextField, Stack, Divider,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import {
   Assignment as AssignmentIcon,
@@ -13,6 +14,8 @@ import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 
 
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const userRole = localStorage.getItem('adminRole');
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);
@@ -157,8 +160,8 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   if (!selectedRequest) return null;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 정보 (번호: {selectedRequest.id})</DialogTitle>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={isMobile}>
+      <DialogTitle sx={{ fontWeight: 'bold' }}>업무 상세 정보</DialogTitle>
       <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
         <Stack spacing={1.5}>
           <Paper variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', columnGap: 3, rowGap: 1, alignItems: 'center' }}>

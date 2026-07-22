@@ -341,7 +341,9 @@ const HomePage: React.FC = () => {
           <Box component="form" onSubmit={handleSubmit}>
             <Stack spacing={{ xs: 1.5, sm: 2 }}>
               <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: { xs: 1.5, sm: 2.5 } }}>기본 정보</Typography>
+                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: { xs: 1.5, sm: 2.5 }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <InfoIcon color="action" sx={{ fontSize: '1.15rem' }} /> 기본 정보
+                </Typography>
                 <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                   <Grid item xs={12} sm={4}>
                     <TextField 
@@ -406,7 +408,9 @@ const HomePage: React.FC = () => {
 
               <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
                 <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold">접수 및 처리 내용</Typography>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <AssignmentIcon color="action" sx={{ fontSize: '1.15rem' }} /> 접수 및 처리 내용
+                  </Typography>
                   
                   <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
                   

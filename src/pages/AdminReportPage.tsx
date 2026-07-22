@@ -1458,6 +1458,7 @@ const AdminReportPage: React.FC = () => {
         onClose={() => setAiModalOpen(false)}
         maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 'bold' }}>
           <AiIcon color="secondary" />
@@ -1558,6 +1559,7 @@ const AdminReportPage: React.FC = () => {
         maxWidth="lg" 
         fullWidth
         scroll="paper"
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
           <FileUploadIcon color="primary" />

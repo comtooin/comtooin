@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import {
-  Container, Typography, Box, Accordion, AccordionSummary, AccordionDetails,
-  Grid, Card, CardContent, Divider, Stack, Dialog, DialogTitle, DialogContent, IconButton
+  Container, Typography, Box, Divider, Stack, Dialog, DialogTitle, DialogContent, IconButton,
+  Tabs, Tab, Paper, useTheme, useMediaQuery, Grid, Accordion, AccordionSummary, AccordionDetails
 } from '@mui/material';
 import {
-  ExpandMore as ExpandMoreIcon,
   HelpOutline as HelpIcon,
   EditNote as RequestIcon,
   Dashboard as DashboardIcon,
@@ -14,7 +13,9 @@ import {
   Computer as InventoryIcon,
   Receipt as QuoteIcon,
   AutoAwesome as AiIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  Info as InfoIcon,
+  ExpandMore as ExpandMoreIcon
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 
@@ -24,11 +25,11 @@ interface AdminHelpProps {
 }
 
 const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) => {
-  const [expanded, setExpanded] = useState<string | false>(false);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const handleChange = (panel: string) => (event: React.SyntheticEvent, isExpanded: boolean) => {
-    setExpanded(isExpanded ? panel : false);
-  };
+  const [activeTab, setActiveTab] = useState('request');
+  const [expandedTab, setExpandedTab] = useState<string | false>('request');
 
   const userRole = localStorage.getItem('adminRole');
   const isCustomer = userRole === 'customer';
@@ -37,6 +38,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'request',
       title: '업무 기록 (유지보수 일지 등록)',
+      shortTitle: '업무 기록',
       icon: <RequestIcon color="primary" />,
       desc: '유지보수 거래처의 장애 접수 및 조치 내역을 간편하게 기록하고 처리 상태를 관리하는 방법입니다.',
       details: [
@@ -49,6 +51,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'dashboard',
       title: '대시보드 (통계 및 일지 조회)',
+      shortTitle: '대시보드',
       icon: <DashboardIcon color="primary" />,
       desc: '등록된 전체 유지보수 실적과 거래처별 업무 점유율 통계를 모니터링하고 엑셀 보고서를 추출하는 방법입니다.',
       details: [
@@ -62,6 +65,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'schedule',
       title: '스케줄 관리 (방문 일정 관리)',
+      shortTitle: '스케줄',
       icon: <CalendarIcon color="primary" />,
       desc: '고객사 정기 점검, 긴급 방문 출장 등 엔지니어의 일정을 팀 캘린더를 통해 통합 예약하고 공유하는 방법입니다.',
       details: [
@@ -74,6 +78,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'archive',
       title: '자료실 (설치 파일 및 매뉴얼)',
+      shortTitle: '자료실',
       icon: <ArchiveIcon color="primary" />,
       desc: '회사 구글 드라이브와 실시간 동기화하여 현장에서 필요한 드라이버, 소프트웨어, 기술 매뉴얼을 찾아 다운로드하는 방법입니다.',
       details: [
@@ -85,6 +90,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'customer',
       title: '거래처 정보 관리',
+      shortTitle: '거래처',
       icon: <CustomerIcon color="primary" />,
       desc: '계약 중인 유지보수 회원사 목록, 담당자 정보, 로그인 계정 정보를 관리 및 조회하는 방법입니다.',
       details: [
@@ -98,11 +104,12 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'inventory',
       title: '거래처 인프라(자산) 관리',
+      shortTitle: '자산 관리',
       icon: <InventoryIcon color="primary" />,
-      desc: '수집 스크립트(HTA)로 확보한 컴퓨터의 상세 하드웨어 부품 스펙과 소프트웨어 자산 내역을 조회하고 활용하는 방법입니다.',
+      desc: '조사 프로그램(EXE)으로 확보한 컴퓨터의 상세 하드웨어 부품 스펙과 소프트웨어 자산 내역을 조회하고 활용하는 방법입니다.',
       details: [
-        'HTA 자산 스캔 스크립트 실행: 컴퓨터 사양 조사를 위해 거래처 PC에서 화면 상단에 제공되는 [자산 수집 스크립트(HTA) 다운로드] 버튼을 클릭해 생성된 스크립트 파일을 다운로드한 뒤 실행해 주십시오.',
-        '실시간 수집 현황 자동 등록: HTA 스캔 프로그램 조사가 완료되면, 새로고침을 누르지 않아도 실시간 백그라운드 갱신을 통해 5초 이내에 해당 거래처 인프라 목록에 자산 사양이 자동 등록됩니다.',
+        '조사 프로그램(EXE) 실행: 컴퓨터 사양 조사를 위해 거래처 PC에서 화면 상단에 제공되는 [조사용 프로그램 다운로드] 버튼을 클릭해 실행 파일을 다운로드한 뒤 실행해 주십시오.',
+        '실시간 수집 현황 자동 등록: 조사 프로그램 스캔이 완료되면, 새로고침을 누르지 않아도 실시간 백그라운드 갱신을 통해 5초 이내에 해당 거래처 인프라 목록에 자산 사양이 자동 등록됩니다.',
         '사양 상세보기 팝업 활용: PC 리스트에서 해당 사양 행을 가볍게 클릭하면 CPU, 메인보드, 설치된 여러 개의 SSD/HDD 상세 용량 사양이 정밀하게 구획된 팝업으로 표출됩니다. (다중 디스크 스캔 시 윈도우가 깔린 C드라이브가 1순위로 표시됨)',
         '모바일 최적화 통계 카드 활용: 태블릿이나 모바일로 현장에서 자산을 볼 때 스크롤의 방해를 피하려면 상단 [통계 차트 접기] 버튼을 눌러 표 영역을 넓게 확보할 수 있습니다.',
         'AI 기반 노후 PC 교체 제안: [AI 노후 장비 진단] 기능 버튼을 누르면 AI가 하드웨어 스펙을 다각도로 분석하여 성능이 미달되거나 교체가 시급한 PC를 판별하고, 고객사 전달용 업그레이드 리포트 제안서를 대필 작성해 줍니다.'
@@ -111,6 +118,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'quote',
       title: '간편견적 (PDF 견적서 생성)',
+      shortTitle: '간편견적',
       icon: <QuoteIcon color="primary" />,
       desc: '부품 장바구니 텍스트 복사만으로 단가와 마진을 실시간 조율하고 A4 규격의 고화질 PDF 견적서를 발행하는 방법입니다.',
       details: [
@@ -124,6 +132,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     {
       id: 'ai-features',
       title: 'AI 편의 기능 (시스템 통합 AI)',
+      shortTitle: 'AI 기능',
       icon: <AiIcon color="primary" />,
       desc: '플랫폼 내부 곳곳에 연동된 지능형 AI 가상 비서를 실무에 효과적으로 활용하는 조작 매뉴얼 가이드입니다.',
       details: [
@@ -135,101 +144,246 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     }
   ];
 
-  const sections = isCustomer 
-    ? allSections.filter(sec => sec.id === 'dashboard' || sec.id === 'inventory')
-    : allSections;
+  // Show all help menus to everyone to avoid role mismatches and provide full system guidance
+  const sections = allSections;
 
-  const helpContent = (
-    <Box sx={{ p: isDialog ? 1 : 0 }}>
-      {/* 바로가기 그리드 카드 */}
-      <Grid container spacing={isDialog ? 2 : 3} sx={{ mb: 4 }}>
-        {sections.map((sec) => (
-          <Grid item xs={12} sm={6} md={3} key={sec.id}>
-            <Card 
-              variant="outlined" 
-              sx={{ 
-                height: '100%', 
-                cursor: 'pointer', 
-                transition: 'all 0.2s',
-                '&:hover': {
-                  borderColor: 'primary.main',
-                  transform: 'translateY(-3px)',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
-                }
-              }}
-              onClick={() => setExpanded(expanded === sec.id ? false : sec.id)}
-            >
-              <CardContent sx={{ p: 2 }}>
-                <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.2 }}>
-                  {sec.icon}
-                  <Typography variant="subtitle2" fontWeight="bold" sx={{ lineHeight: 1.3 }}>
-                    {sec.title}
+  const activeSection = sections.find(sec => sec.id === activeTab) || sections[0];
+
+  const desktopContent = activeSection ? (
+    <Grid container spacing={3}>
+      {/* 좌측 탭 선택 영역 */}
+      <Grid item xs={3.5}>
+        <Tabs
+          orientation="vertical"
+          value={activeTab}
+          onChange={(e, val) => setActiveTab(val)}
+          sx={{
+            borderRight: 1,
+            borderColor: 'divider',
+            height: '520px',
+            '&& .MuiTab-root': {
+              alignItems: 'flex-start',
+              textAlign: 'left',
+              py: 1.8,
+              px: 2,
+              minHeight: 'auto',
+              borderBottom: '1px solid #f1f5f9',
+              mr: 0,
+              '&.Mui-selected': {
+                bgcolor: '#f1f5f9',
+              }
+            }
+          }}
+        >
+          {sections.map(sec => (
+            <Tab 
+              key={sec.id}
+              value={sec.id}
+              label={
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <Box sx={{ display: 'flex', alignItems: 'center', '& svg': { fontSize: '1.2rem', color: activeTab === sec.id ? 'primary.main' : 'text.secondary' } }}>
+                    {sec.icon}
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight="bold" sx={{ color: activeTab === sec.id ? 'primary.main' : 'text.primary', fontSize: '0.875rem' }}>
+                    {sec.shortTitle}
                   </Typography>
                 </Stack>
-                <Typography variant="caption" color="text.secondary" sx={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', lineHeight: 1.4 }}>
-                  {sec.desc}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+              }
+            />
+          ))}
+        </Tabs>
       </Grid>
 
-      {/* 아코디언 매뉴얼 목록 */}
-      <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
-        상세 매뉴얼
-      </Typography>
-      
-      <Box sx={{ mb: 2 }}>
-        {sections.map((sec) => (
-          <Accordion 
-            key={sec.id} 
-            expanded={expanded === sec.id} 
-            onChange={handleChange(sec.id)}
-            variant="outlined"
-            sx={{ 
-              mb: 1.5, 
-              borderRadius: '8px !important',
-              '&:before': { display: 'none' },
-              borderColor: expanded === sec.id ? 'primary.main' : 'divider'
-            }}
-          >
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                {sec.icon}
-                <Typography fontWeight="bold" sx={{ fontSize: '0.95rem' }}>
-                  {sec.title}
-                </Typography>
-              </Stack>
-            </AccordionSummary>
-            <AccordionDetails sx={{ px: { xs: 2, sm: 4 }, pb: 3, pt: 1 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2, bgcolor: '#f8fafc', p: 2, borderRadius: 1, borderLeft: '3px solid', borderColor: 'primary.light' }}>
-                {sec.desc}
+      {/* 우측 상세 설명 영역 */}
+      <Grid item xs={8.5}>
+        <Paper 
+          variant="outlined" 
+          sx={{ 
+            p: 3.5, 
+            borderRadius: 2, 
+            bgcolor: 'background.paper', 
+            boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+            height: '520px',
+            overflowY: 'auto'
+          }}
+        >
+          <Stack spacing={3}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ display: 'flex', alignItems: 'center', '& svg': { fontSize: '1.5rem', color: 'primary.main' } }}>
+                {activeSection.icon}
+              </Box>
+              <Typography variant="h6" fontWeight="bold" color="text.primary">
+                {activeSection.title}
               </Typography>
-              <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5 }}>
-                상세 이용 절차 & 팁
+            </Stack>
+            
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                p: 2, 
+                bgcolor: '#f8fafc', 
+                borderRadius: 1.5, 
+                borderLeft: '4px solid', 
+                borderColor: 'primary.main', 
+                lineHeight: 1.6,
+                fontSize: '0.9rem'
+              }}
+            >
+              {activeSection.desc}
+            </Typography>
+
+            <Box>
+              <Typography 
+                variant="subtitle2" 
+                fontWeight="bold" 
+                sx={{ 
+                  mb: 2, 
+                  color: 'text.primary', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 0.5,
+                  fontSize: '0.95rem'
+                }}
+              >
+                <InfoIcon sx={{ fontSize: '1.15rem' }} /> 상세 이용 절차 및 사용 팁
               </Typography>
-              <Stack spacing={1.2}>
-                {sec.details.map((tip, idx) => (
-                  <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', fontSize: '0.85rem', color: 'text.primary', lineHeight: 1.5 }}>
-                    <Box sx={{ mr: 1, color: 'primary.main', fontWeight: 'bold' }}>•</Box>
-                    <Box>{tip}</Box>
+              <Stack spacing={2}>
+                {activeSection.details.map((tip, idx) => (
+                  <Box 
+                    key={idx} 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'flex-start', 
+                      fontSize: '0.875rem', 
+                      color: 'text.primary', 
+                      lineHeight: 1.6 
+                    }}
+                  >
+                    <Box 
+                      sx={{ 
+                        mr: 1.5, 
+                        mt: 0.2, 
+                        width: 22, 
+                        height: 22, 
+                        borderRadius: '50%', 
+                        bgcolor: '#e3f2fd', 
+                        color: 'primary.main', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        fontSize: '0.75rem', 
+                        fontWeight: 'bold', 
+                        flexShrink: 0 
+                      }}
+                    >
+                      {idx + 1}
+                    </Box>
+                    <Box sx={{ pt: 0.2 }}>{tip}</Box>
                   </Box>
                 ))}
               </Stack>
-            </AccordionDetails>
-          </Accordion>
-        ))}
-      </Box>
+            </Box>
+          </Stack>
+        </Paper>
+      </Grid>
+    </Grid>
+  ) : null;
+
+  const mobileContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+      {sections.map((sec) => (
+        <Accordion 
+          key={sec.id} 
+          expanded={expandedTab === sec.id} 
+          onChange={(e, isExpanded) => setExpandedTab(isExpanded ? sec.id : false)}
+          variant="outlined"
+          sx={{ 
+            borderRadius: '8px !important',
+            '&:before': { display: 'none' },
+            borderColor: expandedTab === sec.id ? 'primary.main' : 'divider',
+            bgcolor: 'background.paper',
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box sx={{ display: 'flex', alignItems: 'center', '& svg': { fontSize: '1.2rem', color: 'primary.main' } }}>
+                {sec.icon}
+              </Box>
+              <Typography fontWeight="bold" sx={{ fontSize: '0.9rem' }}>
+                {sec.title}
+              </Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails sx={{ px: 2, pb: 2.5, pt: 0.5 }}>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ 
+                mb: 2, 
+                p: 1.5, 
+                bgcolor: '#f8fafc', 
+                borderRadius: 1, 
+                borderLeft: '3px solid', 
+                borderColor: 'primary.light', 
+                lineHeight: 1.5,
+                fontSize: '0.85rem'
+              }}
+            >
+              {sec.desc}
+            </Typography>
+            <Typography variant="subtitle2" fontWeight="bold" sx={{ mb: 1.5, fontSize: '0.875rem' }}>
+              상세 이용 절차 및 사용 팁
+            </Typography>
+            <Stack spacing={1.5}>
+              {sec.details.map((tip, idx) => (
+                <Box 
+                  key={idx} 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'flex-start', 
+                    fontSize: '0.825rem', 
+                    color: 'text.primary', 
+                    lineHeight: 1.5 
+                  }}
+                >
+                  <Box 
+                    sx={{ 
+                      mr: 1.2, 
+                      mt: 0.2, 
+                      width: 18, 
+                      height: 18, 
+                      borderRadius: '50%', 
+                      bgcolor: '#e3f2fd', 
+                      color: 'primary.main', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      fontSize: '0.7rem', 
+                      fontWeight: 'bold', 
+                      flexShrink: 0 
+                    }}
+                  >
+                    {idx + 1}
+                  </Box>
+                  <Box sx={{ pt: 0.1 }}>{tip}</Box>
+                </Box>
+              ))}
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+      ))}
     </Box>
   );
 
+  const helpContent = isMobile ? mobileContent : desktopContent;
+
   if (isDialog) {
     return (
-      <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth style={{ zIndex: 1400 }}>
+      <Dialog open={true} onClose={onClose} maxWidth="lg" fullWidth style={{ zIndex: 1400 }} fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box display="flex" alignItems="center" gap={1}>
-            <HelpIcon color="primary" />
+            <HelpIcon color="action" sx={{ fontSize: '1.25rem' }} />
             <span>시스템 도움말 및 사용 가이드</span>
           </Box>
           <IconButton onClick={onClose} size="small"><CloseIcon /></IconButton>

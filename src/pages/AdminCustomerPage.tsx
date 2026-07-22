@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography, Box, Paper, TextField, Button, List, ListItem,
   IconButton, Divider, CircularProgress, Alert, Stack, Container, Grid, Tooltip,
-  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControlLabel
+  Dialog, DialogTitle, DialogContent, DialogActions, Checkbox, FormControlLabel,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import { 
   Delete as DeleteIcon, 
@@ -13,7 +14,9 @@ import {
   VerifiedUser as ActiveIcon,
   Computer as ComputerIcon,
   Edit as EditIcon,
-  VpnKey as VpnKeyIcon
+  VpnKey as VpnKeyIcon,
+  Info as InfoIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api';
@@ -36,6 +39,8 @@ interface Customer {
 }
 
 const AdminCustomerPage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,6 +184,7 @@ const AdminCustomerPage: React.FC = () => {
       setCreateAccountOption(false);
       setNewLoginId('');
       setNewPassword('');
+      alert('거래처가 성공적으로 등록되었습니다.');
       setRegisterOpen(false);
       
       fetchCustomers();
@@ -224,7 +230,7 @@ const AdminCustomerPage: React.FC = () => {
         .eq('id', selectedCustomer.id);
 
       if (updateError) throw updateError;
-
+      alert('거래처 정보가 수정되었습니다.');
       setEditOpen(false);
       fetchCustomers();
     } catch (err: any) {
@@ -248,6 +254,7 @@ const AdminCustomerPage: React.FC = () => {
         .eq('id', id);
 
       if (deleteError) throw deleteError;
+      alert('거래처가 삭제되었습니다.');
       fetchCustomers();
     } catch (err: any) {
       setError(err.message || '거래처 삭제 중 오류가 발생했습니다.');
@@ -297,7 +304,8 @@ const AdminCustomerPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      setAccountSuccess('거래처 계정이 성공적으로 생성되었습니다.');
+      alert('거래처 계정이 성공적으로 생성되었습니다.');
+      setAccountDialogOpen(false);
       
       // 즉시 로컬 데이터 갱신
       setAccountCustomer(prev => prev ? {
@@ -343,7 +351,8 @@ const AdminCustomerPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      setAccountSuccess('거래처 계정이 삭제되었습니다.');
+      alert('거래처 계정이 삭제되었습니다.');
+      setAccountDialogOpen(false);
       setAccountCustomer(prev => prev ? {
         ...prev,
         auth_user_id: undefined,
@@ -389,7 +398,8 @@ const AdminCustomerPage: React.FC = () => {
         throw new Error(errorMessage);
       }
 
-      setAccountSuccess('비밀번호가 성공적으로 변경되었습니다.');
+      alert('비밀번호가 성공적으로 변경되었습니다.');
+      setAccountDialogOpen(false);
       setAccountPassword('');
     } catch (err: any) {
       setAccountError(err.message || '비밀번호 변경 중 오류가 발생했습니다.');
@@ -615,22 +625,23 @@ const AdminCustomerPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
+        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: 1.5, sm: 3 }, // 모바일 여백 최소화
-            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
+            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
           }
         }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EditIcon /> {isAdmin ? '거래처 정보 수정' : '거래처 정보 조회'}
+          <BusinessIcon color="action" sx={{ fontSize: '1.25rem' }} /> {isAdmin ? '거래처 정보 수정' : '거래처 정보 조회'}
         </DialogTitle>
         <DialogContent dividers>
           <Box component="form" onSubmit={handleEditCustomer} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 기본 정보
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <InfoIcon sx={{ fontSize: '1.1rem' }} /> 기본 정보
                 </Typography>
               </Grid>
               <Grid item xs={12}>
@@ -660,8 +671,8 @@ const AdminCustomerPage: React.FC = () => {
               </Grid>
               
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 담당자 1 정보
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <PersonIcon sx={{ fontSize: '1.1rem' }} /> 담당자 1 정보
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -700,8 +711,8 @@ const AdminCustomerPage: React.FC = () => {
               </Grid>
               
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 담당자 2 정보 (선택)
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <PersonIcon sx={{ fontSize: '1.1rem' }} /> 담당자 2 정보 (선택)
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -737,17 +748,18 @@ const AdminCustomerPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
           {isAdmin ? (
             <>
-              <Button onClick={() => setEditOpen(false)} color="inherit">취소</Button>
+              <Button onClick={() => setEditOpen(false)} variant="outlined" color="inherit">취소</Button>
               <Button 
                 variant="contained" 
+                color="primary"
                 onClick={handleEditCustomer} 
                 disabled={submitting || !editCustomerName.trim()}
                 sx={{ fontWeight: 'bold' }}
               >
-                저장하기
+                저장
               </Button>
             </>
           ) : (
@@ -762,9 +774,10 @@ const AdminCustomerPage: React.FC = () => {
         onClose={() => setAccountDialogOpen(false)} 
         maxWidth="xs" 
         fullWidth
+        fullScreen={isMobile}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <VpnKeyIcon /> {accountCustomer?.name} 계정 {isAdmin ? '관리' : '조회'}
+          <VpnKeyIcon color="action" sx={{ fontSize: '1.25rem' }} /> {accountCustomer?.name} 계정 {isAdmin ? '관리' : '조회'}
         </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
@@ -857,22 +870,23 @@ const AdminCustomerPage: React.FC = () => {
         maxWidth="sm" 
         fullWidth
         scroll="paper"
+        fullScreen={isMobile}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: 1.5, sm: 3 },
-            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
+            m: { xs: isMobile ? 0 : 1.5, sm: 3 },
+            maxHeight: { xs: isMobile ? '100%' : 'calc(100% - 24px)', sm: 'calc(100% - 64px)' }
           }
         }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AddIcon /> 새 거래처 등록
+          <BusinessIcon color="action" sx={{ fontSize: '1.25rem' }} /> 새 거래처 등록
         </DialogTitle>
         <DialogContent dividers>
           <Box component="form" onSubmit={handleAddCustomer} sx={{ mt: 1 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 기본 정보
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <InfoIcon sx={{ fontSize: '1.1rem' }} /> 기본 정보
                 </Typography>
               </Grid>
               <Grid item xs={12}>
@@ -902,8 +916,8 @@ const AdminCustomerPage: React.FC = () => {
               </Grid>
               
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 담당자 1 정보
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <PersonIcon sx={{ fontSize: '1.1rem' }} /> 담당자 1 정보
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -942,8 +956,8 @@ const AdminCustomerPage: React.FC = () => {
               </Grid>
               
               <Grid item xs={12}>
-                <Typography variant="subtitle2" color="primary" fontWeight="bold">
-                  • 담당자 2 정보 (선택)
+                <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <PersonIcon sx={{ fontSize: '1.1rem' }} /> 담당자 2 정보 (선택)
                 </Typography>
               </Grid>
               <Grid item xs={12} sm={4}>
@@ -1037,15 +1051,16 @@ const AdminCustomerPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setRegisterOpen(false)} color="inherit">취소</Button>
+        <DialogActions sx={{ p: 2, gap: 1 }}>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">취소</Button>
           <Button 
             variant="contained" 
+            color="primary"
             onClick={handleAddCustomer} 
             disabled={submitting || !newCustomerName.trim() || (createAccountOption && (!newLoginId.trim() || !newPassword.trim()))}
             sx={{ fontWeight: 'bold' }}
           >
-            등록하기
+            저장
           </Button>
         </DialogActions>
       </Dialog>

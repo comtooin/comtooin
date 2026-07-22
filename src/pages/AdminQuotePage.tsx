@@ -3,7 +3,8 @@ import {
   Container, Typography, Box, Paper, TextField, Button, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   IconButton, Grid, Divider, InputAdornment, Dialog, DialogTitle, DialogContent, DialogActions,
-  List, ListItem, ListItemText, ListItemButton, Collapse, Stack
+  List, ListItem, ListItemText, ListItemButton, Collapse, Stack,
+  useTheme, useMediaQuery
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DownloadIcon from '@mui/icons-material/Download';
@@ -29,6 +30,8 @@ interface QuoteItem {
 }
 
 const AdminQuotePage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [rawText, setRawText] = useState('');
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [globalMargin, setGlobalMargin] = useState<number>(15);
@@ -600,7 +603,7 @@ const AdminQuotePage: React.FC = () => {
       </Box>
 
       {/* 텍스트 견적 자동입력 모달 */}
-      <Dialog open={pasteDialogOpen} onClose={() => setPasteDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={pasteDialogOpen} onClose={() => setPasteDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>텍스트 견적 자동입력</DialogTitle>
         <DialogContent dividers>
           <Typography variant="body2" color="text.secondary" gutterBottom sx={{ lineHeight: 1.5 }}>
@@ -625,22 +628,23 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             sx={{ mt: 2, fontFamily: 'monospace', fontSize: '0.85rem' }}
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPasteDialogOpen(false)} color="inherit">취소</Button>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, gap: 1 }}>
+          <Button onClick={() => setPasteDialogOpen(false)} color="inherit" size="small">취소</Button>
           <Button 
             variant="contained" 
             color="primary" 
             onClick={handleParse}
             startIcon={<AutoFixHighIcon />}
+            size="small"
             sx={{ fontWeight: 'bold' }}
           >
-            데이터 파싱 및 자동 입력
+            자동입력
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Preview Dialog */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="lg" fullWidth>
+      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)} maxWidth="lg" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           견적서 인쇄 미리보기
         </DialogTitle>
@@ -811,7 +815,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       </Dialog>
 
       {/* Save Template Dialog */}
-      <Dialog open={!!newTemplateName || saveDialogOpen} onClose={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} maxWidth="xs" fullWidth>
+      <Dialog open={!!newTemplateName || saveDialogOpen} onClose={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} maxWidth="xs" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>견적 템플릿 저장</DialogTitle>
         <DialogContent dividers>
           <TextField
@@ -831,7 +835,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       </Dialog>
 
       {/* Load Template Dialog */}
-      <Dialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} maxWidth="sm" fullWidth>
+      <Dialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontWeight: 'bold' }}>저장된 견적 템플릿</DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
           {templates.length === 0 ? (

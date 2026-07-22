@@ -425,9 +425,10 @@ const AdminSchedulePage: React.FC = () => {
       </Paper>
 
       {/* 등록 팝업 */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle sx={{ fontWeight: 'bold' }}>
-          {formData.id ? '일정 수정' : `${formData.date} 일정 등록`}
+      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
+          <span>{formData.id ? '일정 수정' : `${formData.date} 일정 등록`}</span>
         </DialogTitle>
         <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
           <Box sx={{ mt: 1 }}>
@@ -487,19 +488,22 @@ const AdminSchedulePage: React.FC = () => {
         <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
             <Button onClick={() => setOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>취소</Button>
-            <Button variant="contained" onClick={handleSave} disabled={loading} startIcon={loading ? <CircularProgress size={20} /> : <EventIcon />} sx={{ fontWeight: 'bold' }}>
-              {formData.id ? '수정 사항 저장' : '저장 및 알림 발송'}
+            <Button variant="contained" color="primary" onClick={handleSave} disabled={loading} sx={{ fontWeight: 'bold' }}>
+              저장
             </Button>
           </Stack>
         </DialogActions>
       </Dialog>
 
       {/* 상세 보기 팝업 */}
-      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth>
+      <Dialog open={detailOpen} onClose={() => setDetailOpen(false)} maxWidth="md" fullWidth fullScreen={isMobile}>
         {selectedEvent && (
           <>
             <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              일정 상세
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
+                <span>일정 상세</span>
+              </Box>
               <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" />
             </DialogTitle>
             <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
