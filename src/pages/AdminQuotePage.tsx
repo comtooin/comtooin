@@ -629,7 +629,6 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
           />
         </DialogContent>
         <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, gap: 1 }}>
-          <Button onClick={() => setPasteDialogOpen(false)} color="inherit" size="small">취소</Button>
           <Button 
             variant="contained" 
             color="primary" 
@@ -640,6 +639,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
           >
             자동입력
           </Button>
+          <Button onClick={() => setPasteDialogOpen(false)} variant="outlined" color="inherit" size="small">닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -798,9 +798,6 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setPreviewOpen(false)} color="inherit" sx={{ fontWeight: 'bold' }}>
-            닫기
-          </Button>
           <Button 
             variant="contained" 
             color="primary" 
@@ -810,6 +807,9 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             sx={{ fontWeight: 'bold' }}
           >
             PDF 다운로드
+          </Button>
+          <Button onClick={() => setPreviewOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold' }}>
+            닫기
           </Button>
         </DialogActions>
       </Dialog>
@@ -829,8 +829,8 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
           />
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} color="inherit">취소</Button>
           <Button onClick={handleSaveTemplate} variant="contained" color="primary">저장</Button>
+          <Button onClick={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -906,7 +906,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
           )}
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setLoadDialogOpen(false)} color="inherit" sx={{ fontWeight: 'bold' }}>닫기</Button>
+          <Button onClick={() => setLoadDialogOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold' }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

@@ -1526,7 +1526,6 @@ const AdminReportPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5, gap: 1 }}>
-          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>닫기</Button>
           <Button 
             variant="contained" 
             color="success" 
@@ -1549,6 +1548,7 @@ const AdminReportPage: React.FC = () => {
           >
             내용 복사
           </Button>
+          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2 }}>닫기</Button>
         </DialogActions>
       </Dialog>
       
@@ -1671,9 +1671,6 @@ const AdminReportPage: React.FC = () => {
           </TableContainer>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setValidationOpen(false)} disabled={importing} color="inherit">
-            취소
-          </Button>
           <Button 
             variant="contained" 
             color="primary" 
@@ -1683,6 +1680,9 @@ const AdminReportPage: React.FC = () => {
             sx={{ fontWeight: 'bold' }}
           >
             {importing ? '가져오는 중...' : '가져오기 완료'}
+          </Button>
+          <Button onClick={() => setValidationOpen(false)} disabled={importing} variant="outlined" color="inherit">
+            닫기
           </Button>
         </DialogActions>
       </Dialog>

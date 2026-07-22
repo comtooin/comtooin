@@ -1471,8 +1471,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={() => setOpenModal(false)} variant="outlined" color="inherit">취소</Button>
           <Button variant="contained" color="primary" onClick={handleEditSubmit} sx={{ fontWeight: 'bold' }}>저장</Button>
+          <Button onClick={() => setOpenModal(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -1527,7 +1527,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
         )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSwDetailOpen(false)} variant="contained" color="inherit">닫기</Button>
+          <Button onClick={() => setSwDetailOpen(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
       {/* 하드웨어 상세 정보 팝업 */}
@@ -1637,7 +1637,6 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Button>
           ) : <Box />}
           <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-            <Button variant="outlined" color="inherit" size="small" onClick={() => setHwDetailOpen(false)} sx={{ bgcolor: 'white' }}>닫기</Button>
             {selectedHardware && (
               <Button 
                 variant="contained" 
@@ -1652,6 +1651,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 수정
               </Button>
             )}
+            <Button variant="outlined" color="inherit" size="small" onClick={() => setHwDetailOpen(false)} sx={{ bgcolor: 'white' }}>닫기</Button>
           </Stack>
         </DialogActions>
       </Dialog>

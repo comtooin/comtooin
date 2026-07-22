@@ -280,11 +280,11 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           ) : (
             <>
               <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', minWidth: 'auto' }}>삭제</Button>
-              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
               <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>{isEditing ? '취소' : '수정'}</Button>
               <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', minWidth: 'auto' }}>
                 {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
               </Button>
+              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
             </>
           )}
         </Stack>

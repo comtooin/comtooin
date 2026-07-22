@@ -308,7 +308,7 @@ const CheckRequestPage: React.FC = () => {
               {selectedRequest.status === 'pending' && (
                 <Button variant="contained" onClick={() => navigate(`/admin/request/edit/${selectedRequest.id}`)} sx={{ fontWeight: 'bold' }}>수정하기</Button>
               )}
-              <Button onClick={() => setSelectedRequest(null)} variant="outlined" sx={{ fontWeight: 'bold' }}>닫기</Button>
+              <Button onClick={() => setSelectedRequest(null)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold' }}>닫기</Button>
             </DialogActions>
           </>
         )}

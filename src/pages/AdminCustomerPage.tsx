@@ -751,7 +751,6 @@ const AdminCustomerPage: React.FC = () => {
         <DialogActions sx={{ p: 2, gap: 1 }}>
           {isAdmin ? (
             <>
-              <Button onClick={() => setEditOpen(false)} variant="outlined" color="inherit">취소</Button>
               <Button 
                 variant="contained" 
                 color="primary"
@@ -761,6 +760,7 @@ const AdminCustomerPage: React.FC = () => {
               >
                 저장
               </Button>
+              <Button onClick={() => setEditOpen(false)} variant="outlined" color="inherit">닫기</Button>
             </>
           ) : (
             <Button onClick={() => setEditOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold' }}>닫기</Button>
@@ -833,7 +833,6 @@ const AdminCustomerPage: React.FC = () => {
               ) : <Box />}
               
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button onClick={() => setAccountDialogOpen(false)} color="inherit" size="small">닫기</Button>
                 {accountCustomer?.auth_user_id ? (
                   <Button 
                     variant="contained" 
@@ -855,6 +854,7 @@ const AdminCustomerPage: React.FC = () => {
                     생성
                   </Button>
                 )}
+                <Button onClick={() => setAccountDialogOpen(false)} variant="outlined" color="inherit" size="small">닫기</Button>
               </Box>
             </>
           ) : (
@@ -1052,7 +1052,6 @@ const AdminCustomerPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">취소</Button>
           <Button 
             variant="contained" 
             color="primary"
@@ -1062,6 +1061,7 @@ const AdminCustomerPage: React.FC = () => {
           >
             저장
           </Button>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

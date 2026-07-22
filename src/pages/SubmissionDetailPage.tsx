@@ -299,8 +299,8 @@ const SubmissionDetailPage: React.FC = () => {
           {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setOpenDeleteDialog(false)}>취소</Button>
           <Button onClick={handleDeleteConfirm} color="error" variant="contained" sx={{ fontWeight: 'bold' }}>데이터 삭제</Button>
+          <Button onClick={() => setOpenDeleteDialog(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

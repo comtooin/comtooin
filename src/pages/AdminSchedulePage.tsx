@@ -487,10 +487,10 @@ const AdminSchedulePage: React.FC = () => {
         </DialogContent>
         <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-            <Button onClick={() => setOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>취소</Button>
             <Button variant="contained" color="primary" onClick={handleSave} disabled={loading} sx={{ fontWeight: 'bold' }}>
               저장
             </Button>
+            <Button onClick={() => setOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
           </Stack>
         </DialogActions>
       </Dialog>
@@ -552,8 +552,8 @@ const AdminSchedulePage: React.FC = () => {
             <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
               <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
               <Stack direction="row" spacing={1}>
-                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
                 <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold' }}>수정</Button>
+                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
               </Stack>
             </DialogActions>
           </>

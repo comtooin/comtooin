@@ -522,8 +522,8 @@ const AdminStaffPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={() => setEditDialogOpen(false)} variant="outlined" color="inherit">취소</Button>
           <Button variant="contained" color="primary" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold' }}>저장</Button>
+          <Button onClick={() => setEditDialogOpen(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -547,8 +547,8 @@ const AdminStaffPage: React.FC = () => {
           />
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button onClick={() => setResetDialogOpen(false)}>취소</Button>
           <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={submitting || !resetPassword.trim()}>비밀번호 변경</Button>
+          <Button onClick={() => setResetDialogOpen(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -661,7 +661,6 @@ const AdminStaffPage: React.FC = () => {
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">취소</Button>
           <Button 
             variant="contained" 
             color="primary"
@@ -671,6 +670,7 @@ const AdminStaffPage: React.FC = () => {
           >
             저장
           </Button>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>
