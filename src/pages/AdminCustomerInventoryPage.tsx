@@ -22,7 +22,6 @@ import {
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import Papa from 'papaparse';
-import JSZip from 'jszip';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
