@@ -7,6 +7,20 @@ using System.Windows.Forms;
 using System.Drawing;
 using System.Collections.Generic;
 using Microsoft.Win32;
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+[assembly: AssemblyTitle("컴투인 PC 자산 수집기")]
+[assembly: AssemblyDescription("COMTOOIN IT Asset Management System PC Scanner")]
+[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyCompany("COMTOOIN")]
+[assembly: AssemblyProduct("COMTOOIN Scanner")]
+[assembly: AssemblyCopyright("Copyright © COMTOOIN All rights reserved.")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
+[assembly: ComVisible(false)]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
 
 namespace ComtooinScanner
 {
