@@ -776,8 +776,8 @@ const AdminCustomerPage: React.FC = () => {
           '& .MuiDialog-paper': {
             m: { xs: '20px 16px', sm: 3 },
             maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
-            width: { xs: 'calc(100% - 32px)' },
-            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+            width: { xs: 'calc(100% - 32px)', sm: '500px' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: '500px' }
           }
         }}
       >

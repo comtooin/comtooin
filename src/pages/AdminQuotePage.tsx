@@ -847,8 +847,8 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
           '& .MuiDialog-paper': {
             m: { xs: '20px 16px', sm: 3 },
             maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
-            width: { xs: 'calc(100% - 32px)' },
-            maxWidth: { xs: 'calc(100% - 32px)', sm: 'xs' }
+            width: { xs: 'calc(100% - 32px)', sm: '480px' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: '480px' }
           }
         }}
       >
