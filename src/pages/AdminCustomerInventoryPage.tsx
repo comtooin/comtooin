@@ -52,7 +52,7 @@ interface Customer {
   name: string;
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
 
 const AdminCustomerInventoryPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -933,6 +933,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
   };
 
   // 하드웨어 대시보드 통계
+  // 하드웨어 대시보드 통계
+  const OS_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#64748b'];
+  const RAM_COLORS = ['#8b5cf6', '#ec4899', '#3b82f6', '#14b8a6', '#f59e0b', '#ef4444'];
+  const SW_COLORS = ['#e11d48', '#0284c7', '#16a34a', '#d97706'];
+  const SEC_COLORS = ['#2e7d32', '#c62828', '#1565c0', '#78909c'];
+  const DISK_COLORS = ['#0f766e', '#14b8a6', '#5eead4', '#ccfbf1', '#64748b'];
+  const CPU_COLORS = ['#1d4ed8', '#3b82f6', '#60a5fa', '#93c5fd', '#f59e0b', '#fbbf24', '#fef08a', '#64748b'];
+
   const cpuStats = useMemo(() => {
     const counts: Record<string, number> = { 'i3': 0, 'i5': 0, 'i7': 0, 'i9': 0, 'Ryzen 3': 0, 'Ryzen 5': 0, 'Ryzen 7': 0, 'Ryzen 9': 0, '기타': 0 };
     hardware.forEach(h => {
@@ -947,7 +955,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       else if (cpu.includes('ryzen 9') || cpu.includes('ryzen9')) counts['Ryzen 9']++;
       else counts['기타']++;
     });
-    return Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k, count: counts[k] })).sort((a, b) => b.count - a.count);
+    return Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k, value: counts[k] })).sort((a, b) => b.value - a.value);
   }, [hardware]);
 
   const memoryStats = useMemo(() => {
@@ -959,18 +967,102 @@ const AdminCustomerInventoryPage: React.FC = () => {
     return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).sort((a,b) => b.value - a.value);
   }, [hardware]);
 
+  const storageStats = useMemo(() => {
+    const counts: Record<string, number> = {
+      '1TB 이상': 0,
+      '500GB 대': 0,
+      '250GB 대': 0,
+      '120GB 대': 0,
+      '기타/미확인': 0
+    };
+
+    hardware.forEach(h => {
+      if (!h.storage) {
+        counts['기타/미확인']++;
+        return;
+      }
+      
+      const drives = h.storage.split(',');
+      const cDrive = drives.find(d => d.includes('[C드라이브]')) || drives[0] || '';
+      const cLower = cDrive.toLowerCase();
+      
+      if (cLower.includes('1tb') || cLower.includes('1000g') || cLower.includes('960g') || cLower.includes('2tb')) {
+        counts['1TB 이상']++;
+      } else if (cLower.includes('500g') || cLower.includes('512g') || cLower.includes('480g')) {
+        counts['500GB 대']++;
+      } else if (cLower.includes('250g') || cLower.includes('256g') || cLower.includes('240g') || cLower.includes('250 gb') || cLower.includes('256 gb')) {
+        counts['250GB 대']++;
+      } else if (cLower.includes('120g') || cLower.includes('128g') || cLower.includes('120 gb') || cLower.includes('128 gb')) {
+        counts['120GB 대']++;
+      } else {
+        const match = cLower.match(/(\d+)\s*(gb|g)/);
+        if (match) {
+          const size = parseInt(match[1]);
+          if (size >= 900) counts['1TB 이상']++;
+          else if (size >= 400) counts['500GB 대']++;
+          else if (size >= 200) counts['250GB 대']++;
+          else if (size >= 100) counts['120GB 대']++;
+          else counts['기타/미확인']++;
+        } else {
+          counts['기타/미확인']++;
+        }
+      }
+    });
+
+    return Object.keys(counts)
+      .filter(k => counts[k] > 0)
+      .map(k => ({ name: k, value: counts[k] }));
+  }, [hardware]);
+
+  const osStats = useMemo(() => {
+    const counts: Record<string, number> = {};
+    hardware.forEach(h => {
+      let osName = '기타 OS';
+      const osLower = (h.os || '').toLowerCase();
+      if (osLower.includes('windows 11')) osName = 'Windows 11';
+      else if (osLower.includes('windows 10')) osName = 'Windows 10';
+      else if (osLower.includes('windows 7')) osName = 'Windows 7';
+      else if (osLower.includes('windows server')) osName = 'Windows Server';
+      else if (osLower.trim() !== '') {
+        osName = h.os.split(' ')[0] || h.os;
+      }
+      counts[osName] = (counts[osName] || 0) + 1;
+    });
+    return Object.keys(counts).map(k => ({ name: k, value: counts[k] })).sort((a,b) => b.value - a.value);
+  }, [hardware]);
+
   // 소프트웨어 대시보드 통계
   const commercialSoftware = useMemo(() => {
-    const counts: Record<string, number> = { 'MS Office': 0, 'Adobe (포토샵/일러 등)': 0, '한컴오피스': 0, 'AutoCAD': 0 };
+    const counts: Record<string, number> = { 'MS Office': 0, 'Adobe 계열': 0, '한컴오피스': 0, 'AutoCAD': 0 };
     software.forEach(s => {
       const name = (s.program_name + ' ' + (s.publisher||'')).toLowerCase();
-      if (name.includes('office') || name.includes('365') || name.includes('excel') || name.includes('word')) counts['MS Office']++;
-      else if (name.includes('adobe') || name.includes('photoshop') || name.includes('illustrator') || name.includes('acrobat')) counts['Adobe (포토샵/일러 등)']++;
+      if (name.includes('office') || name.includes('365') || name.includes('excel') || name.includes('word') || name.includes('powerpoint')) counts['MS Office']++;
+      else if (name.includes('adobe') || name.includes('photoshop') || name.includes('illustrator') || name.includes('acrobat') || name.includes('reader')) counts['Adobe 계열']++;
       else if (name.includes('한컴') || name.includes('hancom') || name.includes('hwp') || name.includes('한글')) counts['한컴오피스']++;
       else if (name.includes('autocad') || name.includes('autodesk')) counts['AutoCAD']++;
     });
     return Object.keys(counts).filter(k => counts[k] > 0).map(k => ({ name: k, value: counts[k] }));
   }, [software]);
+
+  const securitySoftware = useMemo(() => {
+    let v3Count = 0;
+    let alyacCount = 0;
+    let defenderCount = 0;
+    
+    software.forEach(s => {
+      const name = (s.program_name || '').toLowerCase();
+      if (name.includes('v3') || name.includes('ahnlab')) v3Count++;
+      else if (name.includes('alyac') || name.includes('알약')) alyacCount++;
+      else if (name.includes('defender')) defenderCount++;
+    });
+    
+    return [
+      { name: 'AhnLab V3', value: v3Count },
+      { name: '알약 (Alyac)', value: alyacCount },
+      { name: 'MS Defender', value: defenderCount },
+      { name: '기타/미설치', value: Math.max(0, hardware.length - (v3Count + alyacCount + defenderCount)) }
+    ].filter(item => item.value > 0);
+  }, [software, hardware]);
 
   const topSoftware = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -1167,79 +1259,142 @@ const AdminCustomerInventoryPage: React.FC = () => {
       <Box sx={{ display: { xs: showStats ? 'block' : 'none', md: 'block' } }}>
         {tabValue === 0 ? (
           <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
-                  등록된 PC 대수
-                </Typography>
-                <Typography variant="h2" fontWeight="bold" color="primary.main">
-                  {hardware.length}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>메모리(RAM) 용량 분포</Typography>
-                <ResponsiveContainer width="100%" height="100%">
+            {/* 1. CPU 등급별 분포 (Doughnut) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">CPU 등급별 분포</Typography>
+                <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px'}}>
-                      {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                    <Pie data={cpuStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {cpuStats.map((entry, index) => <Cell key={`cell-${index}`} fill={CPU_COLORS[index % CPU_COLORS.length]} />)}
                     </Pie>
-                    <RechartsTooltip />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>CPU 등급별 분포</Typography>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={cpuStats} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 11}} />
-                    <RechartsTooltip />
-                    <Bar dataKey="count" fill="#0288d1" radius={[0, 4, 4, 0]} />
-                  </BarChart>
+
+            {/* 2. 메모리(RAM) 용량 분포 (Doughnut) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">메모리(RAM) 용량 분포</Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                  <PieChart>
+                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={RAM_COLORS[index % RAM_COLORS.length]} />)}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+
+            {/* 3. 하드(C드라이브) 용량 분포 (Doughnut) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">하드(C드라이브) 용량 분포</Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                  <PieChart>
+                    <Pie data={storageStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {storageStats.map((entry, index) => <Cell key={`cell-${index}`} fill={DISK_COLORS[index % DISK_COLORS.length]} />)}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+
+            {/* 4. 운영체제(OS) 분포 (Doughnut) */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">운영체제(OS) 분포</Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                  <PieChart>
+                    <Pie data={osStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {osStats.map((entry, index) => <Cell key={`cell-${index}`} fill={OS_COLORS[index % OS_COLORS.length]} />)}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
           </Grid>
         ) : (
-          <Grid container spacing={2} sx={{ mb: 2.5 }}>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
-                <Typography variant="subtitle1" fontWeight="bold" color="text.secondary" gutterBottom>
-                  설치된 프로그램 총 건수
+          <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
+            {/* 1. 설치된 프로그램 총 건수 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2, height: '260px', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" color="text.secondary" gutterBottom>
+                  설치 프로그램 총 건수
                 </Typography>
-                <Typography variant="h2" fontWeight="bold" color="secondary.main">
+                <Typography variant="h2" fontWeight="bold" color="secondary.main" sx={{ mt: 1 }}>
                   {software.length}
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>주요 상용 소프트웨어 설치 현황</Typography>
-                <ResponsiveContainer width="100%" height="100%">
+
+            {/* 2. 주요 상용 소프트웨어 설치 현황 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">상용 소프트웨어 설치 현황</Typography>
+                <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={70} fill="#8884d8" paddingAngle={5} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '11px', fontWeight: 'bold'}}>
-                      {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={['#d32f2f', '#1976d2', '#388e3c', '#f57c00'][index % 4]} />)}
+                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SW_COLORS[index % SW_COLORS.length]} />)}
                     </Pie>
-                    <RechartsTooltip />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={4}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '250px' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom>전체 Top 5 소프트웨어</Typography>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topSoftware} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+
+            {/* 3. 보안 백신 설치 현황 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">보안 백신 설치 현황</Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                  <PieChart>
+                    <Pie data={securitySoftware} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                      {securitySoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SEC_COLORS[index % SEC_COLORS.length]} />)}
+                    </Pie>
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Grid>
+
+            {/* 4. 전체 Top 5 소프트웨어 */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
+                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">전체 Top 5 소프트웨어</Typography>
+                <ResponsiveContainer width="100%" height="90%">
+                  <BarChart data={topSoftware} layout="vertical" margin={{ top: 10, right: 15, left: 10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{fontSize: 10}} />
-                    <RechartsTooltip />
-                    <Bar dataKey="count" fill="#607d8b" radius={[0, 4, 4, 0]} />
+                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 9, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                    <RechartsTooltip 
+                      contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
+                      itemStyle={{ color: '#f8fafc' }}
+                    />
+                    <Bar dataKey="count" fill="#475569" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </Paper>
