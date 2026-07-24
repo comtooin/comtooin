@@ -19,7 +19,8 @@ import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
   Description as DescriptionIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  RestartAlt as RestartAltIcon
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -95,6 +96,7 @@ const AdminReportPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
   const [error, setError] = useState('');
   const [allRequests, setAllRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
@@ -231,14 +233,17 @@ const AdminReportPage: React.FC = () => {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setPage(1); // 탭 변경 시 페이지 리셋
-    setSelectedCategoryFilter('all'); // 그래프 필터 초기화
-    setStatus('all'); // 상태 필터 초기화
-    setSelectedMonth('all'); // 기간 필터 초기화
-    
+  };
+
+  const handleResetAllFilters = () => {
+    setSelectedCategoryFilter('all');
+    setStatus('all');
+    setSelectedMonth('all');
     const role = localStorage.getItem('adminRole');
     if (role !== 'customer') {
-      setSelectedCustomer('all'); // 거래처 필터 초기화
+      setSelectedCustomer('all');
     }
+    setPage(1);
   };
 
   const fetchInitialData = useCallback(async () => {
@@ -586,7 +591,7 @@ const AdminReportPage: React.FC = () => {
 
   const handleExportExcel = async () => {
     try {
-        setLoading(true);
+        setExportLoading(true);
         setError('');
         
         const supabaseUrl = (supabase as any).supabaseUrl || process.env.REACT_APP_SUPABASE_URL;
@@ -650,7 +655,7 @@ const AdminReportPage: React.FC = () => {
         alert(`엑셀 다운로드 실패: ${err.message}`);
         setError(err.message);
     } finally {
-        setLoading(false);
+        setExportLoading(false);
     }
   };
 
@@ -1360,11 +1365,12 @@ const AdminReportPage: React.FC = () => {
                 fullWidth
                 variant="outlined" 
                 color="secondary" 
-                startIcon={<FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                startIcon={exportLoading ? <CircularProgress size={16} color="inherit" /> : <FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
                 onClick={handleExportExcel}
+                disabled={exportLoading}
                 sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
               >
-                다운로드
+                {exportLoading ? "다운로드 중..." : "다운로드"}
               </Button>
             </Grid>
             {userRole !== 'customer' && (
@@ -1398,16 +1404,64 @@ const AdminReportPage: React.FC = () => {
             )}
           </Grid>
         </Box>
-        {selectedCategoryFilter !== 'all' && (
-          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>활성 필터:</Typography>
+        {(selectedCategoryFilter !== 'all' || 
+          status !== 'all' || 
+          selectedMonth !== 'all' || 
+          (userRole !== 'customer' && selectedCustomer !== 'all')) && (
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold', whiteSpace: 'nowrap' }}>활성 필터:</Typography>
+            
+            {userRole !== 'customer' && selectedCustomer !== 'all' && (
+              <Chip 
+                label={`거래처: ${selectedCustomer}`} 
+                onDelete={() => setSelectedCustomer('all')} 
+                color="primary"
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: 1, fontWeight: 'bold' }}
+              />
+            )}
+            
+            {selectedMonth !== 'all' && (
+              <Chip 
+                label={`기간: ${selectedMonth === 'today' ? '오늘' : selectedMonth}`} 
+                onDelete={() => setSelectedMonth('all')} 
+                color="primary"
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: 1, fontWeight: 'bold' }}
+              />
+            )}
+            
+            {status !== 'all' && (
+              <Chip 
+                label={`상태: ${status === 'processing' ? '처리중' : status === 'completed' ? '처리완료' : status}`} 
+                onDelete={() => setStatus('all')} 
+                color="primary"
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: 1, fontWeight: 'bold' }}
+              />
+            )}
+
+            {selectedCategoryFilter !== 'all' && (
+              <Chip 
+                label={`업무 유형: ${selectedCategoryFilter}`} 
+                onDelete={() => setSelectedCategoryFilter('all')} 
+                color="primary"
+                size="small"
+                variant="outlined"
+                sx={{ borderRadius: 1, fontWeight: 'bold' }}
+              />
+            )}
+
             <Chip 
-              label={`업무 유형: ${selectedCategoryFilter}`} 
-              onDelete={() => setSelectedCategoryFilter('all')} 
-              color="primary"
+              icon={<RestartAltIcon sx={{ fontSize: '1rem !important' }} />}
+              label="필터 초기화" 
+              onClick={handleResetAllFilters} 
+              color="error"
               size="small"
-              variant="outlined"
-              sx={{ borderRadius: 1, fontWeight: 'bold' }}
+              sx={{ borderRadius: 1, fontWeight: 'bold', ml: { xs: 0, sm: 0.5 }, cursor: 'pointer' }}
             />
           </Box>
         )}

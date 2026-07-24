@@ -430,6 +430,7 @@ const AdminSchedulePage: React.FC = () => {
         onClose={() => setOpen(false)} 
         maxWidth="md" 
         fullWidth
+        transitionDuration={0}
         sx={{
           '& .MuiDialog-paper': {
             m: { xs: '20px 16px', sm: 3 },
@@ -498,13 +499,24 @@ const AdminSchedulePage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-          <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-            <Button variant="contained" color="primary" onClick={handleSave} disabled={loading} sx={{ fontWeight: 'bold' }}>
-              저장
-            </Button>
-            <Button onClick={() => setOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
-          </Stack>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexDirection: 'row', gap: 1, justifyContent: 'flex-end' }}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            onClick={handleSave} 
+            disabled={loading} 
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' } }}
+          >
+            저장
+          </Button>
+          <Button 
+            onClick={() => setOpen(false)} 
+            variant="outlined" 
+            color="inherit" 
+            sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' } }}
+          >
+            닫기
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -514,18 +526,19 @@ const AdminSchedulePage: React.FC = () => {
         onClose={() => setDetailOpen(false)} 
         maxWidth="md" 
         fullWidth
+        transitionDuration={0}
         sx={{
           '& .MuiDialog-paper': {
-            m: { xs: '12px 8px', sm: 3 },
-            maxHeight: { xs: 'calc(100% - 24px)', sm: 'calc(100% - 64px)' },
-            width: { xs: 'calc(100% - 16px)' },
-            maxWidth: { xs: 'calc(100% - 16px)', sm: 'md' }
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'md' }
           }
         }}
       >
         {selectedEvent && (
           <>
-            <DialogTitle sx={{ fontWeight: 'bold', bgcolor: '#e3f2fd', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
                 <span>일정 상세</span>
@@ -575,12 +588,31 @@ const AdminSchedulePage: React.FC = () => {
                 </Box>
               </Stack>
             </DialogContent>
-            <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-              <Button onClick={() => handleDelete(selectedEvent.id)} color="error" variant="outlined" sx={{ fontWeight: 'bold' }}>삭제</Button>
-              <Stack direction="row" spacing={1}>
-                <Button variant="contained" color="primary" onClick={handleEdit} sx={{ fontWeight: 'bold' }}>수정</Button>
-                <Button onClick={() => setDetailOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white' }}>닫기</Button>
-              </Stack>
+            <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'center' }}>
+              <Button 
+                onClick={() => handleDelete(selectedEvent.id)} 
+                color="error" 
+                variant="outlined" 
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, mr: 'auto', minWidth: '60px' }}
+              >
+                삭제
+              </Button>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={handleEdit} 
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, minWidth: '60px' }}
+              >
+                수정
+              </Button>
+              <Button 
+                onClick={() => setDetailOpen(false)} 
+                variant="outlined" 
+                color="inherit" 
+                sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, minWidth: '60px' }}
+              >
+                닫기
+              </Button>
             </DialogActions>
           </>
         )}

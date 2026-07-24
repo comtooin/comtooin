@@ -1189,7 +1189,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
               fontWeight: 'bold', 
               color: '#673ab7', 
               borderColor: '#673ab7',
-              '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' } 
+              '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
+              height: '36px',
+              fontSize: '0.75rem',
+              borderRadius: 1
             }}
           >
             {isGenerating ? "생성 중..." : "AI 자산 분석 리포트"}
@@ -1200,6 +1203,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             color="primary" 
             startIcon={<FileDownloadIcon />} 
             onClick={handleDownloadExe}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             자산 수집기 다운로드
           </Button>
@@ -1418,15 +1422,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
                 <>
-                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' } }}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                     전체 초기화
                   </Button>
-                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                     CSV 업로드
                     <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'hardware')} />
                   </Button>
                 </>
-                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('hardware')}>
+                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('hardware')} sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                   엑셀 다운로드
                 </Button>
               </Stack>
@@ -1535,15 +1539,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
             <Box>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
                 <>
-                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' } }}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                     전체 초기화
                   </Button>
-                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small">
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                     CSV 업로드
                     <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'software')} />
                   </Button>
                 </>
-                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('software')}>
+                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('software')} sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                   엑셀 전체 다운로드
                 </Button>
               </Stack>
@@ -1600,6 +1604,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                                 e.stopPropagation();
                                 handleDeleteByComputer(group.computer_name);
                               }}
+                              sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}
                             >
                               초기화
                             </Button>
@@ -1679,9 +1684,9 @@ const AdminCustomerInventoryPage: React.FC = () => {
             )}
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button variant="contained" color="primary" onClick={handleEditSubmit} sx={{ fontWeight: 'bold' }}>저장</Button>
-          <Button onClick={() => setOpenModal(false)} variant="outlined" color="inherit">닫기</Button>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
+          <Button variant="contained" color="primary" onClick={handleEditSubmit} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>저장</Button>
+          <Button onClick={() => setOpenModal(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -1751,8 +1756,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
           </Box>
         )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSwDetailOpen(false)} variant="outlined" color="inherit">닫기</Button>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
+          <Button onClick={() => setSwDetailOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
       {/* 하드웨어 상세 정보 팝업 */}
@@ -1859,7 +1864,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Stack>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+        <DialogActions sx={{ px: { xs: 1.5, sm: 3 }, py: { xs: 1.5, sm: 2 }, bgcolor: '#f8fafc', borderTop: '1px solid #e2e8f0', flexDirection: { xs: 'column', sm: 'row' }, alignItems: 'stretch', gap: 1 }}>
           {selectedHardware ? (
             <Button 
               variant="outlined" 
@@ -1871,11 +1876,12 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   setHwDetailOpen(false);
                 }
               }}
+              sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: '100%', sm: 'auto' } }}
             >
               삭제
             </Button>
-          ) : <Box />}
-          <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+          ) : <Box sx={{ display: { xs: 'none', sm: 'block' } }} />}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ ml: { sm: 'auto' }, width: { xs: '100%', sm: 'auto' } }}>
             {selectedHardware && (
               <Button 
                 variant="contained" 
@@ -1885,12 +1891,12 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   setHwDetailOpen(false);
                   openEditModal(selectedHardware, 'hardware');
                 }}
-                sx={{ fontWeight: 'bold' }}
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: '100%', sm: 'auto' } }}
               >
                 수정
               </Button>
             )}
-            <Button variant="outlined" color="inherit" size="small" onClick={() => setHwDetailOpen(false)} sx={{ bgcolor: 'white' }}>닫기</Button>
+            <Button variant="outlined" color="inherit" size="small" onClick={() => setHwDetailOpen(false)} sx={{ bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: '100%', sm: 'auto' } }}>닫기</Button>
           </Stack>
         </DialogActions>
       </Dialog>
@@ -1976,8 +1982,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
             ))}
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: 1 }}>
-          <Button onClick={handleDownloadAiReport} variant="contained" color="success" sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1 }}>
+          <Button onClick={handleDownloadAiReport} variant="contained" color="success" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' }}>
             PC에 다운로드 (PDF)
           </Button>
           <Button 
@@ -1990,11 +1996,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
               navigator.clipboard.writeText(tempElement.innerText || tempElement.textContent || '');
               alert('리포트 내용이 클립보드에 복사되었습니다.');
             }}
-            sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' }}
           >
             내용 복사
           </Button>
-          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2, width: { xs: '100%', sm: 'auto' }, m: '0 !important' }}>닫기</Button>
+          <Button onClick={() => setAiModalOpen(false)} color="inherit" variant="outlined" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

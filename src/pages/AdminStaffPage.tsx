@@ -255,14 +255,14 @@ const AdminStaffPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
-      <Helmet><title>멤버 관리 | COMTOOIN</title></Helmet>
+      <Helmet><title>멤버 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <PeopleIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
           <Typography variant="h5" component="h1" fontWeight="bold">
-            멤버 관리
+            멤버
           </Typography>
         </Stack>
         <Typography variant="body2" color="text.secondary">
@@ -317,7 +317,7 @@ const AdminStaffPage: React.FC = () => {
                 color="primary" 
                 startIcon={<AddIcon />} 
                 onClick={() => setRegisterOpen(true)}
-                sx={{ fontWeight: 'bold' }}
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
               >
                 새 멤버 등록
               </Button>
@@ -520,9 +520,9 @@ const AdminStaffPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
-          <Button variant="contained" color="primary" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold' }}>저장</Button>
-          <Button onClick={() => setEditDialogOpen(false)} variant="outlined" color="inherit">닫기</Button>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& > button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
+          <Button variant="contained" color="primary" onClick={handleUpdateStaff} disabled={submitting || !editingStaff?.name.trim() || !editingStaff?.username.trim() || !editingStaff?.email.trim()} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>저장</Button>
+          <Button onClick={() => setEditDialogOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -558,9 +558,9 @@ const AdminStaffPage: React.FC = () => {
             placeholder="최소 6자 이상"
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
-          <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={submitting || !resetPassword.trim()}>비밀번호 변경</Button>
-          <Button onClick={() => setResetDialogOpen(false)} variant="outlined" color="inherit">닫기</Button>
+        <DialogActions sx={{ p: 2, pt: 0, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& > button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
+          <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={submitting || !resetPassword.trim()} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>비밀번호 변경</Button>
+          <Button onClick={() => setResetDialogOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -673,17 +673,17 @@ const AdminStaffPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& > button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
           <Button 
             variant="contained" 
             color="primary"
             onClick={handleAddStaff} 
             disabled={submitting || !newName.trim() || !newEmail.trim() || !newUsername.trim() || !newPassword.trim()}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             저장
           </Button>
-          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">닫기</Button>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

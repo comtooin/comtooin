@@ -470,7 +470,7 @@ const AdminCustomerPage: React.FC = () => {
                   color="primary" 
                   startIcon={<AddIcon />} 
                   onClick={() => setRegisterOpen(true)}
-                  sx={{ fontWeight: 'bold' }}
+                  sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
                 >
                   새 거래처 등록
                 </Button>
@@ -746,7 +746,7 @@ const AdminCustomerPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
           {isAdmin ? (
             <>
               <Button 
@@ -754,14 +754,14 @@ const AdminCustomerPage: React.FC = () => {
                 color="primary"
                 onClick={handleEditCustomer} 
                 disabled={submitting || !editCustomerName.trim()}
-                sx={{ fontWeight: 'bold' }}
+                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
               >
                 저장
               </Button>
-              <Button onClick={() => setEditOpen(false)} variant="outlined" color="inherit">닫기</Button>
+              <Button onClick={() => setEditOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
             </>
           ) : (
-            <Button onClick={() => setEditOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold' }}>닫기</Button>
+            <Button onClick={() => setEditOpen(false)} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
           )}
         </DialogActions>
       </Dialog>
@@ -822,7 +822,7 @@ const AdminCustomerPage: React.FC = () => {
             {accountSuccess && <Alert severity="success">{accountSuccess}</Alert>}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, display: 'flex', justifyContent: isAdmin ? 'space-between' : 'flex-end', gap: 1 }}>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, display: 'flex', flexDirection: 'row', gap: 1 }}>
           {isAdmin ? (
             <>
               {accountCustomer?.auth_user_id ? (
@@ -832,38 +832,37 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   onClick={handleDeleteAccount} 
                   disabled={accountSubmitting}
+                  sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, mr: { sm: 'auto' } }}
                 >
                   삭제
                 </Button>
-              ) : <Box />}
+              ) : <Box sx={{ display: { xs: 'none', sm: 'block' } }} />}
               
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                {accountCustomer?.auth_user_id ? (
-                  <Button 
-                    variant="contained" 
-                    onClick={handleResetPassword} 
-                    disabled={accountSubmitting || !accountPassword.trim()}
-                    size="small"
-                    sx={{ fontWeight: 'bold' }}
-                  >
-                    비번 변경
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="contained" 
-                    onClick={handleCreateAccount} 
-                    disabled={accountSubmitting || !accountLoginId.trim() || !accountPassword.trim()}
-                    size="small"
-                    sx={{ fontWeight: 'bold' }}
-                  >
-                    생성
-                  </Button>
-                )}
-                <Button onClick={() => setAccountDialogOpen(false)} variant="outlined" color="inherit" size="small">닫기</Button>
-              </Box>
+              {accountCustomer?.auth_user_id ? (
+                <Button 
+                  variant="contained" 
+                  onClick={handleResetPassword} 
+                  disabled={accountSubmitting || !accountPassword.trim()}
+                  size="small"
+                  sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, ml: { xs: 0, sm: 1 } }}
+                >
+                  비번 변경
+                </Button>
+              ) : (
+                <Button 
+                  variant="contained" 
+                  onClick={handleCreateAccount} 
+                  disabled={accountSubmitting || !accountLoginId.trim() || !accountPassword.trim()}
+                  size="small"
+                  sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, ml: { xs: 0, sm: 1 } }}
+                >
+                  생성
+                </Button>
+              )}
+              <Button onClick={() => setAccountDialogOpen(false)} variant="outlined" color="inherit" size="small" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, ml: { xs: 0, sm: 1 } }}>닫기</Button>
             </>
           ) : (
-            <Button onClick={() => setAccountDialogOpen(false)} variant="contained" color="primary" size="small" sx={{ fontWeight: 'bold' }}>닫기</Button>
+            <Button onClick={() => setAccountDialogOpen(false)} variant="contained" color="primary" size="small" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: 1 }}>닫기</Button>
           )}
         </DialogActions>
       </Dialog>
@@ -1057,17 +1056,17 @@ const AdminCustomerPage: React.FC = () => {
             </Grid>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2, gap: 1 }}>
+        <DialogActions sx={{ p: 2, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
           <Button 
             variant="contained" 
             color="primary"
             onClick={handleAddCustomer} 
             disabled={submitting || !newCustomerName.trim() || (createAccountOption && (!newLoginId.trim() || !newPassword.trim()))}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             저장
           </Button>
-          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit">닫기</Button>
+          <Button onClick={() => setRegisterOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>

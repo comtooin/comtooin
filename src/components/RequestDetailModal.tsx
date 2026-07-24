@@ -284,20 +284,20 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'center' }}>
-        <Stack direction="row" spacing={{ xs: 1.5, sm: 2 }} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1, justifyContent: 'center', width: '100%' }}>
           {userRole === 'customer' ? (
-            <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', minWidth: 100 }}>닫기</Button>
+            <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 100 } }}>닫기</Button>
           ) : (
             <>
-              <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', minWidth: 'auto' }}>삭제</Button>
-              <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>{isEditing ? '취소' : '수정'}</Button>
-              <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', minWidth: 'auto' }}>
+              <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 }, mr: { sm: 'auto' } }}>삭제</Button>
+              <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>{isEditing ? '취소' : '수정'}</Button>
+              <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>
                 {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
               </Button>
-              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', minWidth: 'auto' }}>닫기</Button>
+              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>닫기</Button>
             </>
           )}
-        </Stack>
+        </Box>
       </DialogActions>
     </Dialog>
   );

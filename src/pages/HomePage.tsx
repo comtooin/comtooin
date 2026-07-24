@@ -424,7 +424,8 @@ const HomePage: React.FC = () => {
                           startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handleVoiceInput('content')} 
                           sx={{ 
-                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
                             minWidth: '75px', whiteSpace: 'nowrap',
                             borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
                           }}
@@ -439,7 +440,8 @@ const HomePage: React.FC = () => {
                           startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('content')} 
                           sx={{ 
-                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
                             minWidth: '85px', whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
@@ -472,7 +474,8 @@ const HomePage: React.FC = () => {
                           startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handleVoiceInput('processingContent')} 
                           sx={{ 
-                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
                             minWidth: '75px', whiteSpace: 'nowrap',
                             borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
                           }}
@@ -487,7 +490,8 @@ const HomePage: React.FC = () => {
                           startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
                           onClick={() => handlePolishText('processingContent')} 
                           sx={{ 
-                            fontSize: '0.7rem', py: 0.2, px: 1.2, 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
                             minWidth: '85px', whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
@@ -517,7 +521,7 @@ const HomePage: React.FC = () => {
                         component="label" 
                         startIcon={<PhotoCamera />} 
                         size="small"
-                        sx={{ borderRadius: 2, py: 0.5, px: 2, color: 'text.secondary', borderColor: 'divider' }}
+                        sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
                       >
                         이미지 첨부 (최대 5개)
                         <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
@@ -545,7 +549,7 @@ const HomePage: React.FC = () => {
               </Paper>
 
               {error && <Alert severity="error">{error}</Alert>}
-              <Button type="submit" variant="contained" fullWidth size="large" sx={{ py: 1.5, fontWeight: 'bold' }} disabled={submitting}>
+              <Button type="submit" variant="contained" fullWidth disabled={submitting} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>
                 {submitting ? <CircularProgress size={24} color="inherit" /> : "업무 기록 저장하기"}
               </Button>
             </Stack>

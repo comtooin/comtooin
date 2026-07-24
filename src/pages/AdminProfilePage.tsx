@@ -242,7 +242,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
                   variant="contained" 
                   onClick={handlePhoneSave} 
                   disabled={submitting} 
-                  sx={{ ml: 1, whiteSpace: 'nowrap', minWidth: '60px', fontWeight: 'bold' }}
+                  sx={{ ml: 1, whiteSpace: 'nowrap', minWidth: '60px', fontWeight: 'bold', height: '30px', fontSize: '0.75rem', borderRadius: 1 }}
                 >
                   저장
                 </Button>
@@ -288,7 +288,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
                 type="submit"
                 variant="contained"
                 disabled={submitting}
-                sx={{ mt: 1, py: 1.2, fontWeight: 'bold' }}
+                sx={{ mt: 1, fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
               >
                 {submitting ? <CircularProgress size={24} color="inherit" /> : '비밀번호 변경하기'}
               </Button>
@@ -322,12 +322,12 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
             보안을 위해 다시 로그인해 주세요.
           </Typography>
         </DialogContent>
-        <DialogActions sx={{ p: 2, pt: 0 }}>
+        <DialogActions sx={{ p: 2, pt: 0, flexDirection: 'row', flexWrap: 'wrap', gap: 1, '& button': { width: { xs: 'calc(50% - 4px)', sm: 'auto' }, m: '0 !important' } }}>
           <Button 
             variant="contained" 
             fullWidth 
             onClick={handleFinalLogout}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             확인 (로그아웃)
           </Button>

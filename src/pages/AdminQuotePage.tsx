@@ -405,27 +405,20 @@ const AdminQuotePage: React.FC = () => {
   const totalMargin = totalFinal - totalCost;
 
   return (
-    <Container maxWidth="lg" sx={{ mt: { xs: 1, sm: 2 }, mb: { xs: 1, sm: 2 }, display: 'flex', flexDirection: 'column', px: { xs: 1, sm: 2 } }}>
+    <Container maxWidth="lg">
       <Helmet><title>간편견적 | COMTOOIN</title></Helmet>
 
       {/* 표준 헤더 섹션 */}
       <Box sx={{ mb: 2.5 }}>
         <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
           <ReceiptIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" fontWeight="bold" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+          <Typography variant="h5" component="h1" fontWeight="bold">
             간편견적
           </Typography>
         </Stack>
-        <Box sx={{ color: 'text.secondary', fontSize: '0.875rem', lineHeight: 1.5 }}>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 0.5 }}>
-            <Box sx={{ mr: 1 }}>•</Box>
-            <Box><b>[텍스트 견적 자동입력]</b> 버튼을 눌러 쇼핑몰 견적서의 텍스트를 넣어 견적서를 작성합니다.</Box>
-          </Box>
-          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-            <Box sx={{ mr: 1 }}>•</Box>
-            <Box>자주 사용하는 견적은 <b>[견적 템플릿 저장]</b>, <b>[저장된 견적 템플릿]</b>으로 저장 및 불러 옵니다.</Box>
-          </Box>
-        </Box>
+        <Typography variant="body2" color="text.secondary">
+          부품 견적 데이터를 작성하고 마진율을 조율하여 PDF 견적서를 발행합니다.
+        </Typography>
       </Box>
 
       <Divider sx={{ mb: 2.5 }} />
@@ -456,7 +449,7 @@ const AdminQuotePage: React.FC = () => {
                   InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                   sx={{ minWidth: '100px' }}
                 />
-                <Button variant="outlined" color="primary" onClick={handleGlobalMarginApply} sx={{ whiteSpace: 'nowrap', height: '40px' }}>
+                <Button variant="outlined" color="primary" onClick={handleGlobalMarginApply} sx={{ whiteSpace: 'nowrap', height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
                   적용
                 </Button>
               </Box>
@@ -465,13 +458,13 @@ const AdminQuotePage: React.FC = () => {
             <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' } }} />
 
             {/* 액션 버튼들 */}
-            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, flexWrap: 'wrap' }}>
               <Button 
                 variant="contained" 
                 color="primary" 
                 startIcon={<AutoFixHighIcon />}
                 onClick={() => setPasteDialogOpen(true)}
-                sx={{ fontWeight: 'bold', width: { xs: '100%', sm: 'auto' }, px: 3 }}
+                sx={{ fontWeight: 'bold', width: { xs: '100%', sm: '220px' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, whiteSpace: 'nowrap' }}
               >
                 텍스트 견적 자동입력
               </Button>
@@ -480,7 +473,7 @@ const AdminQuotePage: React.FC = () => {
                 color="secondary" 
                 startIcon={<FolderOpenIcon />}
                 onClick={handleOpenLoadDialog}
-                sx={{ fontWeight: 'bold', width: { xs: '100%', sm: 'auto' }, px: 3 }}
+                sx={{ fontWeight: 'bold', width: { xs: '100%', sm: '220px' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, whiteSpace: 'nowrap' }}
               >
                 저장된 견적 템플릿
               </Button>
@@ -601,6 +594,7 @@ const AdminQuotePage: React.FC = () => {
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={handleAddItemManually}
+                  sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}
                 >
                   항목 직접 추가
                 </Button>
@@ -617,6 +611,7 @@ const AdminQuotePage: React.FC = () => {
                     }
                   }}
                   disabled={items.length === 0}
+                  sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}
                 >
                   초기화
                 </Button>
@@ -640,7 +635,7 @@ const AdminQuotePage: React.FC = () => {
                   color="primary" 
                   startIcon={<SaveIcon />}
                   onClick={() => setNewTemplateName(`${customerName || '고객'} 견적_${format(new Date(), 'yyyyMMdd')}`)}
-                  sx={{ width: { xs: '100%', sm: 'auto' }, px: 3, fontWeight: 'bold', borderRadius: 1 }}
+                  sx={{ width: { xs: '100%', sm: '220px' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap' }}
                 >
                   견적 템플릿 저장
                 </Button>
@@ -648,7 +643,7 @@ const AdminQuotePage: React.FC = () => {
                   variant="contained" 
                   color="secondary" 
                   onClick={() => setPreviewOpen(true)}
-                  sx={{ width: { xs: '100%', sm: 'auto' }, px: 4, fontWeight: 'bold', borderRadius: 1 }}
+                  sx={{ width: { xs: '100%', sm: '220px' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap' }}
                 >
                   미리보기 및 다운로드
                 </Button>
@@ -697,18 +692,17 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             sx={{ mt: 2, fontFamily: 'monospace', fontSize: '0.85rem' }}
           />
         </DialogContent>
-        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, gap: 1 }}>
+        <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, display: 'flex', flexDirection: 'row', gap: 1, '& button': { flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, m: '0 !important' } }}>
           <Button 
             variant="contained" 
             color="primary" 
             onClick={handleParse}
             startIcon={<AutoFixHighIcon />}
-            size="small"
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             자동입력
           </Button>
-          <Button onClick={() => setPasteDialogOpen(false)} variant="outlined" color="inherit" size="small">닫기</Button>
+          <Button onClick={() => setPasteDialogOpen(false)} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -879,18 +873,18 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
               </Typography>
             </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
+        <DialogActions sx={{ p: 2, display: 'flex', flexDirection: 'row', gap: 1, '& button': { flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, m: '0 !important' } }}>
           <Button 
             variant="contained" 
             color="primary" 
             startIcon={<DownloadIcon />}
             onClick={() => { handleDownloadPDF(); setPreviewOpen(false); }}
             disabled={items.length === 0}
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             PDF 다운로드
           </Button>
-          <Button onClick={() => setPreviewOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold' }}>
+          <Button onClick={() => setPreviewOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>
             닫기
           </Button>
         </DialogActions>
@@ -923,9 +917,9 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             sx={{ mt: 1 }}
           />
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleSaveTemplate} variant="contained" color="primary">저장</Button>
-          <Button onClick={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} variant="outlined" color="inherit">닫기</Button>
+        <DialogActions sx={{ p: 2, display: 'flex', flexDirection: 'row', gap: 1, '& button': { flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, m: '0 !important' } }}>
+          <Button onClick={handleSaveTemplate} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>저장</Button>
+          <Button onClick={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} variant="outlined" color="inherit" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
 
@@ -987,13 +981,14 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                           </ListItem>
                         ))}
                       </List>
-                      <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Box sx={{ mt: 2, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1, justifyContent: 'space-between', alignItems: 'stretch' }}>
                         <Button 
                           variant="text" 
                           size="small" 
                           color="error" 
                           startIcon={<DeleteIcon />}
                           onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(tpl.id); }}
+                          sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, justifyContent: { xs: 'center', sm: 'flex-start' } }}
                         >
                           삭제
                         </Button>
@@ -1002,6 +997,7 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
                           size="small" 
                           color="primary" 
                           onClick={(e) => { e.stopPropagation(); handleLoadTemplate(tpl.id); }}
+                          sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
                         >
                           이 템플릿 불러오기
                         </Button>
@@ -1013,8 +1009,8 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             </List>
           )}
         </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={() => setLoadDialogOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold' }}>닫기</Button>
+        <DialogActions sx={{ p: 2, flexDirection: { xs: 'column', sm: 'row' }, gap: 1, '& button': { width: { xs: '100%', sm: 'auto' }, m: '0 !important' } }}>
+          <Button onClick={() => setLoadDialogOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>닫기</Button>
         </DialogActions>
       </Dialog>
     </Container>
