@@ -95,6 +95,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
   // 소프트웨어 상세보기 팝업 상태
   const [swDetailOpen, setSwDetailOpen] = useState(false);
   const [selectedComputer, setSelectedComputer] = useState<string>('');
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
   const [swDetailPage, setSwDetailPage] = useState(1);
   const swDetailRowsPerPage = 15;
 
@@ -1579,6 +1580,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                         hover 
                         onClick={() => {
                           setSelectedComputer(group.computer_name);
+                          setSelectedUserName(group.user_name || '');
                           setSwDetailPage(1);
                           setSwDetailOpen(true);
                         }}
@@ -1699,9 +1701,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <SettingsIcon color="action" sx={{ fontSize: '1.25rem' }} />
-          <span>[{selectedComputer}] 설치된 소프트웨어 상세</span>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            <SettingsIcon color="action" sx={{ fontSize: '1.25rem' }} />
+            <span>[{selectedUserName || '미지정'}] 소프트웨어 상세 목록 정보</span>
+          </Box>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
           <TableContainer>
@@ -1770,7 +1774,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1.5 }}>
           <Box display="flex" alignItems="center" gap={1}>
             <ComputerIcon color="action" sx={{ fontSize: '1.25rem' }} />
-            <span>하드웨어 상세 사양 정보</span>
+            <span>[{selectedHardware?.user_name || '미지정'}] 하드웨어 상세 사양 정보</span>
           </Box>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 3 }}>
