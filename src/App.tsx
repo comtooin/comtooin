@@ -283,9 +283,9 @@ function App() {
       <Router>
         <SessionManager />
         <OneSignalManager />
-        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
           <NavBar />
-          <Box component="main" sx={{ flexGrow: 1, py: { xs: 3, md: 5 } }}>
+          <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 }, overflow: 'hidden' }}>
             <Routes>
               <Route path="/" element={<RootRoute />} />
               <Route path="/admin/login" element={<AdminLoginPage />} />

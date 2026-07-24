@@ -66,87 +66,145 @@ const AdminQuotePage: React.FC = () => {
   const handleParse = () => {
     if (!rawText.trim()) return;
     
-    const lines = rawText.split('\n');
+    const lines = rawText.split('\n').map(l => l.trim()).filter(l => l !== '');
     const parsedItems: QuoteItem[] = [];
-    let buffer = '';
+    let currentCategory = '';
+    let parsedWithCart = false;
 
+    // 1. 장바구니 패턴 분석 시도 (컴퓨존, 조이젠 등)
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
-      if (!line) continue;
+      const line = lines[i];
 
-      // Handle Tab Separated (Website/Excel copy)
-      if (line.includes('\t')) {
-        const parts = line.split('\t').map(p => p.trim()).filter(p => p !== '');
-        if (parts.length >= 4) {
-          // Typically the last 3 columns are Price, Quantity, Total
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          const totalStr = parts[parts.length - 1].replace(/[^0-9]/g, '');
-          const qtyStr = parts[parts.length - 2].replace(/[^0-9]/g, '');
-          const priceStr = parts[parts.length - 3].replace(/[^0-9]/g, '');
+      // Computoz 옵션 라인 스킵
+      if (i > 0 && lines[i - 1] === '상   품 :') continue;
 
-          if (priceStr && qtyStr && parseInt(priceStr) > 0) {
-            let category = parts[1] || '';
-            let name = parts.slice(2, parts.length - 3).join(' ');
-            if (parts.length === 4) {
-               category = '';
-               name = parts[0];
-            }
-            name = name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*-\d+\s*$/, '').trim();
-            parsedItems.push({
-              id: Date.now().toString() + Math.random().toString(),
-              category,
-              name,
-              costPrice: parseInt(priceStr),
-              quantity: parseInt(qtyStr) || 1,
-              marginRate: globalMargin,
-              finalPrice: 0,
-            });
+      // [카테고리] 형태의 짧은 라인 감지
+      if (line.startsWith('[') && line.endsWith(']') && line.length < 25 && !line.includes(' ') && 
+          !line.includes('전자') && !line.includes('마이크로') && !line.includes('MSI') && 
+          !line.includes('AMD') && !line.includes('MANLI') && !line.includes('GIGABYTE')) {
+        currentCategory = line.slice(1, -1);
+        continue;
+      }
+
+      // 상품명으로 보이는 라인 감지 (대괄호로 시작하고 일정 길이 이상)
+      if (line.startsWith('[') && line.includes(']') && line.length > 10) {
+        const name = line.trim();
+        let costPrice = 0;
+        let quantity = 1;
+        let foundPrice = false;
+        let foundQty = false;
+
+        // 이후 최대 8줄 탐색하며 가격과 수량 매칭
+        for (let j = 1; j <= 8; j++) {
+          if (i + j >= lines.length) break;
+          const subLine = lines[i + j].trim();
+
+          if (subLine === '변경' || subLine === '상   품 :' || subLine.includes('수량추가수량제거') || 
+              subLine === '바로구매' || subLine === '좋아요' || subLine.includes('보관하기') || 
+              subLine.includes('계속 보관하기')) {
             continue;
           }
-        }
-      }
 
-      // Handle space/newline separated (PDF OCR or loose copy)
-      buffer += (buffer ? ' ' : '') + line;
-      
-      // Look for pattern: ... (Text) (Price원) (Qty) (Total원)
-      const match = buffer.match(/(.*?)\s+([0-9,]+)\s*원?\s+([0-9]+)\s+([0-9,]+)\s*원?$/);
-      if (match) {
-        const prefix = match[1];
-        const costPrice = parseInt(match[2].replace(/,/g, ''));
-        const quantity = parseInt(match[3]);
-        
-        const prefixParts = prefix.split(' ');
-        let category = '';
-        let name = prefix;
-        if (prefixParts.length >= 3 && !isNaN(parseInt(prefixParts[0]))) {
-          category = prefixParts[1];
-          name = prefixParts.slice(2).join(' ');
-        } else if (prefixParts.length >= 2 && !isNaN(parseInt(prefixParts[0]))) {
-          category = '';
-          name = prefixParts.slice(1).join(' ');
+          if (!foundPrice && (subLine.includes('원') || subLine.includes(',')) && /[0-9,]{4,}/.test(subLine)) {
+            const numStr = subLine.replace(/[^0-9]/g, '');
+            if (numStr) {
+              costPrice = parseInt(numStr);
+              foundPrice = true;
+            }
+          } else if (!foundQty && /^[0-9]+$/.test(subLine) && parseInt(subLine) < 100) {
+            quantity = parseInt(subLine);
+            foundQty = true;
+          }
         }
-        name = name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*-\d+\s*$/, '').trim();
-        
-        parsedItems.push({
-          id: Date.now().toString() + Math.random().toString(),
-          category,
-          name,
-          costPrice,
-          quantity,
-          marginRate: globalMargin,
-          finalPrice: 0,
-        });
-        buffer = '';
+
+        if (foundPrice) {
+          parsedItems.push({
+            id: Date.now().toString() + Math.random().toString(),
+            category: currentCategory,
+            name: name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*-\d+\s*$/, '').trim(),
+            costPrice,
+            quantity,
+            marginRate: globalMargin,
+            finalPrice: 0,
+          });
+          parsedWithCart = true;
+        }
       }
     }
-    
+
+    // 2. 장바구니 패턴으로 매칭된 건이 없으면 기존 Tab 분리 및 원가 패턴 분석 실행
+    if (!parsedWithCart) {
+      let buffer = '';
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i];
+
+        // 탭 구분선 처리
+        if (line.includes('\t')) {
+          const parts = line.split('\t').map(p => p.trim()).filter(p => p !== '');
+          if (parts.length >= 4) {
+            const priceStr = parts[parts.length - 3].replace(/[^0-9]/g, '');
+            const qtyStr = parts[parts.length - 2].replace(/[^0-9]/g, '');
+            if (priceStr && qtyStr && parseInt(priceStr) > 0) {
+              let category = parts[1] || '';
+              let name = parts.slice(2, parts.length - 3).join(' ');
+              if (parts.length === 4) {
+                category = '';
+                name = parts[0];
+              }
+              name = name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*-\d+\s*$/, '').trim();
+              parsedItems.push({
+                id: Date.now().toString() + Math.random().toString(),
+                category,
+                name,
+                costPrice: parseInt(priceStr),
+                quantity: parseInt(qtyStr) || 1,
+                marginRate: globalMargin,
+                finalPrice: 0,
+              });
+              continue;
+            }
+          }
+        }
+
+        // 공백/줄바꿈 패턴 결합 처리
+        buffer += (buffer ? ' ' : '') + line;
+        const match = buffer.match(/(.*?)\s+([0-9,]+)\s*원?\s+([0-9]+)\s+([0-9,]+)\s*원?$/);
+        if (match) {
+          const prefix = match[1];
+          const costPrice = parseInt(match[2].replace(/,/g, ''));
+          const quantity = parseInt(match[3]);
+
+          const prefixParts = prefix.split(' ');
+          let category = '';
+          let name = prefix;
+          if (prefixParts.length >= 3 && !isNaN(parseInt(prefixParts[0]))) {
+            category = prefixParts[1];
+            name = prefixParts.slice(2).join(' ');
+          } else if (prefixParts.length >= 2 && !isNaN(parseInt(prefixParts[0]))) {
+            category = '';
+            name = prefixParts.slice(1).join(' ');
+          }
+          name = name.replace(/^\[[a-zA-Z0-9_-]+\]\s*/, '').replace(/\s*-\d+\s*$/, '').trim();
+
+          parsedItems.push({
+            id: Date.now().toString() + Math.random().toString(),
+            category,
+            name,
+            costPrice,
+            quantity,
+            marginRate: globalMargin,
+            finalPrice: 0,
+          });
+          buffer = '';
+        }
+      }
+    }
+
     const recalculated = parsedItems.map(item => ({
       ...item,
       finalPrice: Math.round(item.costPrice * (1 + item.marginRate / 100) / 10) * 10
     }));
-    
-    // 기존 아이템 덮어쓰기 (원시 텍스트 입력창은 헷갈리지 않게 비워줍니다)
+
     setItems(recalculated);
     setRawText('');
     setPasteDialogOpen(false);
@@ -435,33 +493,6 @@ const AdminQuotePage: React.FC = () => {
               <Typography variant="subtitle1" fontWeight="bold">
                 견적 상세 내역
               </Typography>
-              <Stack direction="row" spacing={1.5}>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={handleAddItemManually}
-                >
-                  항목 직접 추가
-                </Button>
-                <Button 
-                  variant="outlined" 
-                  color="error" 
-                  size="small"
-                  startIcon={<DeleteIcon />}
-                  onClick={() => {
-                    if(window.confirm('입력된 모든 내역을 지우시겠습니까?')) {
-                      setItems([]);
-                      setCustomerName('');
-                      setGlobalMargin(15);
-                    }
-                  }}
-                  disabled={items.length === 0}
-                >
-                  초기화
-                </Button>
-              </Stack>
             </Box>
 
               <TableContainer sx={{ maxHeight: { xs: 500, sm: 400 }, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
@@ -562,6 +593,34 @@ const AdminQuotePage: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+
+              <Box sx={{ mt: 1.5, mb: 1, display: 'flex', gap: 1.5, justifyContent: 'flex-start' }}>
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={handleAddItemManually}
+                >
+                  항목 직접 추가
+                </Button>
+                <Button 
+                  variant="outlined" 
+                  color="error" 
+                  size="small"
+                  startIcon={<DeleteIcon />}
+                  onClick={() => {
+                    if(window.confirm('입력된 모든 내역을 지우시겠습니까?')) {
+                      setItems([]);
+                      setCustomerName('');
+                      setGlobalMargin(15);
+                    }
+                  }}
+                  disabled={items.length === 0}
+                >
+                  초기화
+                </Button>
+              </Box>
 
               <Box sx={{ mt: 2, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
                 <Typography variant="body2" display="flex" justifyContent="space-between">

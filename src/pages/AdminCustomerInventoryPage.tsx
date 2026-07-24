@@ -175,7 +175,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
           width: 794px;
           height: 1123px;
           background-color: #ffffff;
-          padding: 60px 50px 80px 50px;
+          padding: 50px 50px 70px 50px;
           box-sizing: border-box;
           font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
           color: #333333;
@@ -184,16 +184,18 @@ const AdminCustomerInventoryPage: React.FC = () => {
           flex-direction: column;
           overflow: hidden;
         }
-        .pdf-page-preview h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
-        .pdf-page-preview .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
-        .pdf-page-preview h2 { font-size: 18px; font-weight: bold; margin-top: 25px; margin-bottom: 12px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        .pdf-page-preview h3 { font-size: 14px; font-weight: bold; margin-top: 18px; margin-bottom: 8px; color: #333; }
-        .pdf-page-preview p { font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; text-align: justify; }
-        .pdf-page-preview ul { padding-left: 20px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.7; }
-        .pdf-page-preview li { margin-bottom: 6px; }
-        .pdf-page-preview table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
-        .pdf-page-preview th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 8px; font-weight: bold; text-align: center; }
-        .pdf-page-preview td { border: 1px solid #ddd; padding: 8px; line-height: 1.5; }
+        .pdf-page-preview h1 { font-size: 20px; font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 8px; color: #111111; }
+        .pdf-page-preview .subtitle { font-size: 11px; text-align: center; margin-bottom: 15px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 8px; }
+        .pdf-page-preview h2 { font-size: 15px; font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+        .pdf-page-preview h3 { font-size: 13px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; color: #333333; }
+        .pdf-page-preview p { font-size: 13px; line-height: 1.65; margin-bottom: 8px; text-align: justify; color: #333333; }
+        .pdf-page-preview ul { padding-left: 20px; margin-bottom: 8px; font-size: 13px; line-height: 1.65; color: #333333; }
+        .pdf-page-preview li { margin-bottom: 4px; color: #333333; }
+        .pdf-page-preview table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px; color: #333333; }
+        .pdf-page-preview th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; color: #333333; }
+        .pdf-page-preview td { border: 1px solid #ddd; padding: 6px; line-height: 1.5; color: #333333; }
+        .pdf-page-preview strong, .pdf-page-preview b, .pdf-page-preview span, .pdf-page-preview div { color: #333333; }
+        .pdf-page-preview h1 *, .pdf-page-preview h2 *, .pdf-page-preview .pdf-header * { color: inherit; }
       `;
       container.appendChild(styleSheet);
       document.body.appendChild(container);
@@ -246,12 +248,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
+      const MAX_CONTENT_HEIGHT = 900; // 900px로 여유 공간 최적화
+      let hasSeenFirstCategory = false;
 
       let children = Array.from(parserDiv.childNodes);
       if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
         const firstChild = children[0] as HTMLElement;
-        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+        const tag = firstChild.tagName.toLowerCase();
+        if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'body' || tag === 'html') {
           children = Array.from(firstChild.childNodes);
         }
       }
@@ -279,17 +283,31 @@ const AdminCustomerInventoryPage: React.FC = () => {
           const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
           
           let isNewCategory = false;
+          let isFirstCategory = false;
           if (tagName === 'h2') {
             const text = el.innerText || el.textContent || '';
+            isFirstCategory = /^(1)\./.test(text.trim());
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
-            currentPageNum++;
-            currentPage = createNewPage(currentPageNum);
-            if (isPageBreak) {
+          if (isFirstCategory) {
+            hasSeenFirstCategory = true;
+          }
+
+          if (isPageBreak) {
+            if (!hasSeenFirstCategory) {
+              // 1번 카테고리 시작 전의 page-break는 무시하여 표지와 1번 카테고리가 1페이지에 함께 나오도록 함
+              continue;
+            } else {
+              currentPageNum++;
+              currentPage = createNewPage(currentPageNum);
               continue;
             }
+          }
+
+          if (isNewCategory && currentPageHasContent) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
           }
         }
 
@@ -593,7 +611,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
         `3. 하드웨어 사양 분포나 교체 비중을 보여줄 때, 아래 양식의 HTML/CSS 가로 막대 그래프를 포함하여 시각적으로 표현해주세요:\n` +
         `   <div style="margin-bottom:10px;"><span style="display:inline-block;width:150px;font-size:13px;">[항목명] ([비율]%)</span><span style="display:inline-block;vertical-align:middle;width:200px;height:12px;background:#e0e0e0;border-radius:6px;margin-right:8px;overflow:hidden;"><span style="display:block;width:[비율]%;height:100%;background:#673ab7;border-radius:6px;"></span></span> <span>[대수]대</span></div>\n` +
         `4. **주제별 A4 1페이지 분량 풍성화 규칙**: 리포트의 4가지 주요 카테고리(1, 2, 3, 4)는 각각 인쇄 시 A4 용지 1페이지에 배치되므로, 각 항목 아래의 텍스트와 표 내용을 매우 상세하게 서술식 단락과 목록으로 풍부하게 채워주십시오. 요약형 문장은 지양하고, 구체적인 분석 의견, 관련 부서 분석, 장비 목록 표, 향후 대책 등을 대량으로 추가하여 각 페이지가 시각적으로 빈 공간 없이 알차게 가득 차도록(최소 10~15줄 이상의 텍스트 및 상세 표) 작성해 주십시오.\n` +
-        `5. **페이지 구분**: 각 대분류(h2)가 시작되기 직전에 반드시 \`<div class="page-break"></div>\` 태그를 삽입해 주십시오.\n` +
+        `5. **페이지 구분**: 2번 카테고리부터 각 대분류(h2)가 시작되기 직전에 반드시 \`<div class="page-break"></div>\` 태그를 삽입해 주십시오. (1번 카테고리 시작 직전에는 절대 삽입하지 마십시오.)\n` +
         `6. **주의(절대 준수)**: 리포트 가장 끝단에 '기술지원문의: 15XX-XXXX', '전화번호', '서비스 데스크 연락처', 또는 '컴투인 IT 인프라 유지보수 서비스팀 ☎ (문의: 1544-XXXX)'와 같은 일반적인 고객 안내 연락처 안내 문구는 **절대 포함하지 마십시오**. 리포트는 4번 항목의 보안 등급 분석 내용으로만 깔끔하게 끝내야 합니다.`;
 
       const response = await fetch(`${(supabase as any).supabaseUrl}/functions/v1/generate-ai-report`, {
@@ -613,6 +631,11 @@ const AdminCustomerInventoryPage: React.FC = () => {
       if (data.error) throw new Error(data.error);
 
       let cleanReport = data.report || data.content || JSON.stringify(data);
+      // 마크다운 코드 블록(```html 또는 ```) 제거
+      cleanReport = cleanReport.replace(/^```html\s*/i, '');
+      cleanReport = cleanReport.replace(/```\s*$/, '');
+      cleanReport = cleanReport.trim();
+
       cleanReport = cleanReport.replace(/추가적인 기술 지원 및 장애 문의 사항은 서비스 데스크로 즉시 연락해 주시기 바랍니다\.?/gi, '');
       cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎ \(문의: [^)]+\)/gi, '');
       cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎/gi, '');
@@ -653,7 +676,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
           width: 794px;
           height: 1123px;
           background-color: #ffffff;
-          padding: 60px 50px 80px 50px;
+          padding: 50px 50px 70px 50px;
           box-sizing: border-box;
           font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
           color: #333333;
@@ -662,19 +685,21 @@ const AdminCustomerInventoryPage: React.FC = () => {
           flex-direction: column;
           overflow: hidden;
         }
-        .pdf-page h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
-        .pdf-page .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
-        .pdf-page h2 { font-size: 18px; font-weight: bold; margin-top: 40px; margin-bottom: 20px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        .pdf-page h3 { font-size: 14px; font-weight: bold; margin-top: 25px; margin-bottom: 15px; color: #333; }
-        .pdf-page p { font-size: 14px; line-height: 1.85; margin-bottom: 20px; text-align: justify; }
-        .pdf-page ul { padding-left: 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.85; }
-        .pdf-page li { margin-bottom: 10px; }
-        .pdf-page table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 13px; }
-        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 12px; font-weight: bold; text-align: center; }
-        .pdf-page td { border: 1px solid #ddd; padding: 12px; line-height: 1.6; }
+        .pdf-page h1 { font-size: 20px; font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 8px; color: #111111; }
+        .pdf-page .subtitle { font-size: 11px; text-align: center; margin-bottom: 15px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 8px; }
+        .pdf-page h2 { font-size: 15px; font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+        .pdf-page h3 { font-size: 13px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; color: #333333; }
+        .pdf-page p { font-size: 13px; line-height: 1.65; margin-bottom: 8px; text-align: justify; color: #333333; }
+        .pdf-page ul { padding-left: 20px; margin-bottom: 8px; font-size: 13px; line-height: 1.65; color: #333333; }
+        .pdf-page li { margin-bottom: 4px; color: #333333; }
+        .pdf-page table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px; color: #333333; }
+        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; color: #333333; }
+        .pdf-page td { border: 1px solid #ddd; padding: 6px; line-height: 1.5; color: #333333; }
+        .pdf-page strong, .pdf-page b, .pdf-page span, .pdf-page div { color: #333333; }
+        .pdf-page h1 *, .pdf-page h2 *, .pdf-page .pdf-header * { color: inherit; }
         .pdf-page .page-number {
           position: absolute;
-          bottom: 30px;
+          bottom: 25px;
           left: 0;
           right: 0;
           text-align: center;
@@ -738,13 +763,15 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
+      const MAX_CONTENT_HEIGHT = 900; // 900px로 여유 공간 최적화
+      let hasSeenFirstCategory = false;
 
       // 최상위 래퍼 div가 단일로 존재할 경우 내부 자식들을 직접 가져오도록 언래핑
       let children = Array.from(parserDiv.childNodes);
       if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
         const firstChild = children[0] as HTMLElement;
-        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+        const tag = firstChild.tagName.toLowerCase();
+        if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'body' || tag === 'html') {
           children = Array.from(firstChild.childNodes);
         }
       }
@@ -772,17 +799,31 @@ const AdminCustomerInventoryPage: React.FC = () => {
           const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
           
           let isNewCategory = false;
+          let isFirstCategory = false;
           if (tagName === 'h2') {
             const text = el.innerText || el.textContent || '';
+            isFirstCategory = /^(1)\./.test(text.trim());
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
-            currentPageNum++;
-            currentPage = createNewPage(currentPageNum);
-            if (isPageBreak) {
+          if (isFirstCategory) {
+            hasSeenFirstCategory = true;
+          }
+
+          if (isPageBreak) {
+            if (!hasSeenFirstCategory) {
+              // 1번 카테고리 시작 전의 page-break는 무시하여 표지와 1번 카테고리가 1페이지에 함께 나오도록 함
+              continue;
+            } else {
+              currentPageNum++;
+              currentPage = createNewPage(currentPageNum);
               continue;
             }
+          }
+
+          if (isNewCategory && currentPageHasContent) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
           }
         }
 
@@ -1058,7 +1099,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
               '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' } 
             }}
           >
-            AI 자산 분석 리포트
+            {isGenerating ? "생성 중..." : "AI 자산 분석 리포트"}
           </Button>
           <Button 
             size="small"
@@ -1723,7 +1764,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   width: '794px',
                   height: '1123px',
                   bgcolor: '#ffffff',
-                  padding: '60px 50px 80px 50px',
+                  padding: '50px 50px 70px 50px',
                   boxSizing: 'border-box',
                   position: 'relative',
                   display: 'flex',
@@ -1740,17 +1781,19 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     transform: 'scale(0.5)',
                     mb: -56
                   },
-                  '& h1': { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', mb: 1, color: '#111' },
-                  '& .subtitle': { fontSize: '12px', textAlign: 'center', mb: 4, color: '#666666', borderBottom: '2px solid #673ab7', pb: 2 },
-                  '& .pdf-header': { fontSize: '11px', color: '#999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
-                  '& h2': { fontSize: '18px', fontWeight: 'bold', mt: 4, mb: 2, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 1 },
-                  '& h3': { fontSize: '14px', fontWeight: 'bold', mt: 2.5, mb: 1.5, color: '#333' },
-                  '& p': { fontSize: '14px', lineHeight: 1.85, mb: 2, textAlign: 'justify' },
-                  '& ul': { pl: 2.5, mb: 2, fontSize: '14px', lineHeight: 1.85 },
-                  '& li': { mb: 1 },
-                  '& table': { width: '100%', borderCollapse: 'collapse', my: 2.5, fontSize: '13px' },
-                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1.5, fontWeight: 'bold', textAlign: 'center' },
-                  '& td': { border: '1px solid #ddd', p: 1.5, lineHeight: 1.6 }
+                  '& h1': { fontSize: '20px', fontWeight: 'bold', textAlign: 'center', mt: 0, mb: 1, color: '#111111' },
+                  '& .subtitle': { fontSize: '11px', textAlign: 'center', mb: 2, color: '#666666', borderBottom: '2px solid #673ab7', pb: 1 },
+                  '& .pdf-header': { fontSize: '11px', color: '#999999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
+                  '& h2': { fontSize: '15px', fontWeight: 'bold', mt: 2, mb: 1, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 0.5 },
+                  '& h3': { fontSize: '13px', fontWeight: 'bold', mt: 1.5, mb: 1, color: '#333333' },
+                  '& p': { fontSize: '13px', lineHeight: 1.7, mb: 1, textAlign: 'justify', color: '#333333' },
+                  '& ul': { pl: 2.5, mb: 1, fontSize: '13px', lineHeight: 1.7, color: '#333333' },
+                  '& li': { mb: 0.5, color: '#333333' },
+                  '& table': { width: '100%', borderCollapse: 'collapse', my: 1.5, fontSize: '12.5px', color: '#333333' },
+                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1, fontWeight: 'bold', textAlign: 'center', color: '#333333' },
+                  '& td': { border: '1px solid #ddd', p: 1, lineHeight: 1.5, color: '#333333' },
+                  '& strong, & b, & span, & div': { color: '#333333' },
+                  '& h1 *, & h2 *, & .pdf-header *': { color: 'inherit' }
                 }}
               >
                 {/* Content */}

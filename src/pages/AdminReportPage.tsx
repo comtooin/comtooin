@@ -118,6 +118,11 @@ const AdminReportPage: React.FC = () => {
   });
   const [status, setStatus] = useState('all');
   const [tabValue, setTabValue] = useState(0);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+
+  const showVisualization = userRole === 'customer' ? tabValue === 0 : tabValue === 1;
+  const showList = userRole === 'customer' ? tabValue === 1 : tabValue === 0;
+
   const [statusData, setStatusData] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
@@ -158,14 +163,60 @@ const AdminReportPage: React.FC = () => {
   }, [allRequests]);
 
   const filteredRequests = useMemo(() => {
-    if (status === 'all') return allRequests;
-    const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
-    return allRequests.filter(r => {
-      if (dbStatus === 'processing') return r.status === 'processing' || r.status === 'pending' || r.status === '처리중';
-      if (dbStatus === 'completed') return r.status === 'completed' || r.status === '처리완료';
-      return r.status === dbStatus;
-    });
-  }, [allRequests, status]);
+    let reqs = allRequests;
+    
+    // 1. 상태 필터링
+    if (status !== 'all') {
+      const dbStatus = status === '처리중' ? 'processing' : status === '처리완료' ? 'completed' : status;
+      reqs = reqs.filter(r => {
+        if (dbStatus === 'processing') return r.status === 'processing' || r.status === 'pending' || r.status === '처리중';
+        if (dbStatus === 'completed') return r.status === 'completed' || r.status === '처리완료';
+        return r.status === dbStatus;
+      });
+    }
+
+    // 2. 업무 유형 필터링 (차트 드릴다운 클릭 시)
+    if (selectedCategoryFilter !== 'all') {
+      reqs = reqs.filter(r => {
+        const text = (r.content || '').toLowerCase();
+        if (selectedCategoryFilter === 'PC / 하드웨어') {
+          return text.includes('pc') || text.includes('본체') || text.includes('모니터') || 
+                 text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || 
+                 text.includes('전원') || text.includes('하드') || text.includes('ram') || 
+                 text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') ||
+                 text.includes('cpu');
+        }
+        if (selectedCategoryFilter === '네트워크 / 인터넷') {
+          return text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || 
+                 text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || 
+                 text.includes('접속') || text.includes('허브') || text.includes('ip') ||
+                 text.includes('dns');
+        }
+        if (selectedCategoryFilter === '소프트웨어 / OS') {
+          return text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || 
+                 text.includes('office') || text.includes('한글') || text.includes('엑셀') || 
+                 text.includes('excel') || text.includes('백신') || text.includes('프로그램') || 
+                 text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') ||
+                 text.includes('라이센스');
+        }
+        if (selectedCategoryFilter === '프린터 / 복합기') {
+          return text.includes('프린터') || text.includes('복합기') || text.includes('토너') || 
+                 text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || 
+                 text.includes('스캔') || text.includes('팩스') || text.includes('드라이버');
+        }
+        if (selectedCategoryFilter === '기타 문의') {
+          const isHw = text.includes('pc') || text.includes('본체') || text.includes('모니터') || text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || text.includes('전원') || text.includes('하드') || text.includes('ram') || text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') || text.includes('cpu');
+          const isNet = text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || text.includes('접속') || text.includes('허브') || text.includes('ip') || text.includes('dns');
+          const isSw = text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || text.includes('office') || text.includes('한글') || text.includes('엑셀') || text.includes('excel') || text.includes('백신') || text.includes('프로그램') || text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') || text.includes('라이센스');
+          const isPrinter = text.includes('프린터') || text.includes('복합기') || text.includes('토너') || text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || text.includes('스캔') || text.includes('팩스') || text.includes('드라이버');
+          return !isHw && !isNet && !isSw && !isPrinter;
+        }
+        return true;
+      });
+    }
+
+    return reqs;
+  }, [allRequests, status, selectedCategoryFilter]);
 
   const customerShareData = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -180,6 +231,14 @@ const AdminReportPage: React.FC = () => {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue);
     setPage(1); // 탭 변경 시 페이지 리셋
+    setSelectedCategoryFilter('all'); // 그래프 필터 초기화
+    setStatus('all'); // 상태 필터 초기화
+    setSelectedMonth('all'); // 기간 필터 초기화
+    
+    const role = localStorage.getItem('adminRole');
+    if (role !== 'customer') {
+      setSelectedCustomer('all'); // 거래처 필터 초기화
+    }
   };
 
   const fetchInitialData = useCallback(async () => {
@@ -217,7 +276,7 @@ const AdminReportPage: React.FC = () => {
           width: 794px;
           height: 1123px;
           background-color: #ffffff;
-          padding: 60px 50px 80px 50px;
+          padding: 50px 50px 70px 50px;
           box-sizing: border-box;
           font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
           color: #333333;
@@ -226,16 +285,18 @@ const AdminReportPage: React.FC = () => {
           flex-direction: column;
           overflow: hidden;
         }
-        .pdf-page-preview h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
-        .pdf-page-preview .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
-        .pdf-page-preview h2 { font-size: 18px; font-weight: bold; margin-top: 25px; margin-bottom: 12px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        .pdf-page-preview h3 { font-size: 14px; font-weight: bold; margin-top: 18px; margin-bottom: 8px; color: #333; }
-        .pdf-page-preview p { font-size: 13.5px; line-height: 1.7; margin-bottom: 12px; text-align: justify; }
-        .pdf-page-preview ul { padding-left: 20px; margin-bottom: 12px; font-size: 13.5px; line-height: 1.7; }
-        .pdf-page-preview li { margin-bottom: 6px; }
-        .pdf-page-preview table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 13px; }
-        .pdf-page-preview th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 8px; font-weight: bold; text-align: center; }
-        .pdf-page-preview td { border: 1px solid #ddd; padding: 8px; line-height: 1.5; }
+        .pdf-page-preview h1 { font-size: 20px; font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 8px; color: #111111; }
+        .pdf-page-preview .subtitle { font-size: 11px; text-align: center; margin-bottom: 15px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 8px; }
+        .pdf-page-preview h2 { font-size: 15px; font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+        .pdf-page-preview h3 { font-size: 13px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; color: #333333; }
+        .pdf-page-preview p { font-size: 13px; line-height: 1.65; margin-bottom: 8px; text-align: justify; color: #333333; }
+        .pdf-page-preview ul { padding-left: 20px; margin-bottom: 8px; font-size: 13px; line-height: 1.65; color: #333333; }
+        .pdf-page-preview li { margin-bottom: 4px; color: #333333; }
+        .pdf-page-preview table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px; color: #333333; }
+        .pdf-page-preview th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; color: #333333; }
+        .pdf-page-preview td { border: 1px solid #ddd; padding: 6px; line-height: 1.5; color: #333333; }
+        .pdf-page-preview strong, .pdf-page-preview b, .pdf-page-preview span, .pdf-page-preview div { color: #333333; }
+        .pdf-page-preview h1 *, .pdf-page-preview h2 *, .pdf-page-preview .pdf-header * { color: inherit; }
       `;
       container.appendChild(styleSheet);
       document.body.appendChild(container);
@@ -289,12 +350,14 @@ const AdminReportPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
+      const MAX_CONTENT_HEIGHT = 900; // 900px로 여유 공간 최적화
+      let hasSeenFirstCategory = false;
 
       let children = Array.from(parserDiv.childNodes);
       if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
         const firstChild = children[0] as HTMLElement;
-        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+        const tag = firstChild.tagName.toLowerCase();
+        if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'body' || tag === 'html') {
           children = Array.from(firstChild.childNodes);
         }
       }
@@ -322,17 +385,31 @@ const AdminReportPage: React.FC = () => {
           const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
           
           let isNewCategory = false;
+          let isFirstCategory = false;
           if (tagName === 'h2') {
             const text = el.innerText || el.textContent || '';
+            isFirstCategory = /^(1)\./.test(text.trim());
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
-            currentPageNum++;
-            currentPage = createNewPage(currentPageNum);
-            if (isPageBreak) {
+          if (isFirstCategory) {
+            hasSeenFirstCategory = true;
+          }
+
+          if (isPageBreak) {
+            if (!hasSeenFirstCategory) {
+              // 1번 카테고리 시작 전의 page-break는 무시하여 표지와 1번 카테고리가 1페이지에 함께 나오도록 함
+              continue;
+            } else {
+              currentPageNum++;
+              currentPage = createNewPage(currentPageNum);
               continue;
             }
+          }
+
+          if (isNewCategory && currentPageHasContent) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
           }
         }
 
@@ -772,6 +849,11 @@ const AdminReportPage: React.FC = () => {
       if (data.error) throw new Error(data.error);
 
       let cleanReport = data.report || '';
+      // 마크다운 코드 블록(```html 또는 ```) 제거
+      cleanReport = cleanReport.replace(/^```html\s*/i, '');
+      cleanReport = cleanReport.replace(/```\s*$/, '');
+      cleanReport = cleanReport.trim();
+
       cleanReport = cleanReport.replace(/추가적인 기술 지원 및 장애 문의 사항은 서비스 데스크로 즉시 연락해 주시기 바랍니다\.?/gi, '');
       cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎ \(문의: [^)]+\)/gi, '');
       cleanReport = cleanReport.replace(/컴투인 IT 인프라 유지보수 서비스팀 ☎/gi, '');
@@ -812,7 +894,7 @@ const AdminReportPage: React.FC = () => {
           width: 794px;
           height: 1123px;
           background-color: #ffffff;
-          padding: 60px 50px 80px 50px;
+          padding: 50px 50px 70px 50px;
           box-sizing: border-box;
           font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
           color: #333333;
@@ -821,19 +903,21 @@ const AdminReportPage: React.FC = () => {
           flex-direction: column;
           overflow: hidden;
         }
-        .pdf-page h1 { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 10px; color: #111; }
-        .pdf-page .subtitle { font-size: 12px; text-align: center; margin-bottom: 30px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 15px; }
-        .pdf-page h2 { font-size: 18px; font-weight: bold; margin-top: 40px; margin-bottom: 20px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 6px; }
-        .pdf-page h3 { font-size: 14px; font-weight: bold; margin-top: 25px; margin-bottom: 15px; color: #333; }
-        .pdf-page p { font-size: 14px; line-height: 1.85; margin-bottom: 20px; text-align: justify; }
-        .pdf-page ul { padding-left: 20px; margin-bottom: 20px; font-size: 14px; line-height: 1.85; }
-        .pdf-page li { margin-bottom: 10px; }
-        .pdf-page table { width: 100%; border-collapse: collapse; margin: 25px 0; font-size: 13px; }
-        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 12px; font-weight: bold; text-align: center; }
-        .pdf-page td { border: 1px solid #ddd; padding: 12px; line-height: 1.6; }
+        .pdf-page h1 { font-size: 20px; font-weight: bold; text-align: center; margin-top: 0; margin-bottom: 8px; color: #111111; }
+        .pdf-page .subtitle { font-size: 11px; text-align: center; margin-bottom: 15px; color: #666666; border-bottom: 2px solid #673ab7; padding-bottom: 8px; }
+        .pdf-page h2 { font-size: 15px; font-weight: bold; margin-top: 15px; margin-bottom: 8px; color: #673ab7; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+        .pdf-page h3 { font-size: 13px; font-weight: bold; margin-top: 10px; margin-bottom: 6px; color: #333333; }
+        .pdf-page p { font-size: 13px; line-height: 1.65; margin-bottom: 8px; text-align: justify; color: #333333; }
+        .pdf-page ul { padding-left: 20px; margin-bottom: 8px; font-size: 13px; line-height: 1.65; color: #333333; }
+        .pdf-page li { margin-bottom: 4px; color: #333333; }
+        .pdf-page table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 12.5px; color: #333333; }
+        .pdf-page th { background-color: #f5f5f5; border: 1px solid #ddd; padding: 6px; font-weight: bold; text-align: center; color: #333333; }
+        .pdf-page td { border: 1px solid #ddd; padding: 6px; line-height: 1.5; color: #333333; }
+        .pdf-page strong, .pdf-page b, .pdf-page span, .pdf-page div { color: #333333; }
+        .pdf-page h1 *, .pdf-page h2 *, .pdf-page .pdf-header * { color: inherit; }
         .pdf-page .page-number {
           position: absolute;
-          bottom: 30px;
+          bottom: 25px;
           left: 0;
           right: 0;
           text-align: center;
@@ -897,13 +981,15 @@ const AdminReportPage: React.FC = () => {
 
       let currentPageNum = 1;
       let currentPage = createNewPage(currentPageNum);
-      const MAX_CONTENT_HEIGHT = 860; // 860px로 여유 공간 최적화
+      const MAX_CONTENT_HEIGHT = 900; // 900px로 여유 공간 최적화
+      let hasSeenFirstCategory = false;
 
       // 최상위 래퍼 div가 단일로 존재할 경우 내부 자식들을 직접 가져오도록 언래핑
       let children = Array.from(parserDiv.childNodes);
       if (children.length === 1 && children[0].nodeType === Node.ELEMENT_NODE) {
         const firstChild = children[0] as HTMLElement;
-        if (firstChild.tagName.toLowerCase() === 'div' || firstChild.tagName.toLowerCase() === 'section') {
+        const tag = firstChild.tagName.toLowerCase();
+        if (tag === 'div' || tag === 'section' || tag === 'article' || tag === 'main' || tag === 'body' || tag === 'html') {
           children = Array.from(firstChild.childNodes);
         }
       }
@@ -931,17 +1017,31 @@ const AdminReportPage: React.FC = () => {
           const isPageBreak = el.className === 'page-break' || el.tagName.toLowerCase() === 'page-break';
           
           let isNewCategory = false;
+          let isFirstCategory = false;
           if (tagName === 'h2') {
             const text = el.innerText || el.textContent || '';
+            isFirstCategory = /^(1)\./.test(text.trim());
             isNewCategory = /^([2-9]|\d{2,})\./.test(text.trim());
           }
 
-          if (isPageBreak || (isNewCategory && currentPageHasContent)) {
-            currentPageNum++;
-            currentPage = createNewPage(currentPageNum);
-            if (isPageBreak) {
+          if (isFirstCategory) {
+            hasSeenFirstCategory = true;
+          }
+
+          if (isPageBreak) {
+            if (!hasSeenFirstCategory) {
+              // 1번 카테고리 시작 전의 page-break는 무시하여 표지와 1번 카테고리가 1페이지에 함께 나오도록 함
+              continue;
+            } else {
+              currentPageNum++;
+              currentPage = createNewPage(currentPageNum);
               continue;
             }
+          }
+
+          if (isNewCategory && currentPageHasContent) {
+            currentPageNum++;
+            currentPage = createNewPage(currentPageNum);
           }
         }
 
@@ -1018,11 +1118,63 @@ const AdminReportPage: React.FC = () => {
     }
   };
 
+  const categoryData = useMemo(() => {
+    let hwCount = 0;
+    let netCount = 0;
+    let swCount = 0;
+    let printerCount = 0;
+    let etcCount = 0;
+
+    filteredRequests.forEach(r => {
+      const text = (r.content || '').toLowerCase();
+      if (
+        text.includes('pc') || text.includes('본체') || text.includes('모니터') || 
+        text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || 
+        text.includes('전원') || text.includes('하드') || text.includes('ram') || 
+        text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') ||
+        text.includes('cpu')
+      ) {
+        hwCount++;
+      } else if (
+        text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || 
+        text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || 
+        text.includes('접속') || text.includes('허브') || text.includes('ip') ||
+        text.includes('dns')
+      ) {
+        netCount++;
+      } else if (
+        text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || 
+        text.includes('office') || text.includes('한글') || text.includes('엑셀') || 
+        text.includes('excel') || text.includes('백신') || text.includes('프로그램') || 
+        text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') ||
+        text.includes('라이센스')
+      ) {
+        swCount++;
+      } else if (
+        text.includes('프린터') || text.includes('복합기') || text.includes('토너') || 
+        text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || 
+        text.includes('스캔') || text.includes('팩스') || text.includes('드라이버')
+      ) {
+        printerCount++;
+      } else {
+        etcCount++;
+      }
+    });
+
+    return [
+      { name: 'PC / 하드웨어', count: hwCount, color: '#f59e0b' },
+      { name: '네트워크 / 인터넷', count: netCount, color: '#3b82f6' },
+      { name: '소프트웨어 / OS', count: swCount, color: '#10b981' },
+      { name: '프린터 / 복합기', count: printerCount, color: '#ec4899' },
+      { name: '기타 문의', count: etcCount, color: '#6b7280' }
+    ].filter(item => item.count > 0);
+  }, [filteredRequests]);
+
   const statusPieData = {
     labels: (statusData || []).filter(d => d.status !== 'pending').map(d => getStatusLabel(d.status)), 
     datasets: [{
       data: (statusData || []).filter(d => d.status !== 'pending').map(d => d.count),
-      backgroundColor: ['#ed6c02', '#2e7d32', '#9966FF'],
+      backgroundColor: ['#ff9800', '#10b981', '#8b5cf6'],
     }],
   };
 
@@ -1030,7 +1182,15 @@ const AdminReportPage: React.FC = () => {
     labels: customerShareData.map(d => d.name),
     datasets: [{
       data: customerShareData.map(d => d.count),
-      backgroundColor: ['#36A2EB', '#FFCE56', '#4BC0C0', '#FF6384', '#9966FF', '#C9CBCF'],
+      backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#ec4899', '#8b5cf6', '#94a3b8'],
+    }],
+  };
+
+  const categoryPieData = {
+    labels: categoryData.map(d => d.name),
+    datasets: [{
+      data: categoryData.map(d => d.count),
+      backgroundColor: categoryData.map(d => d.color),
     }],
   };
 
@@ -1039,9 +1199,12 @@ const AdminReportPage: React.FC = () => {
     datasets: [{
       label: selectedCustomer === 'all' ? '전체 업무 건수' : `${selectedCustomer} 업무 추이`,
       data: (monthlyData || []).map(d => d.total_requests),
-      backgroundColor: 'rgba(96, 125, 139, 0.6)',
-      borderColor: 'rgba(96, 125, 139, 1)',
+      backgroundColor: 'rgba(103, 58, 183, 0.75)',
+      hoverBackgroundColor: 'rgba(103, 58, 183, 0.95)',
+      borderColor: '#673ab7',
       borderWidth: 1,
+      borderRadius: 6,
+      borderSkipped: false,
     }],
   };
 
@@ -1189,7 +1352,7 @@ const AdminReportPage: React.FC = () => {
                   borderRadius: 1
                 }}
               >
-                AI 리포트
+                {isGenerating ? "생성 중..." : "AI 리포트"}
               </Button>
             </Grid>
             <Grid item xs={userRole === 'customer' ? 12 : 4} sm="auto">
@@ -1235,13 +1398,32 @@ const AdminReportPage: React.FC = () => {
             )}
           </Grid>
         </Box>
+        {selectedCategoryFilter !== 'all' && (
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>활성 필터:</Typography>
+            <Chip 
+              label={`업무 유형: ${selectedCategoryFilter}`} 
+              onDelete={() => setSelectedCategoryFilter('all')} 
+              color="primary"
+              size="small"
+              variant="outlined"
+              sx={{ borderRadius: 1, fontWeight: 'bold' }}
+            />
+          </Box>
+        )}
       </Paper>
 
       {/* 탭 섹션 */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
-          <Tab label="업무 상세 리스트" sx={{ fontWeight: 'bold' }} />
-          <Tab label="시각화 분석" sx={{ fontWeight: 'bold' }} />
+          <Tab 
+            label={userRole === 'customer' ? "시각화 분석" : "업무 상세 리스트"} 
+            sx={{ fontWeight: 'bold' }} 
+          />
+          <Tab 
+            label={userRole === 'customer' ? "업무 상세 리스트" : "시각화 분석"} 
+            sx={{ fontWeight: 'bold' }} 
+          />
         </Tabs>
       </Box>
 
@@ -1249,7 +1431,7 @@ const AdminReportPage: React.FC = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
       ) : (
         <Box sx={{ pt: 1 }}>
-          {tabValue === 0 && (
+          {showList && (
             <Box sx={{ minHeight: 400 }}>
               {isMobile ? (
                 <Stack spacing={1.5} sx={{ mb: 2 }}>
@@ -1408,45 +1590,133 @@ const AdminReportPage: React.FC = () => {
             </Box>
           )}
 
-          {tabValue === 1 && (
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={userRole === 'customer' ? 6 : 4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
-                    <PieChartIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">상태별 업무 비중</Typography>
+          {showVisualization && (
+            <Grid container spacing={3}>
+              {/* 1. 월별 업무 처리 추이 (Bar) */}
+              <Grid item xs={12} md={userRole === 'customer' ? 6 : 6}>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
+                  <Stack direction="row" spacing={1} justifyContent="flex-start" mb={2} alignItems="center">
+                    <BarChartIcon color="primary" fontSize="small" />
+                    <Typography variant="subtitle2" fontWeight="bold">월별 업무 처리 추이</Typography>
                   </Stack>
-                  <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
-                    <Pie data={statusPieData} options={{ maintainAspectRatio: false }} />
+                  <Box sx={{ height: 260, mt: 1 }}>
+                    <Bar data={barChartData} options={{ 
+                      maintainAspectRatio: false, 
+                      plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                          backgroundColor: '#1e293b',
+                          titleFont: { size: 13, weight: 'bold' },
+                          bodyFont: { size: 12 },
+                          padding: 10,
+                          cornerRadius: 8,
+                          displayColors: false
+                        }
+                      },
+                      scales: {
+                        y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b' } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                      },
+                      onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                          const index = elements[0].index;
+                          const label = barChartData.labels[index];
+                          setSelectedMonth(label);
+                          setTabValue(userRole === 'customer' ? 1 : 0);
+                        }
+                      }
+                    }} />
                   </Box>
                 </Paper>
               </Grid>
 
+              {/* 2. 상태별 업무 비중 (Pie) */}
+              <Grid item xs={12} md={userRole === 'customer' ? 3 : 3}>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={2} alignItems="center">
+                    <PieChartIcon color="primary" fontSize="small" />
+                    <Typography variant="subtitle2" fontWeight="bold">업무 처리 상태</Typography>
+                  </Stack>
+                  <Box sx={{ height: 260, display: 'flex', justifyContent: 'center', mt: 1 }}>
+                    <Pie data={statusPieData} options={{ 
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                      },
+                      onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                          const index = elements[0].index;
+                          const label = statusPieData.labels[index];
+                          let filterStatus = 'all';
+                          if (label === '처리중') filterStatus = '처리중';
+                          else if (label === '완료') filterStatus = '처리완료';
+                          else if (label === '취소') filterStatus = 'cancelled';
+                          
+                          setStatus(filterStatus);
+                          setTabValue(userRole === 'customer' ? 1 : 0);
+                        }
+                      }
+                    }} />
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* 3. 장애 및 지원 유형 분석 (Doughnut) */}
+              <Grid item xs={12} md={userRole === 'customer' ? 3 : 3}>
+                <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
+                  <Stack direction="row" spacing={1} justifyContent="center" mb={2} alignItems="center">
+                    <PieChartIcon color="primary" fontSize="small" />
+                    <Typography variant="subtitle2" fontWeight="bold">장애 및 지원 유형</Typography>
+                  </Stack>
+                  <Box sx={{ height: 260, display: 'flex', justifyContent: 'center', mt: 1 }}>
+                    <Pie data={categoryPieData} options={{ 
+                      maintainAspectRatio: false,
+                      cutout: '60%',
+                      plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                      },
+                      onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                          const index = elements[0].index;
+                          const label = categoryPieData.labels[index];
+                          setSelectedCategoryFilter(label);
+                          setTabValue(userRole === 'customer' ? 1 : 0);
+                        }
+                      }
+                    }} />
+                  </Box>
+                </Paper>
+              </Grid>
+
+              {/* 4. 거래처별 업무 점유율 (Staff 전용) */}
               {userRole !== 'customer' && (
-                <Grid item xs={12} md={4}>
-                  <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
-                    <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
-                      <BusinessIcon color="action" fontSize="small" />
-                      <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 점유율</Typography>
+                <Grid item xs={12} md={12}>
+                  <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, bgcolor: 'background.paper' }}>
+                    <Stack direction="row" spacing={1} justifyContent="flex-start" mb={2} alignItems="center">
+                      <BusinessIcon color="primary" fontSize="small" />
+                      <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 분담 비율 (TOP 6)</Typography>
                     </Stack>
-                    <Box sx={{ height: 250, display: 'flex', justifyContent: 'center' }}>
-                      <Pie data={customerPieData} options={{ maintainAspectRatio: false }} />
+                    <Box sx={{ height: 280, display: 'flex', justifyContent: 'center', mt: 1 }}>
+                      <Box sx={{ width: '100%', maxWidth: 450 }}>
+                        <Pie data={customerPieData} options={{ 
+                          maintainAspectRatio: false,
+                          plugins: {
+                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                          },
+                          onClick: (event, elements) => {
+                            if (elements.length > 0) {
+                              const index = elements[0].index;
+                              const label = customerPieData.labels[index];
+                              setSelectedCustomer(label);
+                              setTabValue(userRole === 'customer' ? 1 : 0);
+                            }
+                          }
+                        }} />
+                      </Box>
                     </Box>
                   </Paper>
                 </Grid>
               )}
-
-              <Grid item xs={12} md={userRole === 'customer' ? 6 : 4}>
-                <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 1, height: '100%' }}>
-                  <Stack direction="row" spacing={1} justifyContent="center" mb={3}>
-                    <BarChartIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">월별 업무 추이</Typography>
-                  </Stack>
-                  <Box sx={{ height: 250 }}>
-                    <Bar data={barChartData} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
-                  </Box>
-                </Paper>
-              </Grid>
             </Grid>
           )}
         </Box>
@@ -1481,7 +1751,7 @@ const AdminReportPage: React.FC = () => {
                   width: '794px',
                   height: '1123px',
                   bgcolor: '#ffffff',
-                  padding: '60px 50px 80px 50px',
+                  padding: '50px 50px 70px 50px',
                   boxSizing: 'border-box',
                   position: 'relative',
                   display: 'flex',
@@ -1498,17 +1768,19 @@ const AdminReportPage: React.FC = () => {
                     transform: 'scale(0.5)',
                     mb: -56
                   },
-                  '& h1': { fontSize: '24px', fontWeight: 'bold', textAlign: 'center', mb: 1, color: '#111' },
-                  '& .subtitle': { fontSize: '12px', textAlign: 'center', mb: 4, color: '#666666', borderBottom: '2px solid #673ab7', pb: 2 },
-                  '& .pdf-header': { fontSize: '11px', color: '#999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
-                  '& h2': { fontSize: '18px', fontWeight: 'bold', mt: 4, mb: 2, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 1 },
-                  '& h3': { fontSize: '14px', fontWeight: 'bold', mt: 2.5, mb: 1.5, color: '#333' },
-                  '& p': { fontSize: '14px', lineHeight: 1.85, mb: 2, textAlign: 'justify' },
-                  '& ul': { pl: 2.5, mb: 2, fontSize: '14px', lineHeight: 1.85 },
-                  '& li': { mb: 1 },
-                  '& table': { width: '100%', borderCollapse: 'collapse', my: 2.5, fontSize: '13px' },
-                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1.5, fontWeight: 'bold', textAlign: 'center' },
-                  '& td': { border: '1px solid #ddd', p: 1.5, lineHeight: 1.6 }
+                  '& h1': { fontSize: '20px', fontWeight: 'bold', textAlign: 'center', mt: 0, mb: 1, color: '#111111' },
+                  '& .subtitle': { fontSize: '11px', textAlign: 'center', mb: 2, color: '#666666', borderBottom: '2px solid #673ab7', pb: 1 },
+                  '& .pdf-header': { fontSize: '11px', color: '#999999', borderBottom: '1px solid #eee', pb: 1, mb: 3 },
+                  '& h2': { fontSize: '15px', fontWeight: 'bold', mt: 2, mb: 1, color: '#673ab7', borderBottom: '1px solid #ddd', pb: 0.5 },
+                  '& h3': { fontSize: '13px', fontWeight: 'bold', mt: 1.5, mb: 1, color: '#333333' },
+                  '& p': { fontSize: '13px', lineHeight: 1.7, mb: 1, textAlign: 'justify', color: '#333333' },
+                  '& ul': { pl: 2.5, mb: 1, fontSize: '13px', lineHeight: 1.7, color: '#333333' },
+                  '& li': { mb: 0.5, color: '#333333' },
+                  '& table': { width: '100%', borderCollapse: 'collapse', my: 1.5, fontSize: '12.5px', color: '#333333' },
+                  '& th': { bgcolor: '#f5f5f5', border: '1px solid #ddd', p: 1, fontWeight: 'bold', textAlign: 'center', color: '#333333' },
+                  '& td': { border: '1px solid #ddd', p: 1, lineHeight: 1.5, color: '#333333' },
+                  '& strong, & b, & span, & div': { color: '#333333' },
+                  '& h1 *, & h2 *, & .pdf-header *': { color: 'inherit' }
                 }}
               >
                 {/* Content */}
