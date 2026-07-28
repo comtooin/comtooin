@@ -905,6 +905,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
     let csvData = '';
     if (type === 'hardware') {
       csvData = Papa.unparse(hardware.map(h => ({
+        '부서': h.department || '',
+        '사용자이름': h.user_name || '',
         '컴퓨터이름': h.computer_name,
         'IP주소': h.ip_address,
         '운영체제': h.os,
@@ -915,12 +917,17 @@ const AdminCustomerInventoryPage: React.FC = () => {
         '저장장치': h.storage
       })));
     } else {
-      csvData = Papa.unparse(software.map(s => ({
-        '컴퓨터이름': s.computer_name,
-        '프로그램명': s.program_name,
-        '프로그램버전': s.program_version,
-        '공급자': s.publisher
-      })));
+      csvData = Papa.unparse(software.map(s => {
+        const hwRecord = hardware.find(h => h.computer_name === s.computer_name);
+        return {
+          '부서': hwRecord?.department || '',
+          '사용자이름': hwRecord?.user_name || '',
+          '컴퓨터이름': s.computer_name,
+          '프로그램명': s.program_name,
+          '프로그램버전': s.program_version,
+          '공급자': s.publisher
+        };
+      }));
     }
 
     const blob = new Blob(["\uFEFF" + csvData], { type: 'text/csv;charset=utf-8;' });
@@ -1077,6 +1084,56 @@ const AdminCustomerInventoryPage: React.FC = () => {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [software]);
+
+  // 도넛 차트 커스텀 라벨 렌더러 (100% 점유 시 중앙에 정렬하여 잘림 방지)
+  const renderPieLabel = (props: any) => {
+    const { cx, cy, midAngle, outerRadius, percent, name } = props;
+    const RADIAN = Math.PI / 180;
+    const pctValue = percent || 0;
+
+    if (pctValue >= 0.99) {
+      return (
+        <g>
+          <text 
+            x={cx} 
+            y={cy - 6} 
+            textAnchor="middle" 
+            fill="#475569" 
+            style={{ fontSize: '10px', fontWeight: 'bold' }}
+          >
+            {name}
+          </text>
+          <text 
+            x={cx} 
+            y={cy + 10} 
+            textAnchor="middle" 
+            fill="#673ab7" 
+            style={{ fontSize: '11px', fontWeight: 'bold' }}
+          >
+            100%
+          </text>
+        </g>
+      );
+    }
+
+    const radius = outerRadius + 8;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+    const isLeft = Math.cos(-midAngle * RADIAN) < 0;
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#334155"
+        textAnchor={isLeft ? 'end' : 'start'}
+        dominantBaseline="central"
+        style={{ fontSize: '9px', fontWeight: 'bold' }}
+      >
+        {`${name} (${(pctValue * 100).toFixed(0)}%)`}
+      </text>
+    );
+  };
 
   // 소프트웨어 그룹화
   const groupedSoftware = useMemo(() => {
@@ -1270,7 +1327,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">CPU 등급별 분포</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={cpuStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={cpuStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {cpuStats.map((entry, index) => <Cell key={`cell-${index}`} fill={CPU_COLORS[index % CPU_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
@@ -1288,7 +1345,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">메모리(RAM) 용량 분포</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={RAM_COLORS[index % RAM_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
@@ -1306,7 +1363,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">하드(C드라이브) 용량 분포</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={storageStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={storageStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {storageStats.map((entry, index) => <Cell key={`cell-${index}`} fill={DISK_COLORS[index % DISK_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
@@ -1324,7 +1381,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">운영체제(OS) 분포</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={osStats} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={osStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {osStats.map((entry, index) => <Cell key={`cell-${index}`} fill={OS_COLORS[index % OS_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
@@ -1356,7 +1413,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">상용 소프트웨어 설치 현황</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SW_COLORS[index % SW_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
@@ -1374,7 +1431,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                 <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">보안 백신 설치 현황</Typography>
                 <ResponsiveContainer width="100%" height="90%">
                   <PieChart>
-                    <Pie data={securitySoftware} cx="50%" cy="50%" innerRadius={45} outerRadius={70} fill="#8884d8" paddingAngle={4} dataKey="value" label={(props: any) => `${props.name} (${((props.percent || 0) * 100).toFixed(0)}%)`} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
+                    <Pie data={securitySoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
                       {securitySoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SEC_COLORS[index % SEC_COLORS.length]} />)}
                     </Pie>
                     <RechartsTooltip 
