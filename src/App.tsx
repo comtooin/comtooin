@@ -170,17 +170,17 @@ const theme = createTheme({
 
 // 로그인 상태에 따라 루트 경로를 분기해주는 컴포넌트
 const RootRoute = () => {
-  const isAdminLoggedIn = !!localStorage.getItem('adminToken');
-  const expiresAt = localStorage.getItem('adminSessionExpiresAt');
-  const userRole = localStorage.getItem('adminRole');
+  const isAdminLoggedIn = !!sessionStorage.getItem('adminToken');
+  const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
+  const userRole = sessionStorage.getItem('adminRole');
   
   // 세션 만료 체크 (만료 시 세션 정리)
   if (expiresAt && new Date().getTime() > parseInt(expiresAt)) {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminSessionExpiresAt');
-    localStorage.removeItem('adminRole');
-    localStorage.removeItem('adminCustomerId');
-    localStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSessionExpiresAt');
+    sessionStorage.removeItem('adminRole');
+    sessionStorage.removeItem('adminCustomerId');
+    sessionStorage.removeItem('adminName');
     return <Navigate to="/admin/login" replace />;
   }
 
@@ -199,13 +199,13 @@ const SessionManager = () => {
   const location = useLocation();
   
   const checkSession = useCallback(() => {
-    const token = localStorage.getItem('adminToken');
-    const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+    const token = sessionStorage.getItem('adminToken');
+    const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
     
     if (token && expiresAt) {
       if (new Date().getTime() > parseInt(expiresAt)) {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('adminSessionExpiresAt');
+        sessionStorage.removeItem('adminToken');
+        sessionStorage.removeItem('adminSessionExpiresAt');
         window.location.href = '/admin/login';
       }
     }
