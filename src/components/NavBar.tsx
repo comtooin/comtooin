@@ -44,19 +44,19 @@ const NavBar: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const role = localStorage.getItem('adminRole');
-    const name = localStorage.getItem('adminName');
+    const token = sessionStorage.getItem('adminToken');
+    const role = sessionStorage.getItem('adminRole');
+    const name = sessionStorage.getItem('adminName');
     setIsAdminLoggedIn(!!token);
     setUserRole(role);
     setUserName(name);
   }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminSessionExpiresAt');
-    localStorage.removeItem('adminRole');
-    localStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSessionExpiresAt');
+    sessionStorage.removeItem('adminRole');
+    sessionStorage.removeItem('adminName');
     setIsAdminLoggedIn(false);
     setUserRole(null);
     setUserName(null);
@@ -137,11 +137,11 @@ const NavBar: React.FC = () => {
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500 }} />
                   </ListItem>
-                  {localStorage.getItem('adminCustomerId') && (
+                  {sessionStorage.getItem('adminCustomerId') && (
                     <ListItem 
                       button 
                       component={RouterLink} 
-                      to={`/admin/customers/${localStorage.getItem('adminCustomerId')}/inventory`}
+                      to={`/admin/customers/${sessionStorage.getItem('adminCustomerId')}/inventory`}
                       selected={location.pathname.includes('/inventory')}
                       sx={getMenuItemStyle(location.pathname.includes('/inventory'))}
                     >
@@ -359,11 +359,11 @@ const NavBar: React.FC = () => {
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                   </ListItem>
-                  {localStorage.getItem('adminCustomerId') && (
+                  {sessionStorage.getItem('adminCustomerId') && (
                     <ListItem 
                       button 
                       component={RouterLink} 
-                      to={`/admin/customers/${localStorage.getItem('adminCustomerId')}/inventory`}
+                      to={`/admin/customers/${sessionStorage.getItem('adminCustomerId')}/inventory`}
                       selected={location.pathname.includes('/inventory')}
                       sx={getMenuItemStyle(location.pathname.includes('/inventory'))}
                     >

@@ -46,8 +46,8 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인 정보가 없습니다.');
 
-      const role = localStorage.getItem('adminRole');
-      const customerId = localStorage.getItem('adminCustomerId');
+      const role = sessionStorage.getItem('adminRole');
+      const customerId = sessionStorage.getItem('adminCustomerId');
 
       if (role === 'customer' && customerId) {
         const { data: customerProfile, error: customerError } = await supabase
@@ -96,8 +96,8 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('로그인 정보가 없습니다.');
 
-      const role = localStorage.getItem('adminRole');
-      const customerId = localStorage.getItem('adminCustomerId');
+      const role = sessionStorage.getItem('adminRole');
+      const customerId = sessionStorage.getItem('adminCustomerId');
 
       if (role === 'customer' && customerId) {
         const { error: updateError } = await supabase
@@ -165,10 +165,10 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
   };
 
   const handleFinalLogout = () => {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminSessionExpiresAt');
-    localStorage.removeItem('adminRole');
-    localStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSessionExpiresAt');
+    sessionStorage.removeItem('adminRole');
+    sessionStorage.removeItem('adminName');
     setSuccessDialogOpen(false);
     if (onClose) onClose();
     navigate('/admin/login');

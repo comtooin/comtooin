@@ -101,10 +101,10 @@ const AdminReportPage: React.FC = () => {
   const [allRequests, setAllRequests] = useState<IRequest[]>([]);
   const [customers, setCustomers] = useState<string[]>([]);
   const [allMonths, setAllMonths] = useState<string[]>([]);
-  const userRole = localStorage.getItem('adminRole');
+  const userRole = sessionStorage.getItem('adminRole');
   const [selectedCustomer, setSelectedCustomer] = useState(() => {
-    const role = localStorage.getItem('adminRole');
-    const name = localStorage.getItem('adminName');
+    const role = sessionStorage.getItem('adminRole');
+    const name = sessionStorage.getItem('adminName');
     if (role === 'customer' && name) return name;
     return 'all';
   });
@@ -239,7 +239,7 @@ const AdminReportPage: React.FC = () => {
     setSelectedCategoryFilter('all');
     setStatus('all');
     setSelectedMonth('all');
-    const role = localStorage.getItem('adminRole');
+    const role = sessionStorage.getItem('adminRole');
     if (role !== 'customer') {
       setSelectedCustomer('all');
     }
@@ -469,8 +469,8 @@ const AdminReportPage: React.FC = () => {
     setError('');
 
     try {
-      const role = localStorage.getItem('adminRole');
-      const customerName = localStorage.getItem('adminName');
+      const role = sessionStorage.getItem('adminRole');
+      const customerName = sessionStorage.getItem('adminName');
       
       let targetCustomer = selectedCustomer;
       if (role === 'customer' && customerName) {

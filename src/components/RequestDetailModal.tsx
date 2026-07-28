@@ -13,7 +13,7 @@ import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 
 
 export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) => {
-  const userRole = localStorage.getItem('adminRole');
+  const userRole = sessionStorage.getItem('adminRole');
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ content: '', requester_name: '', comments: [] as any[] });

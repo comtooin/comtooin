@@ -14,8 +14,8 @@ const AdminLoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    const expiresAt = localStorage.getItem('adminSessionExpiresAt');
+    const token = sessionStorage.getItem('adminToken');
+    const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
     
     if (token && expiresAt && new Date().getTime() <= parseInt(expiresAt)) {
       navigate('/');
@@ -72,16 +72,16 @@ const AdminLoginPage: React.FC = () => {
           .eq('auth_user_id', data.session.user.id)
           .single();
 
-        // 2시간 뒤 만료 시간 설정
-        const expiresAt = new Date().getTime() + 2 * 60 * 60 * 1000;
-        localStorage.setItem('adminToken', data.session.access_token);
-        localStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
+        // 30분 뒤 만료 시간 설정 (세션 타임아웃 단축)
+        const expiresAt = new Date().getTime() + 30 * 60 * 1000;
+        sessionStorage.setItem('adminToken', data.session.access_token);
+        sessionStorage.setItem('adminSessionExpiresAt', expiresAt.toString());
         
         if (staffProfile) {
-          localStorage.setItem('adminStaffId', staffProfile.id);
-          localStorage.setItem('adminRole', staffProfile.role);
-          localStorage.setItem('adminName', staffProfile.name);
-          localStorage.removeItem('adminCustomerId'); // 이전에 저장되었을 수 있는 거래처 ID 명시적 제거
+          sessionStorage.setItem('adminStaffId', staffProfile.id);
+          sessionStorage.setItem('adminRole', staffProfile.role);
+          sessionStorage.setItem('adminName', staffProfile.name);
+          sessionStorage.removeItem('adminCustomerId'); // 이전에 저장되었을 수 있는 거래처 ID 명시적 제거
         } else {
           // 2. staff가 아니라면 customers 테이블에서 거래처 계정 조회
           const { data: customerProfile } = await supabase
@@ -91,20 +91,20 @@ const AdminLoginPage: React.FC = () => {
             .single();
 
           if (customerProfile) {
-            localStorage.setItem('adminRole', 'customer');
-            localStorage.setItem('adminName', customerProfile.name);
-            localStorage.setItem('adminCustomerId', customerProfile.id);
-            localStorage.removeItem('adminStaffId'); // 어드민 스태프 ID 제거
+            sessionStorage.setItem('adminRole', 'customer');
+            sessionStorage.setItem('adminName', customerProfile.name);
+            sessionStorage.setItem('adminCustomerId', customerProfile.id);
+            sessionStorage.removeItem('adminStaffId'); // 어드민 스태프 ID 제거
           } else {
             // 둘 다 정보가 없는 경우 기본 임시 회원 권한
-            localStorage.setItem('adminRole', 'member');
-            localStorage.setItem('adminName', data.session.user.user_metadata?.name || '관리자');
-            localStorage.removeItem('adminCustomerId');
+            sessionStorage.setItem('adminRole', 'member');
+            sessionStorage.setItem('adminName', data.session.user.user_metadata?.name || '관리자');
+            sessionStorage.removeItem('adminCustomerId');
           }
         }
 
         // Navigate to dashboard if customer, else home page
-        const userRole = localStorage.getItem('adminRole');
+        const userRole = sessionStorage.getItem('adminRole');
         if (userRole === 'customer') {
           navigate('/admin/dashboard');
         } else {

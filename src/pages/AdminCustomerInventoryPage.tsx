@@ -106,8 +106,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
   // 모바일 통계 접기/펼치기 상태 (모바일 전용)
   const [showStats, setShowStats] = useState(false);
 
-  const userRole = localStorage.getItem('adminRole');
-  const customerId = localStorage.getItem('adminCustomerId');
+  const userRole = sessionStorage.getItem('adminRole');
+  const customerId = sessionStorage.getItem('adminCustomerId');
 
   useEffect(() => {
     if (userRole === 'customer' && id !== customerId) {

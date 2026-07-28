@@ -11,7 +11,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
   }
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+  auth: {
+    persistSession: true,
+    storage: window.sessionStorage
+  }
+});
 
 // default export 제거 (named export로만 내보냄)
 
@@ -27,7 +32,7 @@ export const assetBaseURL = `${supabaseUrl}/storage/v1/object/public`;
  * localStorage에 저장된 값이 있으면 사용하고, 없으면 DB에서 조회하여 캐시합니다.
  */
 export const getCurrentStaffId = async () => {
-  const cachedId = localStorage.getItem('adminStaffId');
+  const cachedId = sessionStorage.getItem('adminStaffId');
   if (cachedId) return cachedId;
 
   const { data: { session } } = await supabase.auth.getSession();
@@ -40,7 +45,7 @@ export const getCurrentStaffId = async () => {
     .single();
 
   if (profile) {
-    localStorage.setItem('adminStaffId', profile.id);
+    sessionStorage.setItem('adminStaffId', profile.id);
     return profile.id;
   }
   return null;

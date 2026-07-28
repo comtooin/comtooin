@@ -7,18 +7,18 @@ interface AdminRouteProps {
 }
 
 const AdminRoute: React.FC<AdminRouteProps> = ({ children, requiredRole }) => {
-  const token = localStorage.getItem('adminToken');
-  const expiresAt = localStorage.getItem('adminSessionExpiresAt');
-  const userRole = localStorage.getItem('adminRole');
+  const token = sessionStorage.getItem('adminToken');
+  const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
+  const userRole = sessionStorage.getItem('adminRole');
   const location = useLocation();
 
   // 토큰이 없거나 세션이 만료된 경우
   if (!token || (expiresAt && new Date().getTime() > parseInt(expiresAt))) {
-    localStorage.removeItem('adminToken');
-    localStorage.removeItem('adminSessionExpiresAt');
-    localStorage.removeItem('adminRole');
-    localStorage.removeItem('adminCustomerId');
-    localStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminToken');
+    sessionStorage.removeItem('adminSessionExpiresAt');
+    sessionStorage.removeItem('adminRole');
+    sessionStorage.removeItem('adminCustomerId');
+    sessionStorage.removeItem('adminName');
     return <Navigate to="/admin/login" />;
   }
 

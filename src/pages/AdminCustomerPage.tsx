@@ -82,7 +82,7 @@ const AdminCustomerPage: React.FC = () => {
   const [accountError, setAccountError] = useState('');
   const [accountSuccess, setAccountSuccess] = useState('');
 
-  const isAdmin = localStorage.getItem('adminRole') === 'admin';
+  const isAdmin = sessionStorage.getItem('adminRole') === 'admin';
 
   useEffect(() => {
     fetchCustomers();

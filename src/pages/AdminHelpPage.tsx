@@ -28,7 +28,7 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const userRole = localStorage.getItem('adminRole');
+  const userRole = sessionStorage.getItem('adminRole');
   const isCustomer = userRole === 'customer';
 
   const defaultTab = isCustomer ? 'dashboard' : 'request';

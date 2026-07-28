@@ -17,7 +17,7 @@ const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const [customerOptions, setCustomerOptions] = useState<string[]>([]); 
   const [staffOptions, setStaffOptions] = useState<string[]>(() => {
-    const storedName = localStorage.getItem('adminName');
+    const storedName = sessionStorage.getItem('adminName');
     return storedName ? [storedName] : [];
   });
   const [customerName, setCustomerName] = useState('');
@@ -98,7 +98,7 @@ const HomePage: React.FC = () => {
   useEffect(() => {
     fetchData();
     // 로그인한 사용자의 이름을 자동으로 설정
-    const storedName = localStorage.getItem('adminName');
+    const storedName = sessionStorage.getItem('adminName');
     if (storedName) {
       setUserName(storedName);
     }
