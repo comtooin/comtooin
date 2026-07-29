@@ -133,6 +133,12 @@ const NavBar: React.FC = () => {
                     to="/admin/dashboard"
                     selected={location.pathname === '/admin/dashboard'}
                     sx={getMenuItemStyle(location.pathname === '/admin/dashboard')}
+                    onClick={(e) => {
+                      if (location.pathname === '/admin/dashboard') {
+                        e.preventDefault();
+                        window.location.reload();
+                      }
+                    }}
                   >
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500 }} />
@@ -168,6 +174,12 @@ const NavBar: React.FC = () => {
                     to="/admin/dashboard"
                     selected={location.pathname === '/admin/dashboard'}
                     sx={getMenuItemStyle(location.pathname === '/admin/dashboard')}
+                    onClick={(e) => {
+                      if (location.pathname === '/admin/dashboard') {
+                        e.preventDefault();
+                        window.location.reload();
+                      }
+                    }}
                   >
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500 }} />
@@ -355,6 +367,12 @@ const NavBar: React.FC = () => {
                     to="/admin/dashboard"
                     selected={location.pathname === '/admin/dashboard'}
                     sx={getMenuItemStyle(location.pathname === '/admin/dashboard')}
+                    onClick={(e) => {
+                      if (location.pathname === '/admin/dashboard') {
+                        e.preventDefault();
+                        window.location.reload();
+                      }
+                    }}
                   >
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
@@ -390,6 +408,12 @@ const NavBar: React.FC = () => {
                     to="/admin/dashboard"
                     selected={location.pathname === '/admin/dashboard'}
                     sx={getMenuItemStyle(location.pathname === '/admin/dashboard')}
+                    onClick={(e) => {
+                      if (location.pathname === '/admin/dashboard') {
+                        e.preventDefault();
+                        window.location.reload();
+                      }
+                    }}
                   >
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
