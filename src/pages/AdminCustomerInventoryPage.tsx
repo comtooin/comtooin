@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  Container, Typography, Box, Paper, Stack, Button, Tabs, Tab,
+  Container, Typography, Box, Paper, Stack, Button, Tabs, Tab, Chip,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel
+  CircularProgress, Alert, IconButton, Grid, Dialog, DialogTitle, DialogContent, DialogActions, TextField, Pagination, Tooltip, TableSortLabel,
+  InputAdornment
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -16,12 +17,14 @@ import {
   AutoAwesome as AiIcon,
   BarChart as BarChartIcon,
   Info as InfoIcon,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Cancel as CancelIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import Papa from 'papaparse';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, LabelList } from 'recharts';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
@@ -66,6 +69,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const [activeHwFilter, setActiveHwFilter] = useState<{ type: 'cpu' | 'memory' | 'storage' | 'os', value: string } | null>(null);
+  const [activeSwFilter, setActiveSwFilter] = useState<{ type: 'commercial' | 'security' | 'top5', value: string } | null>(null);
+  const [hwSearchQuery, setHwSearchQuery] = useState('');
+  const [swSearchQuery, setSwSearchQuery] = useState('');
 
   // AI 리포트 상태
   const [aiModalOpen, setAiModalOpen] = useState(false);
@@ -970,7 +977,22 @@ const AdminCustomerInventoryPage: React.FC = () => {
     const counts: Record<string, number> = {};
     hardware.forEach(h => {
       const mem = h.memory || 'Unknown';
-      counts[mem] = (counts[mem] || 0) + 1;
+      let cleanMem = mem.trim();
+      const match = cleanMem.match(/(\d+(?:\.\d+)?)\s*(gb|mb|g|m)/i);
+      if (match) {
+        let unit = match[2].toUpperCase();
+        if (unit === 'G') unit = 'GB';
+        if (unit === 'M') unit = 'MB';
+        let num = match[1];
+        if (num.endsWith('.00')) num = num.slice(0, -3);
+        else if (num.endsWith('.0')) num = num.slice(0, -2);
+        cleanMem = num + unit;
+      } else {
+        const numMatch = cleanMem.match(/(\d+)/);
+        if (numMatch) cleanMem = numMatch[1] + 'GB';
+        else cleanMem = 'Unknown';
+      }
+      counts[cleanMem] = (counts[cleanMem] || 0) + 1;
     });
     return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).sort((a,b) => b.value - a.value);
   }, [hardware]);
@@ -1085,37 +1107,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
       .slice(0, 5);
   }, [software]);
 
-  // 도넛 차트 커스텀 라벨 렌더러 (100% 점유 시 중앙에 정렬하여 잘림 방지)
+  // 원형 차트 커스텀 라벨 렌더러 (점유율 % 제외하고 개수 단위만 표시)
   const renderPieLabel = (props: any) => {
-    const { cx, cy, midAngle, outerRadius, percent, name } = props;
+    const { cx, cy, midAngle, outerRadius, value, name } = props;
     const RADIAN = Math.PI / 180;
-    const pctValue = percent || 0;
-
-    if (pctValue >= 0.99) {
-      return (
-        <g>
-          <text 
-            x={cx} 
-            y={cy - 6} 
-            textAnchor="middle" 
-            fill="#475569" 
-            style={{ fontSize: '10px', fontWeight: 'bold' }}
-          >
-            {name}
-          </text>
-          <text 
-            x={cx} 
-            y={cy + 10} 
-            textAnchor="middle" 
-            fill="#673ab7" 
-            style={{ fontSize: '11px', fontWeight: 'bold' }}
-          >
-            100%
-          </text>
-        </g>
-      );
-    }
-
     const radius = outerRadius + 8;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -1125,15 +1120,17 @@ const AdminCustomerInventoryPage: React.FC = () => {
       <text
         x={x}
         y={y}
-        fill="#334155"
+        fill="#475569"
         textAnchor={isLeft ? 'end' : 'start'}
         dominantBaseline="central"
         style={{ fontSize: '9px', fontWeight: 'bold' }}
       >
-        {`${name} (${(pctValue * 100).toFixed(0)}%)`}
+        {`${name} (${value}대)`}
       </text>
     );
   };
+
+
 
   // 소프트웨어 그룹화
   const groupedSoftware = useMemo(() => {
@@ -1194,6 +1191,162 @@ const AdminCustomerInventoryPage: React.FC = () => {
     return sortable;
   }, [groupedSoftware, swSortConfig, hardware]);
 
+  const filteredHardware = useMemo(() => {
+    let result = sortedHardware;
+    if (activeHwFilter) {
+      result = result.filter(h => {
+        if (activeHwFilter.type === 'cpu') {
+          const cpu = (h.processor || '').toLowerCase();
+          const val = activeHwFilter.value.toLowerCase();
+          if (val === '기타') {
+            return !cpu.includes('i3') && !cpu.includes('i5') && !cpu.includes('i7') && !cpu.includes('i9') &&
+                   !cpu.includes('ryzen 3') && !cpu.includes('ryzen3') &&
+                   !cpu.includes('ryzen 5') && !cpu.includes('ryzen5') &&
+                   !cpu.includes('ryzen 7') && !cpu.includes('ryzen7') &&
+                   !cpu.includes('ryzen 9') && !cpu.includes('ryzen9');
+          }
+          if (val === 'ryzen 3') return cpu.includes('ryzen 3') || cpu.includes('ryzen3');
+          if (val === 'ryzen 5') return cpu.includes('ryzen 5') || cpu.includes('ryzen5');
+          if (val === 'ryzen 7') return cpu.includes('ryzen 7') || cpu.includes('ryzen7');
+          if (val === 'ryzen 9') return cpu.includes('ryzen 9') || cpu.includes('ryzen9');
+          return cpu.includes(val);
+        }
+        if (activeHwFilter.type === 'memory') {
+          const mem = h.memory || 'Unknown';
+          let cleanMem = mem.trim();
+          const match = cleanMem.match(/(\d+(?:\.\d+)?)\s*(gb|mb|g|m)/i);
+          if (match) {
+            let unit = match[2].toUpperCase();
+            if (unit === 'G') unit = 'GB';
+            if (unit === 'M') unit = 'MB';
+            let num = match[1];
+            if (num.endsWith('.00')) num = num.slice(0, -3);
+            else if (num.endsWith('.0')) num = num.slice(0, -2);
+            cleanMem = num + unit;
+          } else {
+            const numMatch = cleanMem.match(/(\d+)/);
+            if (numMatch) cleanMem = numMatch[1] + 'GB';
+            else cleanMem = 'Unknown';
+          }
+          return cleanMem === activeHwFilter.value;
+        }
+        if (activeHwFilter.type === 'storage') {
+          if (!h.storage) return activeHwFilter.value === '기타/미확인';
+          const drives = h.storage.split(',');
+          const cDrive = drives.find(d => d.includes('[C드라이브]')) || drives[0] || '';
+          const cLower = cDrive.toLowerCase();
+          
+          let cat = '기타/미확인';
+          if (cLower.includes('1tb') || cLower.includes('1000g') || cLower.includes('960g') || cLower.includes('2tb')) {
+            cat = '1TB 이상';
+          } else if (cLower.includes('500g') || cLower.includes('512g') || cLower.includes('480g')) {
+            cat = '500GB 대';
+          } else if (cLower.includes('250g') || cLower.includes('256g') || cLower.includes('240g') || cLower.includes('250 gb') || cLower.includes('256 gb')) {
+            cat = '250GB 대';
+          } else if (cLower.includes('120g') || cLower.includes('128g') || cLower.includes('120 gb') || cLower.includes('128 gb')) {
+            cat = '120GB 대';
+          } else {
+            const match = cLower.match(/(\d+)\s*(gb|g)/);
+            if (match) {
+              const size = parseInt(match[1]);
+              if (size >= 900) cat = '1TB 이상';
+              else if (size >= 400) cat = '500GB 대';
+              else if (size >= 200) cat = '250GB 대';
+              else if (size >= 100) cat = '120GB 대';
+            }
+          }
+          return cat === activeHwFilter.value;
+        }
+        if (activeHwFilter.type === 'os') {
+          let osName = '기타 OS';
+          const osLower = (h.os || '').toLowerCase();
+          if (osLower.includes('windows 11')) osName = 'Windows 11';
+          else if (osLower.includes('windows 10')) osName = 'Windows 10';
+          else if (osLower.includes('windows 7')) osName = 'Windows 7';
+          else if (osLower.includes('windows server')) osName = 'Windows Server';
+          else if (osLower.trim() !== '') {
+            osName = h.os.split(' ')[0] || h.os;
+          }
+          return osName === activeHwFilter.value;
+        }
+        return true;
+      });
+    }
+    if (hwSearchQuery.trim() !== '') {
+      const q = hwSearchQuery.toLowerCase();
+      result = result.filter(h =>
+        (h.department || '').toLowerCase().includes(q) ||
+        (h.user_name || '').toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [sortedHardware, activeHwFilter, hwSearchQuery]);
+
+  const filteredGroupedSoftware = useMemo(() => {
+    let result = sortedGroupedSoftware;
+    if (activeSwFilter) {
+      result = result.filter(group => {
+        return group.softwareList.some(s => {
+          const progName = (s.program_name || '').toLowerCase();
+          const val = activeSwFilter.value;
+          
+          if (activeSwFilter.type === 'commercial') {
+            if (val === 'MS Office') {
+              return progName.includes('office') || progName.includes('365') || progName.includes('excel') || progName.includes('word') || progName.includes('powerpoint');
+            }
+            if (val === 'Adobe 계열') {
+              return progName.includes('adobe') || progName.includes('photoshop') || progName.includes('illustrator') || progName.includes('acrobat') || progName.includes('reader');
+            }
+            if (val === '한컴오피스') {
+              return progName.includes('한컴') || progName.includes('hancom') || progName.includes('hwp') || progName.includes('한글');
+            }
+            if (val === 'AutoCAD') {
+              return progName.includes('autocad') || progName.includes('autodesk');
+            }
+          }
+          if (activeSwFilter.type === 'security') {
+            if (val === 'AhnLab V3') {
+              return progName.includes('v3') || progName.includes('ahnlab');
+            }
+            if (val === '알약 (Alyac)') {
+              return progName.includes('alyac') || progName.includes('알약');
+            }
+            if (val === 'MS Defender') {
+              return progName.includes('defender');
+            }
+            if (val === '기타/미설치') {
+              const hasV3 = group.softwareList.some(sw => {
+                const n = (sw.program_name || '').toLowerCase();
+                return n.includes('v3') || n.includes('ahnlab');
+              });
+              const hasAlyac = group.softwareList.some(sw => {
+                const n = (sw.program_name || '').toLowerCase();
+                return n.includes('alyac') || n.includes('알약');
+              });
+              const hasDefender = group.softwareList.some(sw => {
+                const n = (sw.program_name || '').toLowerCase();
+                return n.includes('defender');
+              });
+              return !hasV3 && !hasAlyac && !hasDefender;
+            }
+          }
+          if (activeSwFilter.type === 'top5') {
+            return s.program_name === val;
+          }
+          return false;
+        });
+      });
+    }
+    if (swSearchQuery.trim() !== '') {
+      const q = swSearchQuery.toLowerCase();
+      result = result.filter(group =>
+        (group.department || '').toLowerCase().includes(q) ||
+        (group.user_name || '').toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [sortedGroupedSoftware, activeSwFilter, swSearchQuery]);
+
   const handleHwSort = (key: keyof Hardware) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (hwSortConfig && hwSortConfig.key === key && hwSortConfig.direction === 'asc') {
@@ -1214,6 +1367,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
   return (
     <Container maxWidth="lg">
+      <style>{`
+        .recharts-wrapper:focus,
+        .recharts-wrapper *:focus,
+        .recharts-surface:focus,
+        .recharts-surface *:focus {
+          outline: none !important;
+        }
+      `}</style>
       <Helmet><title>{customer?.name} 인벤토리 | COMTOOIN</title></Helmet>
 
       <Box sx={{ mb: 2.5, display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, flexDirection: { xs: 'column', md: 'row' }, gap: 2, justifyContent: 'space-between' }}>
@@ -1235,7 +1396,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
             </Typography>
           </Box>
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ xs: 'stretch', sm: 'center' }} sx={{ mt: { xs: 2, sm: 0 } }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: { xs: 2, sm: 0 }, width: { xs: '100%', sm: 'auto' } }}>
           <Button 
             size="small"
             variant="outlined" 
@@ -1248,11 +1409,14 @@ const AdminCustomerInventoryPage: React.FC = () => {
               borderColor: '#673ab7',
               '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
               height: '36px',
-              fontSize: '0.75rem',
-              borderRadius: 1
+              fontSize: { xs: '0.7rem', sm: '0.75rem' },
+              borderRadius: 1,
+              flex: { xs: 1, sm: 'initial' },
+              whiteSpace: 'nowrap',
+              px: { xs: 1, sm: 1.5 }
             }}
           >
-            {isGenerating ? "생성 중..." : "AI 자산 분석 리포트"}
+            {isGenerating ? "생성 중..." : "AI 리포트"}
           </Button>
           <Button 
             size="small"
@@ -1260,9 +1424,17 @@ const AdminCustomerInventoryPage: React.FC = () => {
             color="primary" 
             startIcon={<FileDownloadIcon />} 
             onClick={handleDownloadExe}
-            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
+            sx={{ 
+              fontWeight: 'bold', 
+              height: '36px', 
+              fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+              borderRadius: 1,
+              flex: { xs: 1, sm: 'initial' },
+              whiteSpace: 'nowrap',
+              px: { xs: 1, sm: 1.5 }
+            }}
           >
-            자산 수집기 다운로드
+            수집기 다운로드
           </Button>
         </Stack>
       </Box>
@@ -1282,7 +1454,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
               </Typography>
             </Stack>
             <Typography variant="caption" color="text.secondary">
-              1. <strong>[자산 수집기 다운로드]</strong> 버튼 클릭
+              1. <strong>[수집기 다운로드]</strong> 버튼 클릭
             </Typography>
             <Typography variant="caption" color="text.secondary">
               2. 파일 실행 (크롬 경고 시 <strong>[다운로드 허용/유지]</strong> 선택)
@@ -1321,74 +1493,170 @@ const AdminCustomerInventoryPage: React.FC = () => {
       <Box sx={{ display: { xs: showStats ? 'block' : 'none', md: 'block' } }}>
         {tabValue === 0 ? (
           <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 2.5 } }}>
-            {/* 1. CPU 등급별 분포 (Doughnut) */}
+            {/* 1. CPU 등급별 분포 (BarChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">CPU 등급별 분포</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">CPU 등급별 분포</Typography>
+                  {activeHwFilter?.type === 'cpu' && (
+                    <IconButton size="small" onClick={() => setActiveHwFilter(null)} sx={{ p: 0, color: 'error.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={cpuStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {cpuStats.map((entry, index) => <Cell key={`cell-${index}`} fill={CPU_COLORS[index % CPU_COLORS.length]} />)}
-                    </Pie>
+                  <BarChart data={cpuStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
-                  </PieChart>
+                    <Bar 
+                      dataKey="value" 
+                      name="수량" 
+                      radius={[0, 6, 6, 0]} 
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveHwFilter({ type: 'cpu', value: data.name });
+                          setHwPage(1);
+                        }
+                      }}
+                    >
+                      {cpuStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={CPU_COLORS[index % CPU_COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: '#475569', fontWeight: 'bold' }} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
 
-            {/* 2. 메모리(RAM) 용량 분포 (Doughnut) */}
+            {/* 2. 메모리(RAM) 용량 분포 (BarChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">메모리(RAM) 용량 분포</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">메모리(RAM) 용량 분포</Typography>
+                  {activeHwFilter?.type === 'memory' && (
+                    <IconButton size="small" onClick={() => setActiveHwFilter(null)} sx={{ p: 0, color: 'error.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={memoryStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {memoryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={RAM_COLORS[index % RAM_COLORS.length]} />)}
-                    </Pie>
+                  <BarChart data={memoryStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
-                  </PieChart>
+                    <Bar 
+                      dataKey="value" 
+                      name="수량" 
+                      radius={[0, 6, 6, 0]} 
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveHwFilter({ type: 'memory', value: data.name });
+                          setHwPage(1);
+                        }
+                      }}
+                    >
+                      {memoryStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={RAM_COLORS[index % RAM_COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: '#475569', fontWeight: 'bold' }} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
 
-            {/* 3. 하드(C드라이브) 용량 분포 (Doughnut) */}
+            {/* 3. 하드(C드라이브) 용량 분포 (BarChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">하드(C드라이브) 용량 분포</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">하드(C드라이브) 용량 분포</Typography>
+                  {activeHwFilter?.type === 'storage' && (
+                    <IconButton size="small" onClick={() => setActiveHwFilter(null)} sx={{ p: 0, color: 'error.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={storageStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {storageStats.map((entry, index) => <Cell key={`cell-${index}`} fill={DISK_COLORS[index % DISK_COLORS.length]} />)}
-                    </Pie>
+                  <BarChart data={storageStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
-                  </PieChart>
+                    <Bar 
+                      dataKey="value" 
+                      name="수량" 
+                      radius={[0, 6, 6, 0]} 
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveHwFilter({ type: 'storage', value: data.name });
+                          setHwPage(1);
+                        }
+                      }}
+                    >
+                      {storageStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={DISK_COLORS[index % DISK_COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: '#475569', fontWeight: 'bold' }} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
 
-            {/* 4. 운영체제(OS) 분포 (Doughnut) */}
+            {/* 4. 운영체제(OS) 분포 (BarChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">운영체제(OS) 분포</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">운영체제(OS) 분포</Typography>
+                  {activeHwFilter?.type === 'os' && (
+                    <IconButton size="small" onClick={() => setActiveHwFilter(null)} sx={{ p: 0, color: 'error.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={osStats} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {osStats.map((entry, index) => <Cell key={`cell-${index}`} fill={OS_COLORS[index % OS_COLORS.length]} />)}
-                    </Pie>
+                  <BarChart data={osStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
-                  </PieChart>
+                    <Bar 
+                      dataKey="value" 
+                      name="수량" 
+                      radius={[0, 6, 6, 0]} 
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveHwFilter({ type: 'os', value: data.name });
+                          setHwPage(1);
+                        }
+                      }}
+                    >
+                      {osStats.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={OS_COLORS[index % OS_COLORS.length]} />
+                      ))}
+                      <LabelList dataKey="value" position="right" style={{ fontSize: 10, fill: '#475569', fontWeight: 'bold' }} />
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
@@ -1407,37 +1675,89 @@ const AdminCustomerInventoryPage: React.FC = () => {
               </Paper>
             </Grid>
 
-            {/* 2. 주요 상용 소프트웨어 설치 현황 */}
+            {/* 2. 주요 상용 소프트웨어 설치 현황 (PieChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">상용 소프트웨어 설치 현황</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">상용 소프트웨어 설치 현황</Typography>
+                  {activeSwFilter?.type === 'commercial' && (
+                    <IconButton size="small" onClick={() => setActiveSwFilter(null)} sx={{ p: 0, color: 'secondary.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={commercialSoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {commercialSoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SW_COLORS[index % SW_COLORS.length]} />)}
-                    </Pie>
+                  <PieChart style={{ outline: 'none' }}>
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
+                    <Pie
+                      data={commercialSoftware}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={3}
+                      label={renderPieLabel}
+                      style={{ outline: 'none', cursor: 'pointer' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveSwFilter({ type: 'commercial', value: data.name });
+                          setSwPage(1);
+                        }
+                      }}
+                    >
+                      {commercialSoftware.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={SW_COLORS[index % SW_COLORS.length]} />
+                      ))}
+                    </Pie>
                   </PieChart>
                 </ResponsiveContainer>
               </Paper>
             </Grid>
 
-            {/* 3. 보안 백신 설치 현황 */}
+            {/* 3. 보안 백신 설치 현황 (PieChart) */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">보안 백신 설치 현황</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">보안 백신 설치 현황</Typography>
+                  {activeSwFilter?.type === 'security' && (
+                    <IconButton size="small" onClick={() => setActiveSwFilter(null)} sx={{ p: 0, color: 'secondary.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <PieChart>
-                    <Pie data={securitySoftware} cx="50%" cy="50%" innerRadius={40} outerRadius={60} fill="#8884d8" paddingAngle={4} dataKey="value" label={renderPieLabel} labelLine={false} style={{fontSize: '10px', fontWeight: 'bold'}}>
-                      {securitySoftware.map((entry, index) => <Cell key={`cell-${index}`} fill={SEC_COLORS[index % SEC_COLORS.length]} />)}
-                    </Pie>
+                  <PieChart style={{ outline: 'none' }}>
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
+                    <Pie
+                      data={securitySoftware}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={45}
+                      outerRadius={65}
+                      paddingAngle={3}
+                      label={renderPieLabel}
+                      style={{ outline: 'none', cursor: 'pointer' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveSwFilter({ type: 'security', value: data.name });
+                          setSwPage(1);
+                        }
+                      }}
+                    >
+                      {securitySoftware.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={SEC_COLORS[index % SEC_COLORS.length]} />
+                      ))}
+                    </Pie>
                   </PieChart>
                 </ResponsiveContainer>
               </Paper>
@@ -1446,9 +1766,16 @@ const AdminCustomerInventoryPage: React.FC = () => {
             {/* 4. 전체 Top 5 소프트웨어 */}
             <Grid item xs={12} sm={6} md={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, height: '260px', bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle2" fontWeight="bold" align="center" gutterBottom color="text.secondary">전체 Top 5 소프트웨어</Typography>
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={0.5} sx={{ mb: 1 }}>
+                  <Typography variant="subtitle2" fontWeight="bold" color="text.secondary">전체 Top 5 소프트웨어</Typography>
+                  {activeSwFilter?.type === 'top5' && (
+                    <IconButton size="small" onClick={() => setActiveSwFilter(null)} sx={{ p: 0, color: 'secondary.main' }} title="필터 해제">
+                      <CancelIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  )}
+                </Stack>
                 <ResponsiveContainer width="100%" height="90%">
-                  <BarChart data={topSoftware} layout="vertical" margin={{ top: 10, right: 15, left: 10, bottom: 5 }}>
+                  <BarChart data={topSoftware} layout="vertical" margin={{ top: 10, right: 15, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 9, fill: '#64748b'}} axisLine={false} tickLine={false} />
@@ -1456,7 +1783,18 @@ const AdminCustomerInventoryPage: React.FC = () => {
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
                     />
-                    <Bar dataKey="count" fill="#475569" radius={[0, 6, 6, 0]} />
+                    <Bar 
+                      dataKey="count" 
+                      fill="#475569" 
+                      radius={[0, 6, 6, 0]} 
+                      style={{ cursor: 'pointer', outline: 'none' }}
+                      onClick={(data) => {
+                        if (data && data.name) {
+                          setActiveSwFilter({ type: 'top5', value: data.name });
+                          setSwPage(1);
+                        }
+                      }}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </Paper>
@@ -1477,19 +1815,52 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {/* 하드웨어 탭 */}
           {tabValue === 0 && (
             <Box>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
-                <>
-                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ mr: { sm: 'auto' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                    전체 초기화
+              {activeHwFilter && (
+                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">적용된 필터:</Typography>
+                  <Chip
+                    label={`${activeHwFilter.type === 'cpu' ? 'CPU' : activeHwFilter.type === 'memory' ? '메모리' : activeHwFilter.type === 'storage' ? '디스크' : 'OS'}: ${activeHwFilter.value}`}
+                    onDelete={() => setActiveHwFilter(null)}
+                    color="primary"
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontWeight: 'bold' }}
+                  />
+                  <Button size="small" onClick={() => setActiveHwFilter(null)} sx={{ fontSize: '0.75rem', py: 0.2 }}>
+                    필터 해제
                   </Button>
-                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                    CSV 업로드
+                </Box>
+              )}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
+                <TextField
+                  placeholder="부서 / 사용자 검색..."
+                  size="small"
+                  value={hwSearchQuery}
+                  onChange={(e) => {
+                    setHwSearchQuery(e.target.value);
+                    setHwPage(1);
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ width: { xs: '100%', sm: 200 }, bgcolor: 'white' }}
+                />
+                <Stack direction="row" spacing={1} justifyContent={{ xs: 'space-between', sm: 'flex-end' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('hardware')} sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    초기화
+                  </Button>
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    업로드
                     <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'hardware')} />
                   </Button>
-                </>
-                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('hardware')} sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                  엑셀 다운로드
-                </Button>
+                  <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('hardware')} sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    다운로드
+                  </Button>
+                </Stack>
               </Stack>
               <TableContainer sx={{ maxHeight: 500 }} ref={hwTableRef}>
                 <Table stickyHeader size="small">
@@ -1517,7 +1888,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedHardware.length > 0 ? sortedHardware.slice((hwPage - 1) * hwRowsPerPage, (hwPage - 1) * hwRowsPerPage + hwRowsPerPage).map((row) => (
+                    {filteredHardware.length > 0 ? filteredHardware.slice((hwPage - 1) * hwRowsPerPage, (hwPage - 1) * hwRowsPerPage + hwRowsPerPage).map((row) => (
                       <TableRow 
                         key={row.id} 
                         hover 
@@ -1574,10 +1945,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-                {sortedHardware.length > hwRowsPerPage && (
+                {filteredHardware.length > hwRowsPerPage && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
                   <Pagination 
-                    count={Math.ceil(sortedHardware.length / hwRowsPerPage)} 
+                    count={Math.ceil(filteredHardware.length / hwRowsPerPage)} 
                     page={hwPage} 
                     onChange={(e, newPage) => {
                       setHwPage(newPage);
@@ -1594,19 +1965,52 @@ const AdminCustomerInventoryPage: React.FC = () => {
           {/* 소프트웨어 탭 (컴퓨터별 그룹화) */}
           {tabValue === 1 && (
             <Box>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} mb={2} justifyContent="flex-end">
-                <>
-                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ mr: { sm: 'auto' }, height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                    전체 초기화
+              {activeSwFilter && (
+                <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body2" color="text.secondary">적용된 필터:</Typography>
+                  <Chip
+                    label={`${activeSwFilter.type === 'commercial' ? '상용SW' : activeSwFilter.type === 'security' ? '백신' : '인기SW'}: ${activeSwFilter.value}`}
+                    onDelete={() => setActiveSwFilter(null)}
+                    color="secondary"
+                    variant="outlined"
+                    size="small"
+                    sx={{ fontWeight: 'bold' }}
+                  />
+                  <Button size="small" onClick={() => setActiveSwFilter(null)} sx={{ fontSize: '0.75rem', py: 0.2 }}>
+                    필터 해제
                   </Button>
-                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                    CSV 업로드
+                </Box>
+              )}
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} mb={2} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between">
+                <TextField
+                  placeholder="부서 / 사용자 검색..."
+                  size="small"
+                  value={swSearchQuery}
+                  onChange={(e) => {
+                    setSwSearchQuery(e.target.value);
+                    setSwPage(1);
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ width: { xs: '100%', sm: 200 }, bgcolor: 'white' }}
+                />
+                <Stack direction="row" spacing={1} justifyContent={{ xs: 'space-between', sm: 'flex-end' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                  <Button variant="outlined" color="error" startIcon={<DeleteSweepIcon />} size="small" onClick={() => handleDeleteAll('software')} sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    초기화
+                  </Button>
+                  <Button component="label" variant="outlined" startIcon={<FileUploadIcon />} size="small" sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    업로드
                     <input type="file" hidden accept=".csv" onChange={(e) => handleFileUpload(e, 'software')} />
                   </Button>
-                </>
-                <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('software')} sx={{ height: '36px', fontSize: '0.75rem', borderRadius: 1, fontWeight: 'bold' }}>
-                  엑셀 전체 다운로드
-                </Button>
+                  <Button variant="outlined" color="secondary" startIcon={<FileDownloadIcon />} size="small" onClick={() => exportToCSV('software')} sx={{ height: '36px', fontSize: { xs: '0.7rem', sm: '0.75rem' }, borderRadius: 1, fontWeight: 'bold', whiteSpace: 'nowrap', flex: { xs: 1, sm: 'initial' }, px: { xs: 1, sm: 1.5 } }}>
+                    다운로드
+                  </Button>
+                </Stack>
               </Stack>
               <TableContainer sx={{ maxHeight: 500 }} ref={swTableRef}>
                 <Table stickyHeader size="small">
@@ -1635,7 +2039,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortedGroupedSoftware.length > 0 ? sortedGroupedSoftware.slice((swPage - 1) * swRowsPerPage, (swPage - 1) * swRowsPerPage + swRowsPerPage).map((group) => (
+                    {filteredGroupedSoftware.length > 0 ? filteredGroupedSoftware.slice((swPage - 1) * swRowsPerPage, (swPage - 1) * swRowsPerPage + swRowsPerPage).map((group) => (
                       <TableRow 
                         key={group.computer_name} 
                         hover 
@@ -1674,10 +2078,10 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
-                {sortedGroupedSoftware.length > swRowsPerPage && (
+                {filteredGroupedSoftware.length > swRowsPerPage && (
                 <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
                   <Pagination 
-                    count={Math.ceil(sortedGroupedSoftware.length / swRowsPerPage)} 
+                    count={Math.ceil(filteredGroupedSoftware.length / swRowsPerPage)} 
                     page={swPage} 
                     onChange={(e, newPage) => {
                       setSwPage(newPage);
