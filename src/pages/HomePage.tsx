@@ -243,7 +243,7 @@ const HomePage: React.FC = () => {
         });
       }
       
-      // 스케줄 자동 연동 및 구글 캘린더 동기화
+      // 스케줄 자동 연동 및 구글 캘린더 동기화 (백그라운드에서 비동기로 실행하여 대기 시간 제거)
       const staffId = await getCurrentStaffId();
       const startTimeStr = `${workDate}T00:00:00`;
       const endTimeStr = `${workDate}T23:59:59`;
@@ -258,25 +258,45 @@ const HomePage: React.FC = () => {
         assigneeEmail: session?.user?.email || ''
       };
 
-      const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
-        body: syncPayload
-      });
-      if (syncError) console.warn('Google Calendar Sync Error:', syncError.message);
+      // 백그라운드 비동기 태스크 실행
+      (async () => {
+        try {
+          let googleEventId = '';
+          try {
+            const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
+              body: syncPayload
+            });
+            if (syncError) {
+              console.warn('Google Calendar Sync Error:', syncError.message);
+            } else {
+              googleEventId = syncData?.googleEventId || '';
+            }
+          } catch (err: any) {
+            console.warn('Google Calendar Sync invoke failed:', err.message || err);
+          }
 
-      const scheduleData = {
-        title: `업무기록 접수 (${userName})`,
-        content: content,
-        staff_id: staffId,
-        staff_ids: staffId ? [staffId] : [],
-        assignee_name: userName,
-        assignee_email: session?.user?.email || '',
-        customer_name: customerName,
-        start_time: startTimeStr,
-        end_time: endTimeStr,
-        all_day: true,
-        google_event_id: syncData?.googleEventId
-      };
-      await supabase.from('schedules').insert(scheduleData);
+          const scheduleData = {
+            title: `업무기록 접수 (${userName})`,
+            content: content,
+            staff_id: staffId,
+            staff_ids: staffId ? [staffId] : [],
+            assignee_name: userName,
+            assignee_email: session?.user?.email || '',
+            customer_name: customerName,
+            start_time: startTimeStr,
+            end_time: endTimeStr,
+            all_day: true,
+            google_event_id: googleEventId
+          };
+          
+          const { error: scheduleError } = await supabase.from('schedules').insert(scheduleData);
+          if (scheduleError) {
+            console.error('Schedule auto-insert failed:', scheduleError.message);
+          }
+        } catch (bgErr) {
+          console.error('Background calendar and schedule sync failed:', bgErr);
+        }
+      })();
 
       alert('업무 기록이 성공적으로 저장되었습니다.');
       setContent('');

@@ -182,35 +182,59 @@ const AdminReportPage: React.FC = () => {
       reqs = reqs.filter(r => {
         const text = (r.content || '').toLowerCase();
         if (selectedCategoryFilter === 'PC / 하드웨어') {
-          return text.includes('pc') || text.includes('본체') || text.includes('모니터') || 
-                 text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || 
-                 text.includes('전원') || text.includes('하드') || text.includes('ram') || 
-                 text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') ||
-                 text.includes('cpu');
+          return text.includes('pc') || text.includes('노트북') || text.includes('데스크탑') || 
+                 text.includes('cpu') || text.includes('메모리') || text.includes('ram') || 
+                 text.includes('하드') || text.includes('ssd') || text.includes('파워') || 
+                 text.includes('부팅') || text.includes('전원') || text.includes('그래픽카드') || 
+                 text.includes('gpu') || text.includes('메인보드') || text.includes('바이오스') || 
+                 text.includes('bios') || text.includes('본체') || text.includes('모니터') || 
+                 text.includes('키보드') || text.includes('마우스') || text.includes('컴퓨터') || 
+                 text.includes('디스크') || text.includes('헤드셋') || text.includes('이어폰') || 
+                 text.includes('스피커') || text.includes('멀티탭') || text.includes('케이블') || 
+                 text.includes('젠더') || text.includes('조립') || text.includes('부품') || 
+                 text.includes('쿨러') || text.includes('팬') || text.includes('케이스') || 
+                 text.includes('usb') || text.includes('외장하드');
         }
         if (selectedCategoryFilter === '네트워크 / 인터넷') {
           return text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || 
                  text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || 
                  text.includes('접속') || text.includes('허브') || text.includes('ip') ||
-                 text.includes('dns');
+                 text.includes('dns') || text.includes('방화벽') || text.includes('vpn') || 
+                 text.includes('스위치') || text.includes('인터넷전화') || text.includes('인터넷 전화') || 
+                 text.includes('랜선') || text.includes('utp') || text.includes('서버') || 
+                 text.includes('나스') || text.includes('nas') || text.includes('포트') || 
+                 text.includes('ping');
         }
         if (selectedCategoryFilter === '소프트웨어 / OS') {
           return text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || 
                  text.includes('office') || text.includes('한글') || text.includes('엑셀') || 
-                 text.includes('excel') || text.includes('백신') || text.includes('프로그램') || 
+                 text.includes('excel') || text.includes('워드') || text.includes('word') || 
+                 text.includes('파워포인트') || text.includes('ppt') || text.includes('일러스트') || 
+                 text.includes('포토샵') || text.includes('오토캐드') || text.includes('autocad') || 
+                 text.includes('백신') || text.includes('v3') || text.includes('알약') || 
+                 text.includes('카스퍼스키') || text.includes('kaspersky') || text.includes('프로그램') || 
                  text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') ||
-                 text.includes('라이센스');
+                 text.includes('라이센스') || text.includes('업데이트') || text.includes('포맷') || 
+                 text.includes('복구') || text.includes('메일') || text.includes('아웃룩') || 
+                 text.includes('outlook') || text.includes('계정') || text.includes('오류') || 
+                 text.includes('에러') || text.includes('크롬') || text.includes('chrome') || 
+                 text.includes('엣지') || text.includes('edge') || text.includes('웨일') || 
+                 text.includes('whale') || text.includes('브라우저') || text.includes('압축') || 
+                 text.includes('폰트') || text.includes('뷰어') || text.includes('pdf');
         }
         if (selectedCategoryFilter === '프린터 / 복합기') {
           return text.includes('프린터') || text.includes('복합기') || text.includes('토너') || 
                  text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || 
-                 text.includes('스캔') || text.includes('팩스') || text.includes('드라이버');
+                 text.includes('스캔') || text.includes('팩스') || text.includes('드라이버') || 
+                 text.includes('용지') || text.includes('용지걸림') || text.includes('급지') || 
+                 text.includes('복사') || text.includes('드럼') || text.includes('스캐너') || 
+                 text.includes('출력물');
         }
         if (selectedCategoryFilter === '기타 문의') {
-          const isHw = text.includes('pc') || text.includes('본체') || text.includes('모니터') || text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || text.includes('전원') || text.includes('하드') || text.includes('ram') || text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') || text.includes('cpu');
-          const isNet = text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || text.includes('접속') || text.includes('허브') || text.includes('ip') || text.includes('dns');
-          const isSw = text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || text.includes('office') || text.includes('한글') || text.includes('엑셀') || text.includes('excel') || text.includes('백신') || text.includes('프로그램') || text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') || text.includes('라이센스');
-          const isPrinter = text.includes('프린터') || text.includes('복합기') || text.includes('토너') || text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || text.includes('스캔') || text.includes('팩스') || text.includes('드라이버');
+          const isHw = text.includes('pc') || text.includes('노트북') || text.includes('데스크탑') || text.includes('cpu') || text.includes('메모리') || text.includes('ram') || text.includes('하드') || text.includes('ssd') || text.includes('파워') || text.includes('부팅') || text.includes('전원') || text.includes('그래픽카드') || text.includes('gpu') || text.includes('메인보드') || text.includes('바이오스') || text.includes('bios') || text.includes('본체') || text.includes('모니터') || text.includes('키보드') || text.includes('마우스') || text.includes('컴퓨터') || text.includes('디스크') || text.includes('헤드셋') || text.includes('이어폰') || text.includes('스피커') || text.includes('멀티탭') || text.includes('케이블') || text.includes('젠더') || text.includes('조립') || text.includes('부품') || text.includes('쿨러') || text.includes('팬') || text.includes('케이스') || text.includes('usb') || text.includes('외장하드');
+          const isNet = text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || text.includes('접속') || text.includes('허브') || text.includes('ip') || text.includes('dns') || text.includes('방화벽') || text.includes('vpn') || text.includes('스위치') || text.includes('인터넷전화') || text.includes('인터넷 전화') || text.includes('랜선') || text.includes('utp') || text.includes('서버') || text.includes('나스') || text.includes('nas') || text.includes('포트') || text.includes('ping');
+          const isSw = text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || text.includes('office') || text.includes('한글') || text.includes('엑셀') || text.includes('excel') || text.includes('워드') || text.includes('word') || text.includes('파워포인트') || text.includes('ppt') || text.includes('일러스트') || text.includes('포토샵') || text.includes('오토캐드') || text.includes('autocad') || text.includes('백신') || text.includes('v3') || text.includes('알약') || text.includes('카스퍼스키') || text.includes('kaspersky') || text.includes('프로그램') || text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') || text.includes('라이센스') || text.includes('업데이트') || text.includes('포맷') || text.includes('복구') || text.includes('메일') || text.includes('아웃룩') || text.includes('outlook') || text.includes('계정') || text.includes('오류') || text.includes('에러') || text.includes('크롬') || text.includes('chrome') || text.includes('엣지') || text.includes('edge') || text.includes('웨일') || text.includes('whale') || text.includes('브라우저') || text.includes('압축') || text.includes('폰트') || text.includes('뷰어') || text.includes('pdf');
+          const isPrinter = text.includes('프린터') || text.includes('복합기') || text.includes('토너') || text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || text.includes('스캔') || text.includes('팩스') || text.includes('드라이버') || text.includes('용지') || text.includes('용지걸림') || text.includes('급지') || text.includes('복사') || text.includes('드럼') || text.includes('스캐너') || text.includes('출력물');
           return !isHw && !isNet && !isSw && !isPrinter;
         }
         return true;
@@ -1133,32 +1157,56 @@ const AdminReportPage: React.FC = () => {
     filteredRequests.forEach(r => {
       const text = (r.content || '').toLowerCase();
       if (
-        text.includes('pc') || text.includes('본체') || text.includes('모니터') || 
-        text.includes('키보드') || text.includes('마우스') || text.includes('부팅') || 
-        text.includes('전원') || text.includes('하드') || text.includes('ram') || 
-        text.includes('컴퓨터') || text.includes('디스크') || text.includes('ssd') ||
-        text.includes('cpu')
+        text.includes('pc') || text.includes('노트북') || text.includes('데스크탑') || 
+        text.includes('cpu') || text.includes('메모리') || text.includes('ram') || 
+        text.includes('하드') || text.includes('ssd') || text.includes('파워') || 
+        text.includes('부팅') || text.includes('전원') || text.includes('그래픽카드') || 
+        text.includes('gpu') || text.includes('메인보드') || text.includes('바이오스') || 
+        text.includes('bios') || text.includes('본체') || text.includes('모니터') || 
+        text.includes('키보드') || text.includes('마우스') || text.includes('컴퓨터') || 
+        text.includes('디스크') || text.includes('헤드셋') || text.includes('이어폰') || 
+        text.includes('스피커') || text.includes('멀티탭') || text.includes('케이블') || 
+        text.includes('젠더') || text.includes('조립') || text.includes('부품') || 
+        text.includes('쿨러') || text.includes('팬') || text.includes('케이스') || 
+        text.includes('usb') || text.includes('외장하드')
       ) {
         hwCount++;
       } else if (
         text.includes('인터넷') || text.includes('네트워크') || text.includes('lan') || 
         text.includes('공유기') || text.includes('와이파이') || text.includes('wifi') || 
         text.includes('접속') || text.includes('허브') || text.includes('ip') ||
-        text.includes('dns')
+        text.includes('dns') || text.includes('방화벽') || text.includes('vpn') || 
+        text.includes('스위치') || text.includes('인터넷전화') || text.includes('인터넷 전화') || 
+        text.includes('랜선') || text.includes('utp') || text.includes('서버') || 
+        text.includes('나스') || text.includes('nas') || text.includes('포트') || 
+        text.includes('ping')
       ) {
         netCount++;
       } else if (
         text.includes('윈도우') || text.includes('windows') || text.includes('오피스') || 
         text.includes('office') || text.includes('한글') || text.includes('엑셀') || 
-        text.includes('excel') || text.includes('백신') || text.includes('프로그램') || 
+        text.includes('excel') || text.includes('워드') || text.includes('word') || 
+        text.includes('파워포인트') || text.includes('ppt') || text.includes('일러스트') || 
+        text.includes('포토샵') || text.includes('오토캐드') || text.includes('autocad') || 
+        text.includes('백신') || text.includes('v3') || text.includes('알약') || 
+        text.includes('카스퍼스키') || text.includes('kaspersky') || text.includes('프로그램') || 
         text.includes('설치') || text.includes('인증') || text.includes('소프트웨어') ||
-        text.includes('라이센스')
+        text.includes('라이센스') || text.includes('업데이트') || text.includes('포맷') || 
+        text.includes('복구') || text.includes('메일') || text.includes('아웃룩') || 
+        text.includes('outlook') || text.includes('계정') || text.includes('오류') || 
+        text.includes('에러') || text.includes('크롬') || text.includes('chrome') || 
+        text.includes('엣지') || text.includes('edge') || text.includes('웨일') || 
+        text.includes('whale') || text.includes('브라우저') || text.includes('압축') || 
+        text.includes('폰트') || text.includes('뷰어') || text.includes('pdf')
       ) {
         swCount++;
       } else if (
         text.includes('프린터') || text.includes('복합기') || text.includes('토너') || 
         text.includes('잉크') || text.includes('인쇄') || text.includes('출력') || 
-        text.includes('스캔') || text.includes('팩스') || text.includes('드라이버')
+        text.includes('스캔') || text.includes('팩스') || text.includes('드라이버') || 
+        text.includes('용지') || text.includes('용지걸림') || text.includes('급지') || 
+        text.includes('복사') || text.includes('드럼') || text.includes('스캐너') || 
+        text.includes('출력물')
       ) {
         printerCount++;
       } else {
