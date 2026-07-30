@@ -1824,7 +1824,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     color="primary"
                     variant="outlined"
                     size="small"
-                    sx={{ fontWeight: 'bold' }}
+                    sx={{ fontWeight: 'bold', borderRadius: 1 }}
                   />
                   <Button size="small" onClick={() => setActiveHwFilter(null)} sx={{ fontSize: '0.75rem', py: 0.2 }}>
                     필터 해제
@@ -1974,7 +1974,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                     color="secondary"
                     variant="outlined"
                     size="small"
-                    sx={{ fontWeight: 'bold' }}
+                    sx={{ fontWeight: 'bold', borderRadius: 1 }}
                   />
                   <Button size="small" onClick={() => setActiveSwFilter(null)} sx={{ fontSize: '0.75rem', py: 0.2 }}>
                     필터 해제

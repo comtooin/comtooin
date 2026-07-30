@@ -152,7 +152,7 @@ const SubmissionDetailPage: React.FC = () => {
             label={getStatusLabel(request.status)} 
             color={getStatusChipColor(request.status)} 
             variant="filled"
-            sx={{ fontWeight: 'bold', px: 1 }}
+            sx={{ fontWeight: 'bold', px: 1, borderRadius: 1 }}
           />
         </Box>
 

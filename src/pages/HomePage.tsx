@@ -322,39 +322,59 @@ const HomePage: React.FC = () => {
 
       <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2.5 }}>
         {[
-          { label: '금일 기록', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} />, filter: 'today' },
-          { label: '이번달 기록', shortLabel: '이번달', count: stats.monthly, icon: <AssessmentIcon fontSize="small" sx={{ color: '#2e7d32' }} />, filter: 'month' },
-          { label: '전체 기록', shortLabel: '전체', count: stats.total, icon: <AssignmentIcon fontSize="small" sx={{ color: '#0288d1' }} />, filter: 'all' },
-        ].map((item, idx, arr) => (
-          <Box 
-            key={idx}
-            onClick={() => navigate(`/admin/dashboard?period=${item.filter}`)}
-            sx={{ 
-              flex: 1, 
-              p: { xs: 1, sm: 2 }, 
-              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
-            }}
-          >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
-              {item.icon}
-              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
-                {item.shortLabel}
-              </Typography>
-              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
-                {item.count}
-              </Typography>
-            </Stack>
-          </Box>
+          { label: '금일 기록', count: stats.today, icon: <TodayIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />, filter: 'today' },
+          { label: '이번달 기록', count: stats.monthly, icon: <AssessmentIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />, filter: 'month' },
+          { label: '전체 기록', count: stats.total, icon: <AssignmentIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />, filter: 'all' },
+        ].map((item, idx) => (
+          <Grid item xs={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              onClick={() => navigate(`/admin/dashboard?period=${item.filter}`)}
+              sx={{ 
+                p: { xs: 1, sm: 1.2 },
+                borderRadius: 1,
+                bgcolor: 'background.paper',
+                cursor: 'pointer',
+                transition: 'all 0.15s ease-in-out',
+                '&:hover': { 
+                  borderColor: 'primary.main',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                }
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {item.icon}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography 
+                  sx={{ 
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 800,
+                    color: 'text.primary',
+                    lineHeight: 1
+                  }}
+                >
+                  {item.count}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
         ))}
-      </Paper>
+      </Grid>
 
       <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} md={8.5}>
@@ -596,7 +616,7 @@ const HomePage: React.FC = () => {
                     primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
                     secondaryTypographyProps={{ variant: 'caption' }}
                   />
-                  <Chip label={req.status === 'completed' ? '완료' : '처리중'} size="small" color={req.status === 'completed' ? 'success' : 'warning'} variant="outlined" sx={{ fontSize: '0.65rem', fontWeight: 'bold' }} />
+                  <Chip label={req.status === 'completed' ? '완료' : '처리중'} size="small" color={req.status === 'completed' ? 'success' : 'warning'} variant="outlined" sx={{ fontSize: '0.65rem', fontWeight: 'bold', borderRadius: 1 }} />
                 </ListItem>
               )) : <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>기록이 없습니다.</Typography>}
             </List>

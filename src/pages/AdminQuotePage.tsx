@@ -427,7 +427,19 @@ const AdminQuotePage: React.FC = () => {
         <Grid container spacing={3}>
           <Grid item xs={12}>
           {/* 상단 통합 컨트롤 바 (모바일 및 PC 반응형 최적화) */}
-          <Paper sx={{ p: { xs: 2, sm: 3 }, mb: 3, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 2, md: 3 }, alignItems: { xs: 'stretch', md: 'center' } }}>
+          <Paper 
+            variant="outlined" 
+            sx={{ 
+              p: { xs: 1.2, sm: 1.5 }, 
+              mb: 3, 
+              borderRadius: 1, 
+              bgcolor: 'background.paper',
+              display: 'flex', 
+              flexDirection: { xs: 'column', md: 'row' }, 
+              gap: { xs: 2, md: 3 }, 
+              alignItems: { xs: 'stretch', md: 'center' } 
+            }}
+          >
             {/* 기본 설정 */}
             <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2, alignItems: { xs: 'stretch', sm: 'center' }, flexGrow: 1 }}>
               <TextField
@@ -481,7 +493,7 @@ const AdminQuotePage: React.FC = () => {
           </Paper>
 
           {/* 하단 견적 상세 내역 테이블 */}
-          <Paper sx={{ p: { xs: 2, sm: 3 } }}>
+          <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper' }}>
             <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Typography variant="subtitle1" fontWeight="bold">
                 견적 상세 내역

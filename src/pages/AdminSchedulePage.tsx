@@ -446,17 +446,209 @@ const AdminSchedulePage: React.FC = () => {
       <Helmet><title>스케줄 | COMTOOIN</title></Helmet>
       
       <style>{`
+        /* 캘린더 전체 테두리 및 격자 */
+        .fc {
+          --fc-border-color: #e2e8f0 !important;
+          font-family: inherit !important;
+        }
+        .fc-theme-standard .fc-scrollgrid {
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 6px !important;
+          overflow: hidden !important;
+        }
+        
+        /* 요일 헤더 영역 */
+        .fc .fc-col-header-cell {
+          background-color: #f8fafc !important;
+          padding: 8px 0 !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .fc .fc-col-header-cell-cushion {
+          font-size: 0.75rem !important;
+          font-weight: 700 !important;
+          color: #475569 !important;
+          text-decoration: none !important;
+          letter-spacing: 0.05em !important;
+        }
+        
+        /* 날짜 숫자 */
+        .fc .fc-daygrid-day-number {
+          font-size: 0.75rem !important;
+          font-weight: 600 !important;
+          color: #64748b !important;
+          text-decoration: none !important;
+          padding: 6px 8px !important;
+        }
+        
+        /* 토요일/일요일 색상 */
         .fc-day-sun .fc-col-header-cell-cushion, 
-        .fc-day-sun .fc-daygrid-day-number { color: #d32f2f !important; }
+        .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
         .fc-day-sat .fc-col-header-cell-cushion, 
-        .fc-day-sat .fc-daygrid-day-number { color: #1976d2 !important; }
-        .fc-event { cursor: pointer; transition: transform 0.1s; }
-        .fc-event:hover { transform: scale(1.02); }
+        .fc-day-sat .fc-daygrid-day-number { color: #475569 !important; }
+        
+        /* 오늘 날짜 셀 하이라이트 */
+        .fc .fc-day-today {
+          background-color: rgba(51, 65, 85, 0.04) !important;
+        }
+        .fc .fc-day-today .fc-daygrid-day-number {
+          color: #334155 !important;
+          font-weight: 800 !important;
+        }
+        
+        /* 헤더 툴바 버튼 스타일 변경 */
+        .fc .fc-toolbar-title {
+          font-size: 1.2rem !important;
+          font-weight: 700 !important;
+          color: #0f172a !important;
+        }
+        .fc .fc-button-primary {
+          background-color: #ffffff !important;
+          border-color: #cbd5e1 !important;
+          color: #334155 !important;
+          font-weight: 600 !important;
+          font-size: 0.75rem !important;
+          border-radius: 4px !important;
+          text-transform: none !important;
+          box-shadow: none !important;
+          padding: 5px 10px !important;
+          transition: all 0.15s ease-in-out !important;
+        }
+        .fc .fc-button-primary:hover {
+          background-color: #f8fafc !important;
+          border-color: #94a3b8 !important;
+          color: #1e293b !important;
+        }
+        .fc .fc-button-primary:active, 
+        .fc .fc-button-primary:focus, 
+        .fc .fc-button-primary.fc-button-active {
+          background-color: #f1f5f9 !important;
+          border-color: #64748b !important;
+          color: #0f172a !important;
+          box-shadow: none !important;
+        }
+        .fc .fc-button-primary:disabled {
+          background-color: #ffffff !important;
+          border-color: #e2e8f0 !important;
+          color: #cbd5e1 !important;
+          opacity: 0.6 !important;
+        }
+        
+        /* 일정 바(블록) 스타일 - 고대비 솔리드 스타일 */
+        .fc-daygrid-block-event {
+          background-color: #475569 !important;
+          color: #ffffff !important;
+          border-radius: 4px !important;
+          border: none !important;
+          padding: 3px 6px !important;
+          margin: 2px 4px !important;
+          transition: all 0.15s ease-in-out !important;
+          cursor: pointer !important;
+        }
+        .fc-daygrid-block-event:hover {
+          background-color: #334155 !important;
+          transform: translateY(-1px) !important;
+        }
+        .fc-daygrid-block-event .fc-event-title {
+          font-size: 0.75rem !important;
+          font-weight: 700 !important;
+          color: #ffffff !important;
+        }
+        
+        /* 일반/시간선 일정(점) 스타일 - 고대비 솔리드 스타일로 변환 */
+        .fc-daygrid-dot-event {
+          background-color: #475569 !important;
+          color: #ffffff !important;
+          border-radius: 4px !important;
+          border: none !important;
+          padding: 3px 6px !important;
+          margin: 2px 4px !important;
+          transition: all 0.15s ease-in-out !important;
+          cursor: pointer !important;
+          display: flex !important;
+          align-items: center !important;
+        }
+        .fc-daygrid-dot-event:hover {
+          background-color: #334155 !important;
+          transform: translateY(-1px) !important;
+        }
+        .fc-daygrid-dot-event .fc-event-title {
+          font-size: 0.75rem !important;
+          font-weight: 700 !important;
+          color: #ffffff !important;
+        }
+        .fc-daygrid-dot-event .fc-event-time {
+          font-size: 0.7rem !important;
+          font-weight: 700 !important;
+          color: rgba(255, 255, 255, 0.85) !important;
+          margin-right: 6px !important;
+        }
+        .fc-daygrid-event-dot {
+          display: none !important;
+        }
+        
+        /* 더보기 버튼 */
+        .fc .fc-more-link {
+          font-size: 0.65rem !important;
+          font-weight: 700 !important;
+          color: #334155 !important;
+          text-decoration: none !important;
+          padding-left: 4px !important;
+        }
         
         @media (max-width: 600px) {
-          .fc .fc-toolbar { display: flex; flex-wrap: wrap; justify-content: center !important; gap: 8px; margin-bottom: 1em !important; }
-          .fc .fc-toolbar-title { width: 100%; text-align: center; font-size: 1.15rem !important; margin-bottom: 2px !important; }
-          .fc .fc-button { padding: 4px 8px !important; font-size: 0.8rem !important; }
+          /* 모바일에서 툴바 간격 조율 및 단일 행 유지 */
+          .fc .fc-toolbar { 
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important; 
+            align-items: center !important;
+            margin-bottom: 0.6em !important; 
+            gap: 4px !important;
+            flex-wrap: nowrap !important;
+          }
+          .fc .fc-toolbar-title { 
+            font-size: 0.95rem !important; 
+            font-weight: 800 !important;
+            text-align: center !important;
+            width: auto !important;
+            margin-bottom: 0 !important;
+          }
+          .fc .fc-button { 
+            padding: 3px 6px !important; 
+            font-size: 0.7rem !important; 
+          }
+          /* 모바일에서 날짜 셀 내부 패딩 및 크기 축소 */
+          .fc .fc-daygrid-day-number {
+            padding: 2px 4px !important;
+            font-size: 0.7rem !important;
+          }
+          /* 모바일에서 요일 셀 패딩 축소 */
+          .fc .fc-col-header-cell {
+            padding: 4px 0 !important;
+          }
+          .fc .fc-col-header-cell-cushion {
+            font-size: 0.65rem !important;
+          }
+          /* 모바일에서 일정 뱃지 높이와 패딩 압축 */
+          .fc-daygrid-block-event, .fc-daygrid-dot-event {
+            padding: 1px 3px !important;
+            margin: 1px 2px !important;
+            border-radius: 2px !important;
+          }
+          .fc-daygrid-block-event .fc-event-title,
+          .fc-daygrid-dot-event .fc-event-title {
+            font-size: 0.65rem !important;
+            line-height: 1.1 !important;
+          }
+          .fc-daygrid-dot-event .fc-event-time {
+            font-size: 0.6rem !important;
+            margin-right: 2px !important;
+          }
+          /* 공휴일 라벨 크기 축소 */
+          .fc-holiday-label {
+            font-size: 0.55rem !important;
+            padding-left: 2px !important;
+          }
         }
       `}</style>
       
@@ -480,52 +672,76 @@ const AdminSchedulePage: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>{error}</Alert>}
 
-      {/* 상단 요약 위젯 섹션 */}
-      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2.5 }}>
         {[
-          { label: '금일 일정', shortLabel: '금일', count: stats.today, icon: <TodayIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '이번달 일정', shortLabel: '이번달', count: stats.monthly, icon: <CalendarMonthIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '예정된 일정', shortLabel: '예정', count: stats.upcoming, icon: <EventIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
-        ].map((item, idx, arr) => (
-          <Box 
-            key={idx}
-            sx={{ 
-              flex: 1, 
-              p: { xs: 1.5, sm: 2 }, 
-              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
-              {item.icon}
-              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
-                {item.shortLabel}
-              </Typography>
-              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
-                {item.count}
-              </Typography>
-            </Stack>
-          </Box>
+          { label: '금일 일정', count: stats.today, icon: <TodayIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '이번달 일정', count: stats.monthly, icon: <CalendarMonthIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '예정된 일정', count: stats.upcoming, icon: <EventIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+        ].map((item, idx) => (
+          <Grid item xs={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: { xs: 1, sm: 1.2 },
+                borderRadius: 1,
+                bgcolor: 'background.paper'
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {item.icon}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                <Typography 
+                  sx={{ 
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 800,
+                    color: 'text.primary',
+                    lineHeight: 1
+                  }}
+                >
+                  {item.count}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
         ))}
-      </Paper>
+      </Grid>
 
       <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
-          headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
+          headerToolbar={isMobile ? {
+            left: 'prev,next',
+            center: 'title',
+            right: 'today'
+          } : {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek'
+          }}
           buttonText={{ today: '오늘', month: '월', week: '주', day: '일' }}
           events={events}
-          height={isMobile ? "auto" : "70vh"}
-          aspectRatio={isMobile ? 0.85 : 1.35}
+          height={isMobile ? "480px" : "70vh"}
+          aspectRatio={isMobile ? 1.05 : 1.35}
           locale="ko"
           dateClick={handleDateClick}
           eventClick={handleEventClick}
           selectable={true}
           dayMaxEvents={isMobile ? 2 : true}
+          dayCellContent={(arg) => arg.dayNumberText.replace('일', '')}
           dayCellDidMount={(info) => {
             const year = info.date.getFullYear();
             const month = String(info.date.getMonth() + 1).padStart(2, '0');
@@ -633,7 +849,7 @@ const AdminSchedulePage: React.FC = () => {
                   onChange={(event, newValue) => setFormData({ ...formData, assignees: newValue })}
                   isOptionEqualToValue={(option, value) => option.id === value.id} filterSelectedOptions
                   renderInput={(params) => <TextField {...params} size="small" placeholder="멤버 이름 검색..." variant="outlined" />}
-                  renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option.name} size="small" color="primary" {...getTagProps({ index })} />)}
+                  renderTags={(value, getTagProps) => value.map((option, index) => <Chip label={option.name} size="small" color="primary" {...getTagProps({ index })} sx={{ borderRadius: 1 }} />)}
                 />
               </Grid>
             </Grid>
@@ -683,7 +899,7 @@ const AdminSchedulePage: React.FC = () => {
                 <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
                 <span>일정 상세</span>
               </Box>
-              <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" />
+              <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" sx={{ borderRadius: 1 }} />
             </DialogTitle>
             <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ pt: 1 }}>

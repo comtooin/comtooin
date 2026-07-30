@@ -204,7 +204,7 @@ const CheckRequestPage: React.FC = () => {
                       color={getStatusChipColor(req.status)} 
                       size="small" 
                       variant="filled" 
-                      sx={{ fontWeight: 'bold' }} 
+                      sx={{ fontWeight: 'bold', borderRadius: 1 }} 
                     />
                   </Box>
                   <Typography 
@@ -251,7 +251,7 @@ const CheckRequestPage: React.FC = () => {
           <>
             <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               접수 상세내용
-              <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} size="small" />
+              <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} size="small" sx={{ borderRadius: 1 }} />
             </DialogTitle>
             <DialogContent dividers>
               <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', borderRadius: 1 }}>

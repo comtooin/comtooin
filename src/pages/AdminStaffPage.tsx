@@ -272,44 +272,59 @@ const AdminStaffPage: React.FC = () => {
 
       <Divider sx={{ mb: 2.5 }} />
 
-      {/* 상단 요약 위젯 섹션 */}
-      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2.5 }}>
         {[
-          { label: '총 멤버', shortLabel: '총멤버', count: stats.total, icon: <PeopleIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '신규 멤버', shortLabel: '신규', count: stats.recent, icon: <PersonAddIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '관리자', shortLabel: '관리자', count: stats.admin, icon: <AssignmentIndIcon fontSize="small" sx={{ color: '#0288d1' }} /> },
-        ].map((item, idx, arr) => (
-          <Box 
-            key={idx}
-            sx={{ 
-              flex: 1, 
-              p: { xs: 1.5, sm: 2 }, 
-              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
-              {item.icon}
-              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
-                {item.shortLabel}
-              </Typography>
-              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
-                {item.count}
-              </Typography>
-            </Stack>
-          </Box>
+          { label: '총 멤버', count: stats.total, icon: <PeopleIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '신규 멤버', count: stats.recent, icon: <PersonAddIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '관리자', count: stats.admin, icon: <AssignmentIndIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+        ].map((item, idx) => (
+          <Grid item xs={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: { xs: 1, sm: 1.2 },
+                borderRadius: 1,
+                bgcolor: 'background.paper'
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {item.icon}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography 
+                  sx={{ 
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 800,
+                    color: 'text.primary',
+                    lineHeight: 1
+                  }}
+                >
+                  {item.count}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
         ))}
-      </Paper>
+      </Grid>
 
       <Grid container spacing={2}>
         {/* 멤버 목록 */}
         <Grid item xs={12}>
           <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 1, bgcolor: 'background.paper', minHeight: '500px' }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
-              <Typography variant="h6" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <BadgeIcon fontSize="small" /> 등록된 멤버 목록
               </Typography>
               <Button 

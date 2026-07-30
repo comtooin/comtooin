@@ -1287,41 +1287,64 @@ const AdminReportPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* 요약 위젯 */}
-      <Paper variant="outlined" sx={{ mb: 2, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2 }}>
         {[
-          { label: '전체', shortLabel: '전체', count: summaryStats.total, statusFilter: 'all', icon: <AssignmentIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '처리중', shortLabel: '처리중', count: summaryStats.processing, statusFilter: 'processing', icon: <AccessTimeIcon fontSize="small" sx={{ color: '#ed6c02' }} /> },
-          { label: '완료됨', shortLabel: '완료', count: summaryStats.completed, statusFilter: 'completed', icon: <CheckCircleIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-        ].map((item, idx, arr) => (
-          <Box 
-            key={idx}
-            onClick={() => setStatus(item.statusFilter)}
-            sx={{ 
-              flex: 1, 
-              p: { xs: 1.5, sm: 2 }, 
-              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-              cursor: 'pointer',
-              bgcolor: status === item.statusFilter ? 'rgba(0,0,0,0.04)' : 'transparent',
-              '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' }
-            }}
-          >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
-              {item.icon}
-              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
-                {item.shortLabel}
-              </Typography>
-              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
-                {item.count}
-              </Typography>
-            </Stack>
-          </Box>
-        ))}
-      </Paper>
+          { label: '전체', count: summaryStats.total, statusFilter: 'all', icon: <AssignmentIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '처리중', count: summaryStats.processing, statusFilter: 'processing', icon: <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '완료됨', count: summaryStats.completed, statusFilter: 'completed', icon: <CheckCircleIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+        ].map((item, idx) => {
+          const isActive = status === item.statusFilter;
+          return (
+            <Grid item xs={4} key={idx}>
+              <Paper 
+                variant="outlined" 
+                onClick={() => setStatus(item.statusFilter)}
+                sx={{ 
+                  p: { xs: 1, sm: 1.2 },
+                  borderRadius: 1,
+                  bgcolor: isActive ? 'action.selected' : 'background.paper',
+                  borderColor: isActive ? 'primary.main' : 'divider',
+                  borderWidth: isActive ? '1.5px' : '1px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease-in-out',
+                  '&:hover': { 
+                    borderColor: 'primary.main',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                  }
+                }}
+              >
+                <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    {item.icon}
+                  </Box>
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                      fontWeight: 700,
+                      color: 'text.secondary',
+                      letterSpacing: '0.02em',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {item.label}
+                  </Typography>
+                  <Typography 
+                    sx={{ 
+                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                      fontWeight: 800,
+                      color: 'text.primary',
+                      lineHeight: 1
+                    }}
+                  >
+                    {item.count}
+                  </Typography>
+                </Stack>
+              </Paper>
+            </Grid>
+          );
+        })}
+      </Grid>
 
       {/* 필터 및 액션 섹션 */}
       <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
@@ -1549,8 +1572,7 @@ const AdminReportPage: React.FC = () => {
                         p: 1.5, 
                         borderRadius: 1, 
                         cursor: 'pointer',
-                        '&:active': { bgcolor: 'action.selected' },
-                        borderLeft: `4px solid ${getStatusChipColor(request.status) === 'success' ? '#2e7d32' : getStatusChipColor(request.status) === 'warning' ? '#ed6c02' : '#0288d1'}`
+                        '&:active': { bgcolor: 'action.selected' }
                       }}
                     >
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
@@ -1565,7 +1587,7 @@ const AdminReportPage: React.FC = () => {
                           color={getStatusChipColor(request.status)} 
                           size="small" 
                           variant="filled" 
-                          sx={{ fontWeight: 'bold', fontSize: '0.6rem', height: '18px' }} 
+                          sx={{ fontWeight: 'bold', fontSize: '0.6rem', height: '18px', borderRadius: 1 }} 
                         />
                       </Box>
                       
@@ -1665,7 +1687,7 @@ const AdminReportPage: React.FC = () => {
                                     color={getStatusChipColor(request.status)} 
                                     size="small" 
                                     variant="outlined" 
-                                    sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em' }} 
+                                    sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em', borderRadius: 1 }} 
                                   />
                                 </TableCell>
                               </TableRow>
@@ -1699,7 +1721,7 @@ const AdminReportPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
                   <Stack direction="row" spacing={1} justifyContent="flex-start" mb={2} alignItems="center">
                     <BarChartIcon color="primary" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">월별 업무 처리 추이</Typography>
+                    <Typography variant="subtitle1" fontWeight="bold">월별 업무 처리 추이</Typography>
                   </Stack>
                   <Box sx={{ height: 260, mt: 1 }}>
                     <Bar data={barChartData} options={{ 
@@ -1737,7 +1759,7 @@ const AdminReportPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={2} alignItems="center">
                     <PieChartIcon color="primary" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">업무 처리 상태</Typography>
+                    <Typography variant="subtitle1" fontWeight="bold">업무 처리 상태</Typography>
                   </Stack>
                   <Box sx={{ height: 260, display: 'flex', justifyContent: 'center', mt: 1 }}>
                     <Pie data={statusPieData} options={{ 
@@ -1768,7 +1790,7 @@ const AdminReportPage: React.FC = () => {
                 <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, height: '100%', bgcolor: 'background.paper' }}>
                   <Stack direction="row" spacing={1} justifyContent="center" mb={2} alignItems="center">
                     <PieChartIcon color="primary" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight="bold">장애 및 지원 유형</Typography>
+                    <Typography variant="subtitle1" fontWeight="bold">장애 및 지원 유형</Typography>
                   </Stack>
                   <Box sx={{ height: 260, display: 'flex', justifyContent: 'center', mt: 1 }}>
                     <Pie data={categoryPieData} options={{ 
@@ -1796,7 +1818,7 @@ const AdminReportPage: React.FC = () => {
                   <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, bgcolor: 'background.paper' }}>
                     <Stack direction="row" spacing={1} justifyContent="flex-start" mb={2} alignItems="center">
                       <BusinessIcon color="primary" fontSize="small" />
-                      <Typography variant="subtitle2" fontWeight="bold">거래처별 업무 분담 비율 (TOP 6)</Typography>
+                      <Typography variant="subtitle1" fontWeight="bold">거래처별 업무 분담 비율 (TOP 6)</Typography>
                     </Stack>
                     <Box sx={{ height: 280, display: 'flex', justifyContent: 'center', mt: 1 }}>
                       <Box sx={{ width: '100%', maxWidth: 450 }}>
@@ -2025,6 +2047,7 @@ const AdminReportPage: React.FC = () => {
                           size="small"
                           color={row.status === 'completed' ? 'success' : 'warning'}
                           variant="outlined"
+                          sx={{ borderRadius: 1 }}
                         />
                       </TableCell>
                       <TableCell sx={{ 

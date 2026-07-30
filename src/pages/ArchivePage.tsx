@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Typography, Box, Paper, Divider, Stack, Container, Button, 
   CircularProgress, Alert, List, ListItem, ListItemIcon, ListItemText, 
-  IconButton, TextField, InputAdornment, Breadcrumbs, Link, ListItemButton
+  IconButton, TextField, InputAdornment, Breadcrumbs, Link, ListItemButton,
+  Grid
 } from '@mui/material';
 import { 
   CloudDownload as CloudDownloadIcon,
@@ -146,53 +147,123 @@ const ArchivePage: React.FC = () => {
       
       <Divider sx={{ mb: 2.5 }} />
 
-      <Paper variant="outlined" sx={{ mb: 2.5, borderRadius: 2, display: 'flex', overflow: 'hidden', bgcolor: 'background.paper' }}>
+      <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2.5 }}>
         {[
-          { label: '총 파일', shortLabel: '총파일', count: stats.totalFiles, icon: <FileIcon fontSize="small" sx={{ color: '#607d8b' }} /> },
-          { label: '신규 파일', shortLabel: '신규', count: stats.recentUploads, icon: <RefreshIcon fontSize="small" sx={{ color: '#2e7d32' }} /> },
-          { label: '전체 폴더', shortLabel: '폴더', count: stats.totalFolders, icon: <FolderIcon fontSize="small" sx={{ color: '#ffa000' }} /> },
-        ].map((item, idx, arr) => (
-          <Box 
-            key={idx}
-            sx={{ 
-              flex: 1, 
-              p: { xs: 1.5, sm: 2 }, 
-              borderRight: idx < arr.length - 1 ? '1px solid' : 'none',
-              borderColor: 'divider',
-            }}
-          >
-            <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" justifyContent="center" sx={{ whiteSpace: 'nowrap' }}>
-              {item.icon}
-              <Typography variant="body2" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                {item.label}
-              </Typography>
-              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ display: { xs: 'block', sm: 'none' }, fontSize: '0.7rem' }}>
-                {item.shortLabel}
-              </Typography>
-              <Typography variant="body1" fontWeight="900" color="text.primary" sx={{ ml: { xs: 0.5, sm: 1 } }}>
-                {item.count}
-              </Typography>
-            </Stack>
-          </Box>
+          { label: '총 파일', count: stats.totalFiles, icon: <FileIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '신규 파일', count: stats.recentUploads, icon: <RefreshIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { label: '전체 폴더', count: stats.totalFolders, icon: <FolderIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+        ].map((item, idx) => (
+          <Grid item xs={4} key={idx}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: { xs: 1, sm: 1.2 },
+                borderRadius: 1,
+                bgcolor: 'background.paper'
+              }}
+            >
+              <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
+                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {item.icon}
+                </Box>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                    fontWeight: 700,
+                    color: 'text.secondary',
+                    letterSpacing: '0.02em',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography 
+                  sx={{ 
+                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
+                    fontWeight: 800,
+                    color: 'text.primary',
+                    lineHeight: 1
+                  }}
+                >
+                  {item.count}
+                </Typography>
+              </Stack>
+            </Paper>
+          </Grid>
         ))}
-      </Paper>
+      </Grid>
 
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>{error}</Alert>}
 
-      <Stack spacing={2} sx={{ mb: 2 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
+      <Stack 
+        direction={{ xs: 'column', sm: 'row' }} 
+        spacing={1.5} 
+        alignItems={{ xs: 'stretch', sm: 'center' }} 
+        sx={{ mb: 2.5 }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1 }}>
           {folderHistory.length > 1 && (
-            <IconButton onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} size="small" sx={{ bgcolor: 'action.hover', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}><ArrowBackIcon fontSize="small" /></IconButton>
+            <IconButton 
+              onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} 
+              size="small" 
+              sx={{ bgcolor: 'action.hover', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}
+            >
+              <ArrowBackIcon fontSize="small" />
+            </IconButton>
           )}
-          <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ bgcolor: 'background.paper', p: '10px 16px', borderRadius: 2, border: '1px solid', borderColor: 'divider', flexGrow: 1, boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' }}>
+          <Breadcrumbs 
+            separator={<NavigateNextIcon fontSize="small" />} 
+            sx={{ 
+              bgcolor: 'background.paper', 
+              p: '6px 12px', 
+              borderRadius: 1, 
+              border: '1px solid', 
+              borderColor: 'divider', 
+              flexGrow: 1 
+            }}
+          >
             {folderHistory.map((folder, index) => (
-              <Link key={folder.id} underline="hover" color={index === folderHistory.length - 1 ? "primary" : "inherit"} onClick={() => handleBreadcrumbClick(index)} sx={{ cursor: 'pointer', fontWeight: index === folderHistory.length - 1 ? 'bold' : 'normal', display: 'flex', alignItems: 'center', fontSize: '0.9rem' }}>
-                {index === 0 && <HomeIcon sx={{ mr: 0.5, fontSize: 18 }} />}{folder.name}
+              <Link 
+                key={folder.id} 
+                underline="hover" 
+                color={index === folderHistory.length - 1 ? "primary" : "inherit"} 
+                onClick={() => handleBreadcrumbClick(index)} 
+                sx={{ 
+                  cursor: 'pointer', 
+                  fontWeight: index === folderHistory.length - 1 ? 'bold' : 'normal', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  fontSize: '0.85rem' 
+                }}
+              >
+                {index === 0 && <HomeIcon sx={{ mr: 0.5, fontSize: 16 }} />}{folder.name}
               </Link>
             ))}
           </Breadcrumbs>
         </Stack>
-        <TextField fullWidth placeholder="파일명 검색..." size="small" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} InputProps={{ startAdornment: (<InputAdornment position="start"><SearchIcon color="action" /></InputAdornment>), sx: { borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 1px 2px 0 rgba(0,0,0,0.05)' } }} />
+        
+        <TextField 
+          placeholder="파일명 검색..." 
+          size="small" 
+          value={searchQuery} 
+          onChange={(e) => setSearchQuery(e.target.value)} 
+          InputProps={{ 
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon color="action" sx={{ fontSize: 18 }} />
+              </InputAdornment>
+            ), 
+            sx: { 
+              borderRadius: 1, 
+              bgcolor: 'background.paper' 
+            } 
+          }} 
+          sx={{ 
+            width: { xs: '100%', sm: '240px' },
+            '& .MuiOutlinedInput-root': { height: '36px' }
+          }} 
+        />
       </Stack>
 
       <Box sx={{ minHeight: '300px' }}>
