@@ -222,12 +222,41 @@ const ArchivePage: React.FC = () => {
                 secondaryAction={
                 <Stack direction="row" spacing={0.5} sx={{ pr: 1 }}>
                   {file.mimeType !== 'application/vnd.google-apps.folder' && file.webContentLink && (
-                    <IconButton component="a" href={file.webContentLink} target="_blank" sx={{ bgcolor: 'action.hover' }}><DirectDownloadIcon fontSize="small" color="primary" /></IconButton>
+                    <IconButton 
+                      component="a" 
+                      href={file.webContentLink} 
+                      target="_blank" 
+                      sx={{ bgcolor: 'action.hover' }}
+                      title="직접 다운로드"
+                    >
+                      <DirectDownloadIcon fontSize="small" color="primary" />
+                    </IconButton>
                   )}
-                  <IconButton component="a" href={file.webViewLink} target="_blank" sx={{ bgcolor: 'action.hover' }}><OpenInNewIcon fontSize="small" /></IconButton>
+                  {file.mimeType !== 'application/vnd.google-apps.folder' && (
+                    <IconButton 
+                      component="a" 
+                      href={file.webViewLink} 
+                      target="_blank" 
+                      sx={{ bgcolor: 'action.hover' }}
+                      title="구글 드라이브에서 보기 (미리보기)"
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  )}
                 </Stack>
               }>
-                <ListItemButton onClick={() => { if (file.mimeType === 'application/vnd.google-apps.folder') handleFolderClick(file.id, file.name); else window.open(file.webViewLink, '_blank'); }} sx={{ px: { xs: 2, sm: 3 }, py: 2, borderRadius: 2 }}>
+                <ListItemButton 
+                  onClick={() => { 
+                    if (file.mimeType === 'application/vnd.google-apps.folder') {
+                      handleFolderClick(file.id, file.name);
+                    } else {
+                      const downloadUrl = file.webContentLink || file.webViewLink;
+                      window.open(downloadUrl, '_blank');
+                    }
+                  }} 
+                  sx={{ px: { xs: 2, sm: 3 }, py: 2, borderRadius: 2 }}
+                  title={file.mimeType === 'application/vnd.google-apps.folder' ? "폴더 열기" : "클릭하여 바로 다운로드"}
+                >
                   <ListItemIcon sx={{ minWidth: { xs: 40, sm: 50 } }}>{getFileIcon(file.mimeType)}</ListItemIcon>
                   <ListItemText 
                     primary={file.name} 

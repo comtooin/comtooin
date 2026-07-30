@@ -356,259 +356,251 @@ const HomePage: React.FC = () => {
         ))}
       </Paper>
 
-      <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-        <Grid item xs={12} md={8}>
+      <Grid container spacing={{ xs: 2, md: 3 }}>
+        <Grid item xs={12} md={8.5}>
           <Box component="form" onSubmit={handleSubmit}>
-            <Stack spacing={{ xs: 1.5, sm: 2 }}>
-              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: { xs: 1.5, sm: 2.5 }, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <InfoIcon color="action" sx={{ fontSize: '1.15rem' }} /> 기본 정보
-                </Typography>
-                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField 
-                      label="업무 일자" 
-                      type="date" 
-                      fullWidth 
-                      required 
-                      variant="outlined" 
-                      size="small" 
-                      value={workDate} 
-                      onChange={(e) => setWorkDate(e.target.value)} 
-                      InputLabelProps={{ shrink: true }} 
-                      InputProps={{
-                        endAdornment: (
-                          <InputAdornment position="end">
-                            <TodayIcon fontSize="small" sx={{ pointerEvents: 'none', color: 'action.active' }} />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
-                          position: 'absolute',
-                          right: 0,
-                          width: '100%',
-                          height: '100%',
-                          opacity: 0,
-                          cursor: 'pointer',
-                        }
-                      }}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <Autocomplete
-                      freeSolo
-                      options={customerOptions}
-                      value={customerName}
-                      onChange={(event, newValue) => {
-                        setCustomerName(newValue || '');
-                      }}
-                      onInputChange={(event, newInputValue) => {
-                        setCustomerName(newInputValue || '');
-                      }}
-                      disabled={loading || submitting}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="거래처명"
-                          required
-                          variant="outlined"
-                          size="small"
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={loading || submitting}>
-                      {staffOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
-                    </TextField>
-                  </Grid>
-                </Grid>
-              </Paper>
-
-              <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-                <Stack spacing={{ xs: 1.5, sm: 2 }}>
-                  <Typography variant="subtitle1" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <AssignmentIcon color="action" sx={{ fontSize: '1.15rem' }} /> 접수 및 처리 내용
+            <Paper variant="outlined" sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+              <Stack spacing={3}>
+                {/* 기본 정보 */}
+                <Box>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.primary' }}>
+                    <InfoIcon color="primary" sx={{ fontSize: '1.25rem' }} /> 기본 정보
                   </Typography>
-                  
-                  <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
-                  
-                  <Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="bold" color="text.secondary">접수내용 (필수)</Typography>
-                      <Stack direction="row" spacing={1}>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
-                          onClick={() => handleVoiceInput('content')} 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '75px', whiteSpace: 'nowrap',
-                            borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
-                          }}
-                          color={isListening === 'content' ? 'primary' : 'inherit'}
-                          disabled={!!isPolishing}
-                        >
-                          {isListening === 'content' ? '인식 중...' : '음성'}
-                        </Button>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
-                          onClick={() => handlePolishText('content')} 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '85px', whiteSpace: 'nowrap',
-                            color: '#673ab7', borderColor: '#673ab7',
-                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
-                          }}
-                          disabled={!!isPolishing || !!isListening}
-                        >
-                          {isPolishing === 'content' ? '정돈 중...' : 'AI 정돈'}
-                        </Button>
-                      </Stack>
-                    </Box>
-                    <TextField 
-                      multiline 
-                      rows={4} 
-                      fullWidth 
-                      variant="outlined" 
-                      value={content} 
-                      onChange={(e) => setContent(e.target.value)} 
-                      required 
-                      placeholder="업무 요청 내용을 상세히 입력해주세요."
-                    />
-                  </Box>
-
-                  <Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="bold" color="text.secondary">처리내용 (선택)</Typography>
-                      <Stack direction="row" spacing={1}>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
-                          onClick={() => handleVoiceInput('processingContent')} 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '75px', whiteSpace: 'nowrap',
-                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
-                          }}
-                          color={isListening === 'processingContent' ? 'primary' : 'inherit'}
-                          disabled={!!isPolishing}
-                        >
-                          {isListening === 'processingContent' ? '인식 중...' : '음성'}
-                        </Button>
-                        <Button 
-                          variant="outlined" 
-                          size="small" 
-                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
-                          onClick={() => handlePolishText('processingContent')} 
-                          sx={{ 
-                            fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '85px', whiteSpace: 'nowrap',
-                            color: '#673ab7', borderColor: '#673ab7',
-                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
-                          }}
-                          disabled={!!isPolishing || !!isListening}
-                        >
-                          {isPolishing === 'processingContent' ? '정돈 중...' : 'AI 정돈'}
-                        </Button>
-                      </Stack>
-                    </Box>
-                    <TextField 
-                      multiline 
-                      rows={4} 
-                      fullWidth 
-                      variant="outlined" 
-                      value={processingContent} 
-                      onChange={(e) => setProcessingContent(e.target.value)} 
-                      placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." 
-                    />
-                  </Box>
-
-                  {/* 콤팩트한 이미지 첨부 영역 */}
-                  <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                      <Button 
+                  <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                    <Grid item xs={12} sm={4}>
+                      <TextField 
+                        label="업무 일자" 
+                        type="date" 
+                        fullWidth 
+                        required 
                         variant="outlined" 
-                        component="label" 
-                        startIcon={<PhotoCamera />} 
-                        size="small"
-                        sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
-                      >
-                        이미지 첨부 (최대 5개)
-                        <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
-                      </Button>
-                      
-                      {images.length > 0 && (
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                          {images.map((img, i) => (
-                            <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
-                              <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
-                              <IconButton 
-                                size="small" 
-                                onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} 
-                                sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
-                              >
-                                <Delete sx={{ fontSize: '0.9rem' }} />
-                              </IconButton>
-                            </Box>
-                          ))}
-                        </Stack>
-                      )}
-                    </Box>
-                  </Box>
-                </Stack>
-              </Paper>
+                        size="small" 
+                        value={workDate} 
+                        onChange={(e) => setWorkDate(e.target.value)} 
+                        InputLabelProps={{ shrink: true }} 
+                        InputProps={{
+                          endAdornment: (
+                            <InputAdornment position="end">
+                              <TodayIcon fontSize="small" sx={{ pointerEvents: 'none', color: 'action.active' }} />
+                            </InputAdornment>
+                          ),
+                        }}
+                        sx={{
+                          '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                            position: 'absolute',
+                            right: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            cursor: 'pointer',
+                          }
+                        }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Autocomplete
+                        freeSolo
+                        options={customerOptions}
+                        value={customerName}
+                        onChange={(event, newValue) => {
+                          setCustomerName(newValue || '');
+                        }}
+                        onInputChange={(event, newInputValue) => {
+                          setCustomerName(newInputValue || '');
+                        }}
+                        disabled={loading || submitting}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="거래처명"
+                            required
+                            variant="outlined"
+                            size="small"
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={loading || submitting}>
+                        {staffOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                      </TextField>
+                    </Grid>
+                  </Grid>
+                </Box>
 
-              {error && <Alert severity="error">{error}</Alert>}
-              <Button type="submit" variant="contained" fullWidth disabled={submitting} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>
-                {submitting ? <CircularProgress size={24} color="inherit" /> : "업무 기록 저장하기"}
-              </Button>
-            </Stack>
+                <Divider />
+
+                {/* 접수 및 처리 내용 */}
+                <Box>
+                  <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.primary' }}>
+                    <AssignmentIcon color="primary" sx={{ fontSize: '1.25rem' }} /> 접수 및 처리 내용
+                  </Typography>
+                  <Stack spacing={2.5}>
+                    <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} />
+                    
+                    <Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography variant="body2" fontWeight="bold" color="text.secondary">접수내용 (필수)</Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                            onClick={() => handleVoiceInput('content')} 
+                            sx={{ 
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                              minWidth: '75px', whiteSpace: 'nowrap',
+                              borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
+                            }}
+                            color={isListening === 'content' ? 'primary' : 'inherit'}
+                            disabled={!!isPolishing}
+                          >
+                            {isListening === 'content' ? '인식 중...' : '음성'}
+                          </Button>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                            onClick={() => handlePolishText('content')} 
+                            sx={{ 
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                              minWidth: '85px', whiteSpace: 'nowrap',
+                              color: '#673ab7', borderColor: '#673ab7',
+                              '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                            }}
+                            disabled={!!isPolishing || !!isListening}
+                          >
+                            {isPolishing === 'content' ? '정돈 중...' : 'AI 정돈'}
+                          </Button>
+                        </Stack>
+                      </Box>
+                      <TextField 
+                        multiline 
+                        rows={4} 
+                        fullWidth 
+                        variant="outlined" 
+                        value={content} 
+                        onChange={(e) => setContent(e.target.value)} 
+                        required 
+                        placeholder="업무 요청 내용을 상세히 입력해주세요."
+                      />
+                    </Box>
+
+                    <Box>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                        <Typography variant="body2" fontWeight="bold" color="text.secondary">처리내용 (선택)</Typography>
+                        <Stack direction="row" spacing={1}>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                            onClick={() => handleVoiceInput('processingContent')} 
+                            sx={{ 
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                              minWidth: '75px', whiteSpace: 'nowrap',
+                              borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
+                            }}
+                            color={isListening === 'processingContent' ? 'primary' : 'inherit'}
+                            disabled={!!isPolishing}
+                          >
+                            {isListening === 'processingContent' ? '인식 중...' : '음성'}
+                          </Button>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AutoAwesomeIcon sx={{ fontSize: '1rem !important' }} />} 
+                            onClick={() => handlePolishText('processingContent')} 
+                            sx={{ 
+                              fontWeight: 'bold',
+                              fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                              minWidth: '85px', whiteSpace: 'nowrap',
+                              color: '#673ab7', borderColor: '#673ab7',
+                              '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                            }}
+                            disabled={!!isPolishing || !!isListening}
+                          >
+                            {isPolishing === 'processingContent' ? '정돈 중...' : 'AI 정돈'}
+                          </Button>
+                        </Stack>
+                      </Box>
+                      <TextField 
+                        multiline 
+                        rows={4} 
+                        fullWidth 
+                        variant="outlined" 
+                        value={processingContent} 
+                        onChange={(e) => setProcessingContent(e.target.value)} 
+                        placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." 
+                      />
+                    </Box>
+
+                    {/* 콤팩트한 이미지 첨부 영역 */}
+                    <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                        <Button 
+                          variant="outlined" 
+                          component="label" 
+                          startIcon={<PhotoCamera />} 
+                          size="small"
+                          sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
+                        >
+                          이미지 첨부 (최대 5개)
+                          <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+                        </Button>
+                        
+                        {images.length > 0 && (
+                          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                            {images.map((img, i) => (
+                              <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+                                <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} 
+                                  sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                                >
+                                  <Delete sx={{ fontSize: '0.9rem' }} />
+                                </IconButton>
+                              </Box>
+                            ))}
+                          </Stack>
+                        )}
+                      </Box>
+                    </Box>
+                  </Stack>
+                </Box>
+
+                {error && <Alert severity="error" sx={{ borderRadius: 1.5 }}>{error}</Alert>}
+                
+                <Button type="submit" variant="contained" fullWidth disabled={submitting} sx={{ fontWeight: 'bold', height: '40px', fontSize: '0.8rem', borderRadius: 1.5 }}>
+                  {submitting ? <CircularProgress size={24} color="inherit" /> : "업무 기록 저장하기"}
+                </Button>
+              </Stack>
+            </Paper>
           </Box>
         </Grid>
 
-        <Grid item xs={12} md={4}>
-          <Stack spacing={{ xs: 1.5, sm: 2 }}>
-            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'background.paper' }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: { xs: 1.5, sm: 2 } }}>
-                <HistoryIcon color="action" /> 최근 등록 이력
-              </Typography>
-              <List dense>
-                {recentRequests.length > 0 ? recentRequests.map((req) => (
-                  <ListItem key={req.id} divider sx={{ px: 0 }}>
-                    <ListItemText 
-                      primary={req.customer_name} 
-                      secondary={req.content.substring(0, 30) + '...'} 
-                      primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
-                      secondaryTypographyProps={{ variant: 'caption' }}
-                    />
-                    <Chip label={req.status === 'completed' ? '완료' : '처리중'} size="small" color={req.status === 'completed' ? 'success' : 'warning'} variant="outlined" sx={{ fontSize: '0.65rem' }} />
-                  </ListItem>
-                )) : <Typography variant="body2" color="text.secondary">기록이 없습니다.</Typography>}
-              </List>
-            </Paper>
-
-            <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 1, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'divider' }}>
-              <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, color: 'text.secondary' }}>
-                <InfoIcon fontSize="small" /> 작성 가이드
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.8, fontSize: '0.8125rem' }}>
-                • 거래처명과 작성자는 필수 선택 사항입니다.<br/>
-                • 이미지는 최대 5장까지 업로드 가능합니다.<br/>
-                • AI 정돈 기능을 사용하여 메모를 다듬어보세요.<br/>
-                • 음성 입력을 통해 더 빠르게 기록할 수 있습니다.
-              </Typography>
-            </Paper>
-          </Stack>
+        <Grid item xs={12} md={3.5}>
+          <Paper variant="outlined" sx={{ p: 2, borderRadius: 2, bgcolor: 'background.paper', boxShadow: '0 1px 3px 0 rgba(0,0,0,0.05)' }}>
+            <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <HistoryIcon color="primary" /> 최근 등록 이력
+            </Typography>
+            <List dense sx={{ py: 0 }}>
+              {recentRequests.length > 0 ? recentRequests.map((req) => (
+                <ListItem key={req.id} divider sx={{ px: 0, py: 1.2 }}>
+                  <ListItemText 
+                    primary={req.customer_name} 
+                    secondary={req.content.substring(0, 30) + (req.content.length > 30 ? '...' : '')} 
+                    primaryTypographyProps={{ variant: 'body2', fontWeight: 'bold' }}
+                    secondaryTypographyProps={{ variant: 'caption' }}
+                  />
+                  <Chip label={req.status === 'completed' ? '완료' : '처리중'} size="small" color={req.status === 'completed' ? 'success' : 'warning'} variant="outlined" sx={{ fontSize: '0.65rem', fontWeight: 'bold' }} />
+                </ListItem>
+              )) : <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>기록이 없습니다.</Typography>}
+            </List>
+          </Paper>
         </Grid>
       </Grid>
     </Container>
