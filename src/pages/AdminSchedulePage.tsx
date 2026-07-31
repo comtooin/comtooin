@@ -675,46 +675,84 @@ const AdminSchedulePage: React.FC = () => {
 
       <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2.5 }}>
         {[
-          { label: '금일 일정', count: stats.today, icon: <TodayIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
-          { label: '이번달 일정', count: stats.monthly, icon: <CalendarMonthIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
-          { label: '예정된 일정', count: stats.upcoming, icon: <EventIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { 
+            label: '금일 일정', 
+            count: stats.today, 
+            icon: <TodayIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#3b82f6' }} />, 
+            bgColor: 'rgba(59, 130, 246, 0.08)' 
+          },
+          { 
+            label: '이번달 일정', 
+            count: stats.monthly, 
+            icon: <CalendarMonthIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#10b981' }} />, 
+            bgColor: 'rgba(16, 185, 129, 0.08)' 
+          },
+          { 
+            label: '예정된 일정', 
+            count: stats.upcoming, 
+            icon: <EventIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#f59e0b' }} />, 
+            bgColor: 'rgba(245, 158, 11, 0.08)' 
+          },
         ].map((item, idx) => (
           <Grid item xs={4} key={idx}>
             <Paper 
               variant="outlined" 
               sx={{ 
-                p: { xs: 1, sm: 1.2 },
+                p: { xs: 1, sm: 1.25 },
                 borderRadius: 1,
-                bgcolor: 'background.paper'
+                bgcolor: 'background.paper',
+                border: '1px solid',
+                borderColor: 'divider',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
+                transition: 'all 0.2s ease-in-out',
+                '&:hover': {
+                  transform: 'translateY(-1px)',
+                  boxShadow: '0 4px 8px rgba(0,0,0,0.04)',
+                  borderColor: 'primary.light',
+                }
               }}
             >
-              <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
-                <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1.5 } }}>
+                <Box 
+                  sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    width: { xs: 24, sm: 38 }, 
+                    height: { xs: 24, sm: 38 }, 
+                    borderRadius: 1, 
+                    bgcolor: item.bgColor,
+                    flexShrink: 0
+                  }}
+                >
                   {item.icon}
                 </Box>
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    fontSize: { xs: '0.625rem', sm: '0.7rem' },
-                    fontWeight: 700,
-                    color: 'text.secondary',
-                    letterSpacing: '0.02em',
-                    whiteSpace: 'nowrap'
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography 
+                    variant="caption" 
+                    noWrap
+                    sx={{ 
+                      fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                      fontWeight: 600,
+                      color: 'text.secondary',
+                      display: 'block',
+                      mb: 0.1
                     }}
                   >
                     {item.label}
                   </Typography>
-                <Typography 
-                  sx={{ 
-                    fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                    fontWeight: 800,
-                    color: 'text.primary',
-                    lineHeight: 1
-                  }}
-                >
-                  {item.count}
-                </Typography>
-              </Stack>
+                  <Typography 
+                    sx={{ 
+                      fontSize: { xs: '0.95rem', sm: '1.15rem' },
+                      fontWeight: 800,
+                      color: 'text.primary',
+                      lineHeight: 1
+                    }}
+                  >
+                    {item.count}
+                  </Typography>
+                </Box>
+              </Box>
             </Paper>
           </Grid>
         ))}

@@ -1585,9 +1585,27 @@ const AdminReportPage: React.FC = () => {
 
       <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 2 }}>
         {[
-          { label: '전체', count: summaryStats.total, statusFilter: 'all', icon: <AssignmentIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
-          { label: '처리중', count: summaryStats.processing, statusFilter: 'processing', icon: <AccessTimeIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
-          { label: '완료됨', count: summaryStats.completed, statusFilter: 'completed', icon: <CheckCircleIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} /> },
+          { 
+            label: '전체', 
+            count: summaryStats.total, 
+            statusFilter: 'all', 
+            icon: <AssignmentIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#3b82f6' }} />, 
+            bgColor: 'rgba(59, 130, 246, 0.08)' 
+          },
+          { 
+            label: '처리중', 
+            count: summaryStats.processing, 
+            statusFilter: 'processing', 
+            icon: <AccessTimeIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#10b981' }} />, 
+            bgColor: 'rgba(16, 185, 129, 0.08)' 
+          },
+          { 
+            label: '완료됨', 
+            count: summaryStats.completed, 
+            statusFilter: 'completed', 
+            icon: <CheckCircleIcon sx={{ fontSize: { xs: 13, sm: 20 }, color: '#f59e0b' }} />, 
+            bgColor: 'rgba(245, 158, 11, 0.08)' 
+          },
         ].map((item, idx) => {
           const isActive = status === item.statusFilter;
           return (
@@ -1596,46 +1614,62 @@ const AdminReportPage: React.FC = () => {
                 variant="outlined" 
                 onClick={() => setStatus(item.statusFilter)}
                 sx={{ 
-                  p: { xs: 1, sm: 1.2 },
+                  p: { xs: 1, sm: 1.25 },
                   borderRadius: 1,
                   bgcolor: isActive ? 'action.selected' : 'background.paper',
                   borderColor: isActive ? 'primary.main' : 'divider',
-                  borderWidth: isActive ? '1.5px' : '1px',
+                  borderWidth: '1px',
                   cursor: 'pointer',
+                  boxShadow: isActive ? '0 2px 8px rgba(0,0,0,0.03)' : '0 2px 4px rgba(0,0,0,0.01)',
                   transition: 'all 0.15s ease-in-out',
                   '&:hover': { 
                     borderColor: 'primary.main',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                    transform: 'translateY(-1px)',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.04)'
                   }
                 }}
               >
-                <Stack direction="row" alignItems="center" justifyContent="center" spacing={{ xs: 0.5, sm: 1 }}>
-                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1.5 } }}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center', 
+                      width: { xs: 24, sm: 38 }, 
+                      height: { xs: 24, sm: 38 }, 
+                      borderRadius: 1, 
+                      bgcolor: item.bgColor,
+                      flexShrink: 0
+                    }}
+                  >
                     {item.icon}
                   </Box>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      fontSize: { xs: '0.625rem', sm: '0.7rem' },
-                      fontWeight: 700,
-                      color: 'text.secondary',
-                      letterSpacing: '0.02em',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    {item.label}
-                  </Typography>
-                  <Typography 
-                    sx={{ 
-                      fontSize: { xs: '0.85rem', sm: '0.95rem' },
-                      fontWeight: 800,
-                      color: 'text.primary',
-                      lineHeight: 1
-                    }}
-                  >
-                    {item.count}
-                  </Typography>
-                </Stack>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography 
+                      variant="caption" 
+                      noWrap
+                      sx={{ 
+                        fontSize: { xs: '0.625rem', sm: '0.7rem' },
+                        fontWeight: 600,
+                        color: 'text.secondary',
+                        display: 'block',
+                        mb: 0.1
+                      }}
+                    >
+                      {item.label}
+                    </Typography>
+                    <Typography 
+                      sx={{ 
+                        fontSize: { xs: '0.95rem', sm: '1.15rem' },
+                        fontWeight: 800,
+                        color: 'text.primary',
+                        lineHeight: 1
+                      }}
+                    >
+                      {item.count}
+                    </Typography>
+                  </Box>
+                </Box>
               </Paper>
             </Grid>
           );
