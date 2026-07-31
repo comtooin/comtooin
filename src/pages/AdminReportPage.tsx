@@ -2490,7 +2490,7 @@ const AdminReportPage: React.FC = () => {
         }}
       >
         <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <EditNoteIcon color="primary" sx={{ fontSize: '1.8rem' }} />
+          <EditNoteIcon color="action" sx={{ fontSize: '1.25rem' }} />
           <span>신규 업무 기록 등록</span>
         </DialogTitle>
         <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
@@ -2574,18 +2574,25 @@ const AdminReportPage: React.FC = () => {
                   <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} disabled={submitting} />
                   
                   <Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="bold" color="text.secondary">접수내용 (필수)</Typography>
+                    <Box sx={{ 
+                      display: "flex", 
+                      flexDirection: { xs: 'column', sm: 'row' }, 
+                      alignItems: { xs: 'flex-start', sm: 'center' }, 
+                      justifyContent: "space-between", 
+                      gap: { xs: 1, sm: 0 },
+                      mb: 1 
+                    }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary" noWrap sx={{ flexShrink: 0, mr: 1 }}>접수내용 (필수)</Typography>
                       <Stack direction="row" spacing={1}>
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={<MicIcon sx={{ fontSize: '0.85rem !important' }} />} 
                           onClick={() => handleVoiceInput('content')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '75px', whiteSpace: 'nowrap',
+                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
+                            minWidth: '60px', px: 1, whiteSpace: 'nowrap',
                             borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
                           }}
                           color={isListening === 'content' ? 'primary' : 'inherit'}
@@ -2596,12 +2603,12 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AiIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={isPolishing === 'content' ? <CircularProgress size={10} color="inherit" /> : <AiIcon sx={{ fontSize: '0.85rem !important' }} />} 
                           onClick={() => handlePolishText('content')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '85px', whiteSpace: 'nowrap',
+                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
+                            minWidth: '68px', px: 1, whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
                           }}
@@ -2625,18 +2632,25 @@ const AdminReportPage: React.FC = () => {
                   </Box>
 
                   <Box>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
-                      <Typography variant="body2" fontWeight="bold" color="text.secondary">처리내용 (선택)</Typography>
+                    <Box sx={{ 
+                      display: "flex", 
+                      flexDirection: { xs: 'column', sm: 'row' }, 
+                      alignItems: { xs: 'flex-start', sm: 'center' }, 
+                      justifyContent: "space-between", 
+                      gap: { xs: 1, sm: 0 },
+                      mb: 1 
+                    }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary" noWrap sx={{ flexShrink: 0, mr: 1 }}>처리내용 (선택)</Typography>
                       <Stack direction="row" spacing={1}>
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={<MicIcon sx={{ fontSize: '0.85rem !important' }} />} 
                           onClick={() => handleVoiceInput('processingContent')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '75px', whiteSpace: 'nowrap',
+                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
+                            minWidth: '60px', px: 1, whiteSpace: 'nowrap',
                             borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
                           }}
                           color={isListening === 'processingContent' ? 'primary' : 'inherit'}
@@ -2647,12 +2661,12 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AiIcon sx={{ fontSize: '1rem !important' }} />} 
+                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={10} color="inherit" /> : <AiIcon sx={{ fontSize: '0.85rem !important' }} />} 
                           onClick={() => handlePolishText('processingContent')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
-                            minWidth: '85px', whiteSpace: 'nowrap',
+                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
+                            minWidth: '68px', px: 1, whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
                           }}
