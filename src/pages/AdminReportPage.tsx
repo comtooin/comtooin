@@ -2576,10 +2576,9 @@ const AdminReportPage: React.FC = () => {
                   <Box>
                     <Box sx={{ 
                       display: "flex", 
-                      flexDirection: { xs: 'column', sm: 'row' }, 
-                      alignItems: { xs: 'flex-start', sm: 'center' }, 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
                       justifyContent: "space-between", 
-                      gap: { xs: 1, sm: 0 },
                       mb: 1 
                     }}>
                       <Typography variant="body2" fontWeight="bold" color="text.secondary" noWrap sx={{ flexShrink: 0, mr: 1 }}>접수내용 (필수)</Typography>
@@ -2587,13 +2586,18 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '0.85rem !important' }} />} 
+                          startIcon={<MicIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
                           onClick={() => handleVoiceInput('content')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
-                            minWidth: '60px', px: 1, whiteSpace: 'nowrap',
-                            borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
+                            fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
+                            height: { xs: '24px', sm: '32px' }, 
+                            borderRadius: 1,
+                            minWidth: 'auto', 
+                            px: { xs: 0.75, sm: 1.5 }, 
+                            whiteSpace: 'nowrap',
+                            borderColor: isListening === 'content' ? 'primary.main' : 'divider',
+                            '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
                           color={isListening === 'content' ? 'primary' : 'inherit'}
                           disabled={!!isPolishing || submitting}
@@ -2603,14 +2607,19 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={isPolishing === 'content' ? <CircularProgress size={10} color="inherit" /> : <AiIcon sx={{ fontSize: '0.85rem !important' }} />} 
+                          startIcon={isPolishing === 'content' ? <CircularProgress size={isMobile ? 9 : 12} color="inherit" /> : <AiIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
                           onClick={() => handlePolishText('content')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
-                            minWidth: '68px', px: 1, whiteSpace: 'nowrap',
+                            fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
+                            height: { xs: '24px', sm: '32px' }, 
+                            borderRadius: 1,
+                            minWidth: 'auto', 
+                            px: { xs: 0.75, sm: 1.5 }, 
+                            whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
-                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
+                            '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
                           disabled={!!isPolishing || !!isListening || submitting}
                         >
@@ -2634,10 +2643,9 @@ const AdminReportPage: React.FC = () => {
                   <Box>
                     <Box sx={{ 
                       display: "flex", 
-                      flexDirection: { xs: 'column', sm: 'row' }, 
-                      alignItems: { xs: 'flex-start', sm: 'center' }, 
+                      flexDirection: 'row', 
+                      alignItems: 'center', 
                       justifyContent: "space-between", 
-                      gap: { xs: 1, sm: 0 },
                       mb: 1 
                     }}>
                       <Typography variant="body2" fontWeight="bold" color="text.secondary" noWrap sx={{ flexShrink: 0, mr: 1 }}>처리내용 (선택)</Typography>
@@ -2645,13 +2653,18 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={<MicIcon sx={{ fontSize: '0.85rem !important' }} />} 
+                          startIcon={<MicIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
                           onClick={() => handleVoiceInput('processingContent')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
-                            minWidth: '60px', px: 1, whiteSpace: 'nowrap',
-                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
+                            fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
+                            height: { xs: '24px', sm: '32px' }, 
+                            borderRadius: 1,
+                            minWidth: 'auto', 
+                            px: { xs: 0.75, sm: 1.5 }, 
+                            whiteSpace: 'nowrap',
+                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider',
+                            '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
                           color={isListening === 'processingContent' ? 'primary' : 'inherit'}
                           disabled={!!isPolishing || submitting}
@@ -2661,14 +2674,19 @@ const AdminReportPage: React.FC = () => {
                         <Button 
                           variant="outlined" 
                           size="small" 
-                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={10} color="inherit" /> : <AiIcon sx={{ fontSize: '0.85rem !important' }} />} 
+                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={isMobile ? 9 : 12} color="inherit" /> : <AiIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
                           onClick={() => handlePolishText('processingContent')} 
                           sx={{ 
                             fontWeight: 'bold',
-                            fontSize: '0.7rem', height: '26px', borderRadius: 1,
-                            minWidth: '68px', px: 1, whiteSpace: 'nowrap',
+                            fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
+                            height: { xs: '24px', sm: '32px' }, 
+                            borderRadius: 1,
+                            minWidth: 'auto', 
+                            px: { xs: 0.75, sm: 1.5 }, 
+                            whiteSpace: 'nowrap',
                             color: '#673ab7', borderColor: '#673ab7',
-                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
+                            '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
                           disabled={!!isPolishing || !!isListening || submitting}
                         >
