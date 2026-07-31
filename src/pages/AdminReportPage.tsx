@@ -5,7 +5,8 @@ import { useSearchParams } from 'react-router-dom';
 import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel,
+  Autocomplete, InputAdornment, IconButton, Menu, ListItemIcon, ListItemText
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -20,9 +21,16 @@ import {
   FileUpload as FileUploadIcon,
   Description as DescriptionIcon,
   Search as SearchIcon,
-  RestartAlt as RestartAltIcon
+  RestartAlt as RestartAltIcon,
+  EditNote as EditNoteIcon,
+  Mic as MicIcon,
+  PhotoCamera as PhotoCameraIcon,
+  Delete as DeleteIcon,
+  Today as TodayIcon,
+  Info as InfoIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon
 } from '@mui/icons-material';
-import { supabase, getCurrentStaffId } from '../api'; 
+import { supabase, getCurrentStaffId, sendPushNotification } from '../api'; 
 import { Helmet } from 'react-helmet-async';
 import { Pie, Bar } from 'react-chartjs-2';
 import {
@@ -142,6 +150,275 @@ const AdminReportPage: React.FC = () => {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+  };
+
+  // 업무 기록 작성 모달 관련 상태
+  const [workLogOpen, setWorkLogOpen] = useState(false);
+  const [staffOptions, setStaffOptions] = useState<string[]>([]);
+  const [customerName, setCustomerName] = useState('');
+  const [userName, setUserName] = useState('');
+  const [requesterName, setRequesterName] = useState('');
+  const [workDate, setWorkDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [content, setContent] = useState(''); 
+  const [processingContent, setProcessingContent] = useState(''); 
+  const [images, setImages] = useState<File[]>([]);
+  const [logError, setLogError] = useState('');
+  const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
+  const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+
+  useEffect(() => {
+    const storedName = sessionStorage.getItem('adminName');
+    if (storedName) {
+      setUserName(storedName);
+    }
+  }, [workLogOpen]);
+
+  const compressImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_WIDTH = 1200;
+          if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error('이미지 압축 중 오류가 발생했습니다.'));
+          }, 'image/jpeg', 0.8);
+        };
+        img.onerror = () => reject(new Error('이미지 로드 중 오류가 발생했습니다.'));
+      };
+      reader.onerror = () => reject(new Error('파일 읽기 중 오류가 발생했습니다.'));
+    });
+  };
+
+  const handleVoiceInput = (target: 'content' | 'processingContent') => {
+    if (isListening === target) {
+      if (recognitionInstance) {
+        recognitionInstance.manualStop = true;
+        recognitionInstance.stop();
+        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+      }
+      setIsListening(null);
+      return;
+    }
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+    
+    if (recognitionInstance) {
+        recognitionInstance.manualStop = true;
+        recognitionInstance.stop();
+        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ko-KR';
+    recognition.continuous = true; 
+    recognition.interimResults = false; 
+    recognition.manualStop = false;
+    recognition.lastProcessedResultIndex = -1;
+    
+    const resetSilenceTimeout = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      recognition.silenceTimeout = setTimeout(() => {
+        recognition.manualStop = true;
+        recognition.stop();
+        setIsListening(null);
+      }, 10000); 
+    };
+
+    recognition.onstart = () => {
+      setIsListening(target);
+      resetSilenceTimeout();
+    };
+    
+    recognition.onend = () => {
+      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
+      if (!recognition.manualStop) {
+        try { recognition.start(); } catch (e) { setIsListening(null); }
+      } else {
+        setIsListening(null);
+      }
+    };
+
+    recognition.onresult = (event: any) => {
+      resetSilenceTimeout(); 
+      
+      const latestIndex = event.results.length - 1;
+      if (latestIndex <= recognition.lastProcessedResultIndex) return;
+      recognition.lastProcessedResultIndex = latestIndex;
+
+      const transcript = event.results[latestIndex][0].transcript;
+      if (transcript) {
+        if (target === 'content') setContent(prev => prev ? `${prev} ${transcript}` : transcript);
+        else setProcessingContent(prev => prev ? `${prev} ${transcript}` : transcript);
+      }
+    };
+    
+    setRecognitionInstance(recognition);
+    recognition.start();
+  };
+
+  const handlePolishText = async (target: 'content' | 'processingContent') => {
+    const textToPolish = target === 'content' ? content : processingContent;
+    if (!textToPolish.trim()) return setLogError("정돈할 내용이 없습니다.");
+    
+    setIsPolishing(target);
+    setLogError('');
+    try {
+      const { data, error: functionError } = await supabase.functions.invoke('polish-text', { 
+        body: { text: textToPolish, type: target } 
+      });
+      if (functionError) throw functionError;
+      if (data?.polishedText) {
+        if (target === 'content') setContent(data.polishedText);
+        else setProcessingContent(data.polishedText);
+      }
+    } catch (err: any) {
+      setLogError("AI 정돈 중 오류가 발생했습니다.");
+    } finally { 
+      setIsPolishing(null); 
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      if (images.length + files.length > 5) return setLogError('이미지는 최대 5개까지 첨부할 수 있습니다.');
+      setImages(prevImages => [...prevImages, ...files]);
+    }
+  };
+
+  const handleSubmitWorkLog = async (e: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLogError('');
+    if (!customerName || !userName || !requesterName || !content) return setLogError('필수 항목을 모두 입력해주세요.');
+    setSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      let uploadedImageUrls: string[] = [];
+      if (images.length > 0) {
+        const formData = new FormData();
+        for (const image of images) {
+          const compressedBlob = await compressImage(image);
+          formData.append('files', compressedBlob, image.name);
+        }
+        formData.append('customerName', customerName);
+        formData.append('userName', userName);
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-daily-log-image', { body: formData });
+        if (uploadError) throw uploadError;
+        uploadedImageUrls = uploadData?.urls || [];
+      }
+      const requestPayload = {
+        customer_name: customerName, user_name: userName, requester_name: requesterName,
+        password: '', content: content, status: processingContent ? 'completed' : 'processing',
+        created_at: new Date(workDate).toISOString(), user_email: session?.user?.email, images: uploadedImageUrls,
+      };
+      const { data: requestData, error: insertError } = await supabase.from('requests').insert([requestPayload]).select();
+      if (insertError) throw insertError;
+      
+      // 알림 전송 (관리자 제외 모든 직원에게)
+      sendPushNotification('새로운 업무기록 등록', `[${customerName}] ${content}`, 'all');
+
+      if (processingContent.trim()) {
+        const staffId = await getCurrentStaffId();
+        await supabase.from('comments').insert({ 
+          request_id: requestData?.[0]?.id, 
+          comment: processingContent, 
+          user_id: staffId 
+        });
+      }
+      
+      // 스케줄 자동 연동 및 구글 캘린더 동기화 (백그라운드에서 비동기로 실행하여 대기 시간 제거)
+      const staffId = await getCurrentStaffId();
+      const startTimeStr = `${workDate}T00:00:00`;
+      const endTimeStr = `${workDate}T23:59:59`;
+      
+      const syncPayload = {
+        method: 'POST',
+        title: `[${customerName}] 업무기록 접수`,
+        description: `작성자: ${userName}\n거래처: ${customerName}\n요청자: ${requesterName}\n\n[접수내용]\n${content}\n\n[처리내용]\n${processingContent}`,
+        startTime: startTimeStr,
+        endTime: endTimeStr,
+        allDay: true,
+        assigneeEmail: session?.user?.email || ''
+      };
+
+      // 백그라운드 비동기 태스크 실행
+      (async () => {
+        try {
+          let googleEventId = '';
+          try {
+            const { data: syncData, error: syncError } = await supabase.functions.invoke('google-calendar-sync', {
+              body: syncPayload
+            });
+            if (syncError) {
+              console.warn('Google Calendar Sync Error:', syncError.message);
+            } else {
+              googleEventId = syncData?.googleEventId || '';
+            }
+          } catch (err: any) {
+            console.warn('Google Calendar Sync invoke failed:', err.message || err);
+          }
+
+          const scheduleData = {
+            title: `업무기록 접수 (${userName})`,
+            content: content,
+            staff_id: staffId,
+            staff_ids: staffId ? [staffId] : [],
+            assignee_name: userName,
+            assignee_email: session?.user?.email || '',
+            customer_name: customerName,
+            start_time: startTimeStr,
+            end_time: endTimeStr,
+            all_day: true,
+            google_event_id: googleEventId
+          };
+          
+          const { error: scheduleError } = await supabase.from('schedules').insert(scheduleData);
+          if (scheduleError) {
+            console.error('Schedule auto-insert failed:', scheduleError.message);
+          }
+        } catch (bgErr) {
+          console.error('Background calendar and schedule sync failed:', bgErr);
+        }
+      })();
+
+      alert('업무 기록이 성공적으로 저장되었습니다.');
+      setContent('');
+      setProcessingContent('');
+      setImages([]);
+      setRequesterName('');
+      setCustomerName('');
+      setWorkDate(format(new Date(), 'yyyy-MM-dd'));
+      setWorkLogOpen(false);
+      applyFilters(true);
+      fetchInitialData();
+    } catch (err: any) { 
+      setLogError(err.message || '저장 중 오류가 발생했습니다.'); 
+    } finally { 
+      setSubmitting(false); 
+    }
+  };
+
+  // 더보기 메뉴 관련 상태
+  const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
+  const isMoreMenuOpen = Boolean(moreAnchorEl);
+  const handleMoreMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setMoreAnchorEl(event.currentTarget);
+  };
+  const handleMoreMenuClose = () => {
+    setMoreAnchorEl(null);
   };
 
   // 엑셀 업로드 검증 모달 관련 상태
@@ -274,6 +551,9 @@ const AdminReportPage: React.FC = () => {
       try {
           const { data: customerData } = await supabase.from('customers').select('name').order('name', { ascending: true });
           if (customerData) setCustomers(customerData.map(c => c.name));
+
+          const { data: staffData } = await supabase.from('staff').select('name, role').neq('role', 'admin').order('name', { ascending: true });
+          if (staffData) setStaffOptions(staffData.map(s => s.name));
 
           const { data: summaryData } = await supabase.rpc('get_monthly_summary', { target_year: currentYear });
           if (summaryData) setAllMonths(summaryData.map((m: MonthlySummary) => m.month));
@@ -1402,36 +1682,60 @@ const AdminReportPage: React.FC = () => {
 
           {/* 우측: 버튼 영역 */}
           <Grid container spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
-            <Grid item xs={6} sm="auto">
+            {userRole !== 'customer' && (
+              <Grid item xs={12} sm="auto">
+                <Button 
+                  fullWidth
+                  variant="contained" 
+                  color="primary"
+                  startIcon={<EditNoteIcon />}
+                  onClick={() => setWorkLogOpen(true)}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    height: '38px', 
+                    fontSize: '0.75rem', 
+                    borderRadius: 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  새 업무 등록
+                </Button>
+              </Grid>
+            )}
+            <Grid item xs={4} sm="auto">
               <Button 
                 fullWidth
-                variant="contained" 
+                variant={userRole === 'customer' ? "contained" : "outlined"} 
                 onClick={() => applyFilters(true)} 
-                startIcon={<SearchIcon sx={{ fontSize: 18 }} />}
-                sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
+                startIcon={isMobile ? null : <SearchIcon sx={{ fontSize: 18 }} />}
+                sx={{ 
+                  fontWeight: 'bold', 
+                  height: '36px', 
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                  borderRadius: 1,
+                  px: { xs: 0.5, sm: 2 },
+                  whiteSpace: 'nowrap',
+                  ...(userRole === 'customer' ? {
+                    bgcolor: 'primary.main',
+                    color: '#ffffff',
+                    '&:hover': {
+                      bgcolor: 'primary.dark'
+                    }
+                  } : {
+                    bgcolor: 'rgba(51, 65, 85, 0.06)',
+                    color: '#334155',
+                    borderColor: '#334155',
+                    '&:hover': {
+                      bgcolor: 'rgba(51, 65, 85, 0.12)',
+                      borderColor: '#0f172a'
+                    }
+                  })
+                }}
               >
                 조회
               </Button>
             </Grid>
-            <Grid item xs={6} sm="auto">
-              <Button 
-                fullWidth
-                variant="outlined" 
-                color="secondary" 
-                startIcon={isGenerating ? <CircularProgress size={14} color="inherit" /> : <AiIcon />}
-                onClick={handleGenerateAiReport}
-                disabled={isGenerating || filteredRequests.length === 0}
-                sx={{ 
-                  fontWeight: 'bold', fontSize: '0.75rem', height: '36px',
-                  color: '#673ab7', borderColor: '#673ab7', 
-                  '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }, 
-                  borderRadius: 1
-                }}
-              >
-                {isGenerating ? "생성 중..." : "AI 리포트"}
-              </Button>
-            </Grid>
-            <Grid item xs={userRole === 'customer' ? 12 : 4} sm="auto">
+            <Grid item xs={4} sm="auto">
               <Button 
                 fullWidth
                 variant="outlined" 
@@ -1439,40 +1743,111 @@ const AdminReportPage: React.FC = () => {
                 startIcon={exportLoading ? <CircularProgress size={16} color="inherit" /> : <FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
                 onClick={handleExportExcel}
                 disabled={exportLoading}
-                sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+                sx={{ 
+                  fontWeight: 'bold', 
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                  height: '36px', 
+                  borderRadius: 1,
+                  px: { xs: 0.5, sm: 2 },
+                  whiteSpace: 'nowrap'
+                }}
               >
-                {exportLoading ? "다운로드 중..." : "다운로드"}
+                {exportLoading ? "중..." : "다운로드"}
               </Button>
             </Grid>
-            {userRole !== 'customer' && (
-              <>
-                <Grid item xs={4} sm="auto">
-                  <Button 
-                    fullWidth
-                    variant="outlined" 
-                    color="primary" 
-                    startIcon={<FileUploadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+            <Grid item xs={4} sm="auto">
+              <Button 
+                fullWidth
+                variant="outlined" 
+                onClick={handleMoreMenuClick}
+                endIcon={isMobile ? null : <KeyboardArrowDownIcon />}
+                sx={{ 
+                  fontWeight: 'bold', 
+                  height: '36px', 
+                  fontSize: { xs: '0.7rem', sm: '0.75rem' }, 
+                  borderRadius: 1,
+                  color: '#64748b',
+                  borderColor: '#cbd5e1',
+                  px: { xs: 0.5, sm: 2 },
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    bgcolor: 'rgba(100, 116, 139, 0.04)',
+                    borderColor: '#94a3b8'
+                  }
+                }}
+              >
+                더보기
+              </Button>
+              <Menu
+                anchorEl={moreAnchorEl}
+                open={isMoreMenuOpen}
+                onClose={handleMoreMenuClose}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                sx={{
+                  '& .MuiPaper-root': {
+                    borderRadius: 1.5,
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    minWidth: 175
+                  }
+                }}
+              >
+                <MenuItem 
+                  onClick={() => {
+                    handleMoreMenuClose();
+                    handleGenerateAiReport();
+                  }}
+                  disabled={isGenerating || filteredRequests.length === 0}
+                  sx={{ py: 1 }}
+                >
+                  <ListItemIcon sx={{ minWidth: '28px !important', color: '#673ab7' }}>
+                    {isGenerating ? <CircularProgress size={16} color="inherit" /> : <AiIcon fontSize="small" />}
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary={isGenerating ? "AI 리포트 생성 중..." : "AI 분석 리포트 생성"} 
+                    primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 'bold', color: '#673ab7' }} 
+                  />
+                </MenuItem>
+                
+                {userRole !== 'customer' && [
+                  <MenuItem 
+                    key="upload"
                     component="label"
-                    sx={{ fontWeight: 'bold', fontSize: { xs: '0.7rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+                    sx={{ py: 1 }}
                   >
-                    업로드
-                    <input type="file" hidden accept=".csv" onChange={handleImportCsv} />
-                  </Button>
-                </Grid>
-                <Grid item xs={4} sm="auto">
-                  <Button 
-                    fullWidth
-                    variant="outlined" 
-                    color="info" 
-                    startIcon={<DescriptionIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
-                    onClick={handleDownloadSampleCsv}
-                    sx={{ fontWeight: 'bold', fontSize: { xs: '0.65rem', sm: '0.75rem' }, height: '36px', borderRadius: 1, px: { xs: 0.5, sm: 2 } }}
+                    <ListItemIcon sx={{ minWidth: '28px !important' }}>
+                      <FileUploadIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="데이터 업로드 (.csv)" primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 'bold' }} />
+                    <input type="file" hidden accept=".csv" onChange={(e) => {
+                      handleMoreMenuClose();
+                      handleImportCsv(e);
+                    }} />
+                  </MenuItem>,
+                  <MenuItem 
+                    key="sample"
+                    onClick={() => {
+                      handleMoreMenuClose();
+                      handleDownloadSampleCsv();
+                    }}
+                    sx={{ py: 1 }}
                   >
-                    업로드양식
-                  </Button>
-                </Grid>
-              </>
-            )}
+                    <ListItemIcon sx={{ minWidth: '28px !important' }}>
+                      <DescriptionIcon fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText primary="업로드 샘플 다운로드" primaryTypographyProps={{ fontSize: '0.8rem', fontWeight: 'bold' }} />
+                  </MenuItem>
+                ]}
+              </Menu>
+            </Grid>
           </Grid>
         </Box>
         {(selectedCategoryFilter !== 'all' || 
@@ -2094,6 +2469,268 @@ const AdminReportPage: React.FC = () => {
           </Button>
           <Button onClick={() => setValidationOpen(false)} disabled={importing} variant="outlined" color="inherit">
             닫기
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 신규 업무 기록 등록 모달 */}
+      <Dialog 
+        open={workLogOpen} 
+        onClose={() => {
+          if (!submitting) setWorkLogOpen(false);
+        }} 
+        maxWidth="md" 
+        fullWidth
+        transitionDuration={0}
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 2,
+            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)'
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <EditNoteIcon color="primary" sx={{ fontSize: '1.8rem' }} />
+          <span>신규 업무 기록 등록</span>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: { xs: 2, sm: 3 } }}>
+          <Box component="form" onSubmit={handleSubmitWorkLog}>
+            <Stack spacing={3}>
+              {/* 기본 정보 */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.primary' }}>
+                  <InfoIcon color="primary" sx={{ fontSize: '1.1rem' }} /> 기본 정보
+                </Typography>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField 
+                      label="업무 일자" 
+                      type="date" 
+                      fullWidth 
+                      required 
+                      variant="outlined" 
+                      size="small" 
+                      value={workDate} 
+                      onChange={(e) => setWorkDate(e.target.value)} 
+                      InputLabelProps={{ shrink: true }} 
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <TodayIcon fontSize="small" sx={{ pointerEvents: 'none', color: 'action.active' }} />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{
+                        '& input[type="date"]::-webkit-calendar-picker-indicator': {
+                          position: 'absolute',
+                          right: 0,
+                          width: '100%',
+                          height: '100%',
+                          opacity: 0,
+                          cursor: 'pointer',
+                        }
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <Autocomplete
+                      freeSolo
+                      options={customers}
+                      value={customerName}
+                      onChange={(event, newValue) => {
+                        setCustomerName(newValue || '');
+                      }}
+                      onInputChange={(event, newInputValue) => {
+                        setCustomerName(newInputValue || '');
+                      }}
+                      disabled={submitting}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="거래처명"
+                          required
+                          variant="outlined"
+                          size="small"
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField select label="작성자" fullWidth required variant="outlined" size="small" value={userName} onChange={(e) => setUserName(e.target.value)} disabled={submitting}>
+                      {staffOptions.map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                    </TextField>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              {/* 접수 및 처리 내용 */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 0.75, color: 'text.primary' }}>
+                  <AssignmentIcon color="primary" sx={{ fontSize: '1.1rem' }} /> 접수 및 처리 내용
+                </Typography>
+                <Stack spacing={2.5}>
+                  <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} disabled={submitting} />
+                  
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary">접수내용 (필수)</Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handleVoiceInput('content')} 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                            minWidth: '75px', whiteSpace: 'nowrap',
+                            borderColor: isListening === 'content' ? 'primary.main' : 'divider' 
+                          }}
+                          color={isListening === 'content' ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing || submitting}
+                        >
+                          {isListening === 'content' ? '인식 중...' : '음성'}
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={isPolishing === 'content' ? <CircularProgress size={12} color="inherit" /> : <AiIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handlePolishText('content')} 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                            minWidth: '85px', whiteSpace: 'nowrap',
+                            color: '#673ab7', borderColor: '#673ab7',
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                          }}
+                          disabled={!!isPolishing || !!isListening || submitting}
+                        >
+                          {isPolishing === 'content' ? '정돈 중...' : 'AI 정돈'}
+                        </Button>
+                      </Stack>
+                    </Box>
+                    <TextField 
+                      multiline 
+                      rows={4} 
+                      fullWidth 
+                      variant="outlined" 
+                      value={content} 
+                      onChange={(e) => setContent(e.target.value)} 
+                      required 
+                      disabled={submitting}
+                      placeholder="업무 요청 내용을 상세히 입력해주세요."
+                    />
+                  </Box>
+
+                  <Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                      <Typography variant="body2" fontWeight="bold" color="text.secondary">처리내용 (선택)</Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<MicIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handleVoiceInput('processingContent')} 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                            minWidth: '75px', whiteSpace: 'nowrap',
+                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider' 
+                          }}
+                          color={isListening === 'processingContent' ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing || submitting}
+                        >
+                          {isListening === 'processingContent' ? '인식 중...' : '음성'}
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={isPolishing === 'processingContent' ? <CircularProgress size={12} color="inherit" /> : <AiIcon sx={{ fontSize: '1rem !important' }} />} 
+                          onClick={() => handlePolishText('processingContent')} 
+                          sx={{ 
+                            fontWeight: 'bold',
+                            fontSize: '0.75rem', height: '36px', borderRadius: 1,
+                            minWidth: '85px', whiteSpace: 'nowrap',
+                            color: '#673ab7', borderColor: '#673ab7',
+                            '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' }
+                          }}
+                          disabled={!!isPolishing || !!isListening || submitting}
+                        >
+                          {isPolishing === 'processingContent' ? '정돈 중...' : 'AI 정돈'}
+                        </Button>
+                      </Stack>
+                    </Box>
+                    <TextField 
+                      multiline 
+                      rows={4} 
+                      fullWidth 
+                      variant="outlined" 
+                      value={processingContent} 
+                      onChange={(e) => setProcessingContent(e.target.value)} 
+                      disabled={submitting}
+                      placeholder="처리 내용을 입력하면 자동으로 '처리완료' 상태로 저장됩니다." 
+                    />
+                  </Box>
+
+                  {/* 이미지 첨부 */}
+                  <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                      <Button 
+                        variant="outlined" 
+                        component="label" 
+                        startIcon={<PhotoCameraIcon />} 
+                        size="small"
+                        disabled={submitting}
+                        sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
+                      >
+                        이미지 첨부 (최대 5개)
+                        <input type="file" hidden multiple accept="image/*" onChange={handleImageChange} />
+                      </Button>
+                      
+                      {images.length > 0 && (
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                          {images.map((img, i) => (
+                            <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+                              <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                              <IconButton 
+                                size="small" 
+                                disabled={submitting}
+                                onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))} 
+                                sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                              >
+                                <DeleteIcon sx={{ fontSize: '0.9rem' }} />
+                              </IconButton>
+                            </Box>
+                          ))}
+                        </Stack>
+                      )}
+                    </Box>
+                  </Box>
+                </Stack>
+              </Box>
+
+              {logError && <Alert severity="error" sx={{ borderRadius: 1.5 }}>{logError}</Alert>}
+            </Stack>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => setWorkLogOpen(false)} 
+            disabled={submitting}
+            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+          >
+            취소
+          </Button>
+          <Button 
+            variant="contained" 
+            onClick={handleSubmitWorkLog} 
+            disabled={submitting}
+            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+          >
+            {submitting ? <CircularProgress size={20} color="inherit" /> : "저장"}
           </Button>
         </DialogActions>
       </Dialog>

@@ -20,7 +20,6 @@ import MenuIcon from '@mui/icons-material/Menu';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
-import EditNoteIcon from '@mui/icons-material/EditNote';
 import BusinessIcon from '@mui/icons-material/Business';
 import PeopleIcon from '@mui/icons-material/People';
 import LogoutIcon from '@mui/icons-material/Logout';
@@ -158,16 +157,7 @@ const NavBar: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/"
-                    selected={location.pathname === '/'}
-                    sx={getMenuItemStyle(location.pathname === '/')}
-                  >
-                    <ListItemIcon><EditNoteIcon /></ListItemIcon>
-                    <ListItemText primary="업무 기록" primaryTypographyProps={{ fontWeight: 500 }} />
-                  </ListItem>
+
                   <ListItem 
                     button 
                     component={RouterLink} 
@@ -392,16 +382,7 @@ const NavBar: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/"
-                    selected={location.pathname === '/'}
-                    sx={getMenuItemStyle(location.pathname === '/')}
-                  >
-                    <ListItemIcon><EditNoteIcon /></ListItemIcon>
-                    <ListItemText primary="업무 기록" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
-                  </ListItem>
+
                   <ListItem 
                     button 
                     component={RouterLink} 

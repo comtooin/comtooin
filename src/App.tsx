@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
-import HomePage from './pages/HomePage';
 import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
 import AdminLoginPage from './pages/AdminLoginPage'; 
 
@@ -172,7 +171,6 @@ const theme = createTheme({
 const RootRoute = () => {
   const isAdminLoggedIn = !!sessionStorage.getItem('adminToken');
   const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
-  const userRole = sessionStorage.getItem('adminRole');
   
   // 세션 만료 체크 (만료 시 세션 정리)
   if (expiresAt && new Date().getTime() > parseInt(expiresAt)) {
@@ -185,10 +183,7 @@ const RootRoute = () => {
   }
 
   if (isAdminLoggedIn) {
-    if (userRole === 'customer') {
-      return <Navigate to="/admin/dashboard" replace />;
-    }
-    return <HomePage />;
+    return <Navigate to="/admin/dashboard" replace />;
   }
 
   return <Navigate to="/admin/login" replace />;
