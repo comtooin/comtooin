@@ -994,7 +994,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       }
       counts[cleanMem] = (counts[cleanMem] || 0) + 1;
     });
-    return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).sort((a,b) => b.value - a.value);
+    return Object.keys(counts).map(key => ({ name: key, value: counts[key] })).sort((a, b) => b.value - a.value);
   }, [hardware]);
 
   const storageStats = useMemo(() => {
@@ -1041,7 +1041,8 @@ const AdminCustomerInventoryPage: React.FC = () => {
 
     return Object.keys(counts)
       .filter(k => counts[k] > 0)
-      .map(k => ({ name: k, value: counts[k] }));
+      .map(k => ({ name: k, value: counts[k] }))
+      .sort((a, b) => b.value - a.value);
   }, [hardware]);
 
   const osStats = useMemo(() => {
@@ -1058,7 +1059,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
       }
       counts[osName] = (counts[osName] || 0) + 1;
     });
-    return Object.keys(counts).map(k => ({ name: k, value: counts[k] })).sort((a,b) => b.value - a.value);
+    return Object.keys(counts).map(k => ({ name: k, value: counts[k] })).sort((a, b) => b.value - a.value);
   }, [hardware]);
 
   // 소프트웨어 대시보드 통계

@@ -480,11 +480,12 @@ const AdminSchedulePage: React.FC = () => {
           padding: 6px 8px !important;
         }
         
-        /* 토요일/일요일 색상 */
+        /* 토요일/일요일/공휴일 색상 */
         .fc-day-sun .fc-col-header-cell-cushion, 
         .fc-day-sun .fc-daygrid-day-number { color: #ef4444 !important; }
         .fc-day-sat .fc-col-header-cell-cushion, 
-        .fc-day-sat .fc-daygrid-day-number { color: #475569 !important; }
+        .fc-day-sat .fc-daygrid-day-number { color: #2563eb !important; }
+        .fc-holiday .fc-daygrid-day-number { color: #ef4444 !important; }
         
         /* 오늘 날짜 셀 하이라이트 */
         .fc .fc-day-today {
