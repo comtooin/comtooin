@@ -101,21 +101,43 @@ const CheckRequestPage: React.FC = () => {
     setError('');
   };
 
-  const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' => {
-    switch (status) {
-      case 'completed': return 'success';
-      case 'processing': return 'warning';
-      case 'pending': return 'info';
-      default: return 'info';
+  const getStatusChipStyle = (status: string) => {
+    const isCompleted = status === 'completed' || status === '처리완료';
+    const isProcessing = status === 'processing' || status === 'pending' || status === '처리중';
+    
+    if (isCompleted) {
+      return {
+        bgcolor: 'rgba(245, 158, 11, 0.1)', // Soft amber background
+        color: '#d97706', // Amber 600 text
+        border: '1px solid rgba(245, 158, 11, 0.2)',
+        fontWeight: 'bold',
+      };
+    } else if (isProcessing) {
+      return {
+        bgcolor: 'rgba(16, 185, 129, 0.1)', // Soft emerald background
+        color: '#059669', // Emerald 600 text
+        border: '1px solid rgba(16, 185, 129, 0.2)',
+        fontWeight: 'bold',
+      };
+    } else {
+      return {
+        bgcolor: 'rgba(148, 163, 184, 0.1)', // Soft slate background
+        color: '#64748b', // Slate 600 text
+        border: '1px solid rgba(148, 163, 184, 0.2)',
+        fontWeight: 'bold',
+      };
     }
   };
 
   const getStatusLabel = (status: string): string => {
     switch (status) {
-      case 'pending': return '접수완료';
-      case 'processing': return '처리중';
-      case 'completed': return '처리완료';
-      default: return status;
+      case 'pending':
+      case 'processing': 
+        return '처리중';
+      case 'completed': 
+        return '처리완료';
+      default: 
+        return status;
     }
   };
 
@@ -201,10 +223,8 @@ const CheckRequestPage: React.FC = () => {
                     </Box>
                     <Chip 
                       label={getStatusLabel(req.status)} 
-                      color={getStatusChipColor(req.status)} 
                       size="small" 
-                      variant="filled" 
-                      sx={{ fontWeight: 'bold', borderRadius: 1 }} 
+                      sx={{ borderRadius: 1, ...getStatusChipStyle(req.status) }} 
                     />
                   </Box>
                   <Typography 
@@ -251,7 +271,7 @@ const CheckRequestPage: React.FC = () => {
           <>
             <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               접수 상세내용
-              <Chip label={getStatusLabel(selectedRequest.status)} color={getStatusChipColor(selectedRequest.status)} size="small" sx={{ borderRadius: 1 }} />
+              <Chip label={getStatusLabel(selectedRequest.status)} size="small" sx={{ borderRadius: 1, ...getStatusChipStyle(selectedRequest.status) }} />
             </DialogTitle>
             <DialogContent dividers>
               <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 }, mb: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', borderRadius: 1 }}>

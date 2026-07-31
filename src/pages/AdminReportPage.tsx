@@ -59,17 +59,33 @@ const getStatusLabel = (status: string) => {
   return labels[status] || status;
 };
 
-const getStatusChipColor = (status: string): 'success' | 'warning' | 'info' | 'default' => {
-  switch (status) {
-    case 'completed':
-    case '처리완료':
-      return 'success';
-    case 'processing':
-    case 'pending':
-    case '처리중':
-      return 'warning';
-    default:
-      return 'default';
+
+
+const getStatusChipStyle = (status: string) => {
+  const isCompleted = status === 'completed' || status === '처리완료';
+  const isProcessing = status === 'processing' || status === 'pending' || status === '처리중';
+  
+  if (isCompleted) {
+    return {
+      bgcolor: 'rgba(245, 158, 11, 0.1)', // Soft amber background
+      color: '#d97706', // Amber 600 text
+      border: '1px solid rgba(245, 158, 11, 0.2)',
+      fontWeight: 'bold',
+    };
+  } else if (isProcessing) {
+    return {
+      bgcolor: 'rgba(16, 185, 129, 0.1)', // Soft emerald background
+      color: '#059669', // Emerald 600 text
+      border: '1px solid rgba(16, 185, 129, 0.2)',
+      fontWeight: 'bold',
+    };
+  } else {
+    return {
+      bgcolor: 'rgba(148, 163, 184, 0.1)', // Soft slate background
+      color: '#64748b', // Slate 600 text
+      border: '1px solid rgba(148, 163, 184, 0.2)',
+      fontWeight: 'bold',
+    };
   }
 };
 
@@ -1959,10 +1975,13 @@ const AdminReportPage: React.FC = () => {
                         </Typography>
                         <Chip 
                           label={getStatusLabel(request.status)} 
-                          color={getStatusChipColor(request.status)} 
                           size="small" 
-                          variant="filled" 
-                          sx={{ fontWeight: 'bold', fontSize: '0.6rem', height: '18px', borderRadius: 1 }} 
+                          sx={{ 
+                            fontSize: '0.6rem', 
+                            height: '18px', 
+                            borderRadius: 1,
+                            ...getStatusChipStyle(request.status)
+                          }} 
                         />
                       </Box>
                       
@@ -2059,10 +2078,14 @@ const AdminReportPage: React.FC = () => {
                                 <TableCell align="center" sx={{ py: 2, px: 1 }}>
                                   <Chip 
                                     label={getStatusLabel(request.status)} 
-                                    color={getStatusChipColor(request.status)} 
                                     size="small" 
-                                    variant="outlined" 
-                                    sx={{ fontWeight: 'bold', fontSize: '0.7rem', width: '65px', letterSpacing: '-0.01em', borderRadius: 1 }} 
+                                    sx={{ 
+                                      fontSize: '0.7rem', 
+                                      width: '65px', 
+                                      letterSpacing: '-0.01em', 
+                                      borderRadius: 1,
+                                      ...getStatusChipStyle(request.status)
+                                    }} 
                                   />
                                 </TableCell>
                               </TableRow>
@@ -2420,9 +2443,11 @@ const AdminReportPage: React.FC = () => {
                         <Chip 
                           label={row.statusRaw || (row.status === 'completed' ? '처리완료' : '처리중')} 
                           size="small"
-                          color={row.status === 'completed' ? 'success' : 'warning'}
-                          variant="outlined"
-                          sx={{ borderRadius: 1 }}
+                          sx={{ 
+                            borderRadius: 1,
+                            fontSize: '0.75rem',
+                            ...getStatusChipStyle(row.status)
+                          }}
                         />
                       </TableCell>
                       <TableCell sx={{ 

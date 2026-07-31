@@ -13,7 +13,8 @@ import {
   Badge as BadgeIcon,
   AssignmentInd as AssignmentIndIcon,
   Edit as EditIcon,
-  LockReset as LockResetIcon
+  LockReset as LockResetIcon,
+  VpnKey as VpnKeyIcon
 } from '@mui/icons-material';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
@@ -420,8 +421,8 @@ const AdminStaffPage: React.FC = () => {
                           <Button 
                             variant="outlined" 
                             size="small"
-                            color="success"
-                            startIcon={<LockResetIcon fontSize="small" />}
+                            color={staff.auth_user_id ? "success" : "warning"}
+                            startIcon={<VpnKeyIcon fontSize="small" />}
                             onClick={() => {
                               setResettingStaff(staff);
                               setResetDialogOpen(true);
