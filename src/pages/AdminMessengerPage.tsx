@@ -754,7 +754,7 @@ const AdminMessengerPage: React.FC = () => {
         <Box
           sx={{
             p: 2,
-            pb: isMobileMode ? 3 : 2, // 모바일 하단 safe-area 대비
+            pb: isMobileMode ? 'calc(env(safe-area-inset-bottom) + 12px)' : 2, // 모바일 하단 safe-area 대비
             borderTop: '1px solid',
             borderColor: 'divider',
             bgcolor: 'background.paper',
@@ -920,6 +920,13 @@ const AdminMessengerPage: React.FC = () => {
         fullScreen
         open={isMobile && !mobileShowList && !!activeRoomId}
         onClose={() => setMobileShowList(true)}
+        PaperProps={{
+          sx: {
+            bgcolor: '#f8fafc',
+            height: '100%',
+            overflow: 'hidden',
+          }
+        }}
       >
         {renderChatDetail(true)}
       </Dialog>
