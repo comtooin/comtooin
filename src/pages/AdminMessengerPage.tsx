@@ -774,7 +774,7 @@ const AdminMessengerPage: React.FC = () => {
             variant="outlined"
             size="small"
             InputProps={{
-              style: { fontSize: '0.875rem', fontWeight: 500, borderRadius: 6 },
+              style: { fontSize: isMobileMode ? '16px' : '0.875rem', fontWeight: 500, borderRadius: 6 },
             }}
             disabled={submitting}
           />

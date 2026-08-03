@@ -294,6 +294,22 @@ const NavBar: React.FC = () => {
               <Box component="span" sx={{ fontWeight: 900, fontSize: '1.15rem' }}>COMTOOIN</Box>
               <Box component="span" sx={{ fontWeight: 400, color: 'rgba(255,255,255,0.7)', fontSize: '0.95rem', ml: 0.5 }}>ITSM</Box>
             </Typography>
+            {isAdminLoggedIn && (
+              <IconButton
+                color="inherit"
+                component={RouterLink}
+                to="/admin/messenger"
+                sx={{
+                  color: location.pathname === '/admin/messenger' ? '#4db6ac' : 'inherit',
+                  transition: 'color 0.2s ease',
+                  '&:hover': {
+                    color: '#4db6ac',
+                  },
+                }}
+              >
+                <ForumIcon />
+              </IconButton>
+            )}
           </Toolbar>
         </AppBar>
         <Drawer

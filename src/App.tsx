@@ -222,6 +222,28 @@ const SessionManager = () => {
 let isOneSignalInitialized = false;
 
 const OneSignalManager = () => {
+  const location = useLocation();
+
+  // 로그인 상태 및 경로 이동 시 OneSignal ID와 스태프 매핑 갱신 감시
+  useEffect(() => {
+    const checkAndUpdateSubscription = async () => {
+      if (!isOneSignalInitialized) return;
+
+      try {
+        const staffId = await getCurrentStaffId();
+        if (staffId && OneSignal.User.PushSubscription.id) {
+          await supabase
+            .from('staff')
+            .update({ onesignal_id: OneSignal.User.PushSubscription.id })
+            .eq('id', staffId);
+        }
+      } catch (err) {
+        console.error('Error updating OneSignal player ID on route change:', err);
+      }
+    };
+    checkAndUpdateSubscription();
+  }, [location]);
+
   useEffect(() => {
     if (isOneSignalInitialized) return;
 

@@ -59,7 +59,7 @@ export const getCurrentStaffId = async () => {
  */
 export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all') => {
   try {
-    let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null).neq('role', 'admin');
+    let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null);
     
     if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
       query = query.in('id', targetStaffIds);
