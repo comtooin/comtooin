@@ -150,11 +150,11 @@ const CheckRequestPage: React.FC = () => {
       </Helmet>
 
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <ReceiptLongIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-            <Typography variant="h5" component="h1" fontWeight="bold">
+      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" spacing={{ xs: 1, sm: 1.5, md: 2 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }}>
+            <ReceiptLongIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
+            <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>
               {isLoggedIn ? `${userName}님의 접수 내역` : '내 접수 내역 확인'}
             </Typography>
           </Stack>
@@ -162,12 +162,12 @@ const CheckRequestPage: React.FC = () => {
             <Button variant="outlined" onClick={handleLogout} size="small" sx={{ fontWeight: 'bold' }}>다른 이름으로 조회</Button>
           )}
         </Stack>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4, mt: { xs: 0.5, sm: 0.75, md: 1 } }}>
           {isLoggedIn ? '접수하신 유지보수 업무의 처리 현황을 실시간으로 확인하실 수 있습니다.' : '접수 시 입력했던 사용자명과 비밀번호를 입력해 주세요.'}
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
       {!isLoggedIn ? (
         <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2, md: 3 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>

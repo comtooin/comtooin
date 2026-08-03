@@ -150,19 +150,19 @@ const SubmissionDetailPage: React.FC = () => {
       </Helmet>
 
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <AssignmentIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" fontWeight="bold">
+      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
+          <AssignmentIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
+          <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>
             업무 기록 상세 정보
           </Typography>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4 }}>
           접수된 업무의 상세 내용과 처리 과정을 확인합니다. (접수번호: {request.id})
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
       <Paper variant="outlined" sx={{ p: { xs: 1.5, md: 2.5 }, borderRadius: 1, bgcolor: 'background.paper', boxShadow: '0 4px 20px 0 rgba(0,0,0,0.05)' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>

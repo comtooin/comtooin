@@ -27,6 +27,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import ReceiptIcon from '@mui/icons-material/Receipt';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import ForumIcon from '@mui/icons-material/Forum';
 import AdminProfilePage from '../pages/AdminProfilePage';
 import AdminHelpPage from '../pages/AdminHelpPage';
 
@@ -213,6 +214,16 @@ const NavBar: React.FC = () => {
                   >
                     <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
                     <ListItemText primary="자료실" primaryTypographyProps={{ fontWeight: 500 }} />
+                  </ListItem>
+                  <ListItem 
+                    button 
+                    component={RouterLink} 
+                    to="/admin/messenger"
+                    selected={location.pathname === '/admin/messenger'}
+                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
+                  >
+                    <ListItemIcon><ForumIcon /></ListItemIcon>
+                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500 }} />
                   </ListItem>
                   {userRole === 'admin' && (
                     <ListItem 
@@ -438,6 +449,16 @@ const NavBar: React.FC = () => {
                   >
                     <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
                     <ListItemText primary="자료실" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
+                  </ListItem>
+                  <ListItem 
+                    button 
+                    component={RouterLink} 
+                    to="/admin/messenger"
+                    selected={location.pathname === '/admin/messenger'}
+                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
+                  >
+                    <ListItemIcon><ForumIcon /></ListItemIcon>
+                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                   </ListItem>
                   {userRole === 'admin' && (
                     <ListItem 

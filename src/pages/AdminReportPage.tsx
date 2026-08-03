@@ -1562,19 +1562,19 @@ const AdminReportPage: React.FC = () => {
       <Helmet><title>대시보드 | COMTOOIN</title></Helmet>
       
       {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5} mb={1}>
-          <DashboardIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-          <Typography variant="h5" component="h1" fontWeight="bold">
+      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
+          <DashboardIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
+          <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>
             대시보드
           </Typography>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4 }}>
           업무 기록 데이터를 기반으로 기간별, 거래처별 통계를 분석합니다.
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
       {/* 에러 알림창 */}
       {error && (

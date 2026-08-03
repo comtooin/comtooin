@@ -655,21 +655,21 @@ const AdminSchedulePage: React.FC = () => {
       
       <Helmet><title>스케줄 관리 | COMTOOIN</title></Helmet>
       
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} mb={1}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <CalendarMonthIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-            <Typography variant="h5" component="h1" fontWeight="bold">
+      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={{ xs: 1, sm: 1.5, md: 2 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }}>
+            <CalendarMonthIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
+            <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>
               스케줄
             </Typography>
           </Stack>
         </Stack>
-        <Typography variant="body2" color="text.secondary">
+        <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4 }}>
           유지보수 일정 및 사내 주요 이벤트를 통합 관리합니다.
         </Typography>
       </Box>
 
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
       {error && <Alert severity="error" sx={{ mb: 2, whiteSpace: 'pre-line' }}>{error}</Alert>}
 

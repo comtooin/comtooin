@@ -164,11 +164,11 @@ const ArchivePage: React.FC = () => {
     <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pb: 10 }}>
       <Helmet><title>자료실 | COMTOOIN</title></Helmet>
 
-      <Box sx={{ mb: 2.5 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} mb={1}>
-          <Stack direction="row" alignItems="center" spacing={1.5}>
-            <CloudDownloadIcon sx={{ fontSize: '2.2rem', color: 'primary.main' }} />
-            <Typography variant="h5" component="h1" fontWeight="bold">자료실</Typography>
+      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={{ xs: 1, sm: 1.5, md: 2 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }}>
+            <CloudDownloadIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
+            <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>자료실</Typography>
           </Stack>
           <Button 
             variant="outlined" 
@@ -181,10 +181,10 @@ const ArchivePage: React.FC = () => {
             새로고침
           </Button>
         </Stack>
-        <Typography variant="body2" color="text.secondary">업무 매뉴얼 및 현장 자료를 안전하게 관리하고 공유합니다.</Typography>
+        <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4 }}>업무 매뉴얼 및 현장 자료를 안전하게 관리하고 공유합니다.</Typography>
       </Box>
       
-      <Divider sx={{ mb: 2.5 }} />
+      <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
       <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 3 }}>
         {[
