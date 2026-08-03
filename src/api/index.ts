@@ -57,7 +57,7 @@ export const getCurrentStaffId = async () => {
  * @param message 알림 내용
  * @param targetStaffIds 특정 직원에게만 보낼 경우 ID 배열. 없거나 'all'이면 전체 발송. (관리자는 항상 제외됨)
  */
-export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all') => {
+export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all', url?: string) => {
   try {
     let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null);
     
@@ -74,7 +74,7 @@ export const sendPushNotification = async (title: string, message: string, targe
     const res = await fetch('/api/sendPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, message, include_player_ids: validPlayerIds })
+      body: JSON.stringify({ title, message, include_player_ids: validPlayerIds, url })
     });
     if (!res.ok) {
       const errorText = await res.text();

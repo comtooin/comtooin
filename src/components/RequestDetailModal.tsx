@@ -135,7 +135,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
         if (requestAuthor?.user_email) {
           const { data: authorStaff } = await supabase.from('staff').select('id').eq('email', requestAuthor.user_email).single();
           if (authorStaff && authorStaff.id !== staffId) {
-             sendPushNotification('새 코멘트 등록 알림', `[${requestAuthor.customer_name}] 업무기록에 코멘트가 달렸습니다.`, [authorStaff.id]);
+             sendPushNotification('새 코멘트 등록 알림', `[${requestAuthor.customer_name}] 업무기록에 코멘트가 달렸습니다.`, [authorStaff.id], window.location.origin + `/admin/request/detail/${selectedRequest.id}`);
           }
         }
       }

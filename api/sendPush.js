@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     }
 
     const body = req.body || {};
-    const { title, message, include_player_ids } = body;
+    const { title, message, include_player_ids, url } = body;
     const appId = process.env.REACT_APP_ONESIGNAL_APP_ID;
     const apiKey = process.env.ONESIGNAL_API_KEY;
 
@@ -30,7 +30,8 @@ export default async function handler(req, res) {
         include_subscription_ids: include_player_ids,
         headings: { en: title, ko: title },
         contents: { en: message, ko: message },
-        target_channel: "push"
+        target_channel: "push",
+        ...(url && { url })
       })
     });
 

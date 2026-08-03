@@ -320,7 +320,7 @@ const AdminMessengerPage: React.FC = () => {
       const activeRoom = rooms.find(r => r.id === activeRoomId);
       const roomPrefix = activeRoom ? `[${activeRoom.name}] ` : '';
       const preview = content.trim().substring(0, 40) + (content.trim().length > 40 ? '...' : '');
-      await sendPushNotification('새로운 메시지', `${roomPrefix}${myName}: ${preview}`, 'all');
+      await sendPushNotification('새로운 메시지', `${roomPrefix}${myName}: ${preview}`, 'all', window.location.origin + '/admin/messenger');
 
       setContent('');
       await fetchMemos(activeRoomId);

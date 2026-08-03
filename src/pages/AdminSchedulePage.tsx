@@ -400,7 +400,7 @@ const AdminSchedulePage: React.FC = () => {
         
         // 새 스케줄 알림 전송 (지정된 멤버에게)
         if (staffIds.length > 0) {
-          sendPushNotification('새로운 일정 등록', `[${formData.title}] 일정이 배정되었습니다.`, staffIds);
+          sendPushNotification('새로운 일정 등록', `[${formData.title}] 일정이 배정되었습니다.`, staffIds, window.location.origin + '/admin/schedule');
         }
       }
 
