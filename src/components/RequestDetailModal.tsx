@@ -154,6 +154,19 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
     }
   };
 
+  const handleToggleEdit = () => {
+    if (!isEditing) {
+      setEditForm({
+        content: selectedRequest.content || '',
+        requester_name: selectedRequest.requester_name || '',
+        comments: selectedRequest.comments || []
+      });
+      setNewStatus(selectedRequest.status);
+      setNewComment('');
+    }
+    setIsEditing(!isEditing);
+  };
+
   if (!selectedRequest) return null;
 
   return (
@@ -191,6 +204,25 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
               <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">작성자</Typography>
               <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.user_name}</Typography>
             </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">상태</Typography>
+              <Typography 
+                variant="subtitle2" 
+                fontWeight="bold" 
+                sx={{ 
+                  color: selectedRequest.status === 'completed' ? 'success.main' : 'warning.main',
+                  bgcolor: selectedRequest.status === 'completed' ? 'rgba(46, 125, 50, 0.08)' : 'rgba(237, 108, 2, 0.08)',
+                  px: 1.2,
+                  py: 0.3,
+                  borderRadius: 1,
+                  fontSize: '0.8rem',
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}
+              >
+                {selectedRequest.status === 'completed' ? '처리완료' : '처리중'}
+              </Typography>
+            </Box>
           </Paper>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -213,7 +245,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
                 <Paper key={c.id} variant="outlined" sx={{ p: 1.5, bgcolor: 'grey.50' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
                     <Typography variant="caption" color="text.secondary">{new Date(c.created_at).toLocaleString()}</Typography>
-                    {userRole !== 'customer' && (
+                    {userRole !== 'customer' && isEditing && (
                       <Stack direction="row" spacing={0.5}>
                         {editingCommentId === c.id ? (
                           <>
@@ -265,7 +297,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
 
           <Divider sx={{ my: 0.5 }} />
           
-          {userRole !== 'customer' && (
+          {userRole !== 'customer' && isEditing && (
             <>
               <FormControl fullWidth>
                 <InputLabel>상태 변경</InputLabel>
@@ -283,18 +315,103 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           )}
         </Stack>
       </DialogContent>
-      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50', justifyContent: 'center' }}>
-        <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 1, justifyContent: 'center', width: '100%' }}>
+      <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           {userRole === 'customer' ? (
-            <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 100 } }}>닫기</Button>
+            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+              <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, minWidth: 100 }}>닫기</Button>
+            </Box>
           ) : (
             <>
-              <Button onClick={handleDeleteRequest} color="error" variant="outlined" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 }, mr: { sm: 'auto' } }}>삭제</Button>
-              <Button variant="outlined" color="primary" onClick={() => setIsEditing(!isEditing)} sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>{isEditing ? '취소' : '수정'}</Button>
-              <Button onClick={handleSaveRequest} variant="contained" color="primary" disabled={saving} sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>
-                {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
-              </Button>
-              <Button onClick={onClose} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', bgcolor: 'white', height: '36px', fontSize: '0.75rem', borderRadius: 1, width: { xs: 'calc(50% - 4px)', sm: 'auto' }, minWidth: { sm: 90 } }}>닫기</Button>
+              {/* 좌측: 기록 전체 삭제 (읽기 모드일 때만 노출해 오클릭 유도 방지) */}
+              <Box>
+                {!isEditing && (
+                  <Button 
+                    onClick={handleDeleteRequest} 
+                    color="error" 
+                    variant="outlined" 
+                    sx={{ 
+                      fontWeight: 'bold', 
+                      height: '36px', 
+                      fontSize: '0.75rem', 
+                      borderRadius: 1, 
+                      minWidth: 90 
+                    }}
+                  >
+                    삭제
+                  </Button>
+                )}
+              </Box>
+
+              {/* 우측: 읽기/수정 전환 액션 버튼 그룹 */}
+              <Stack direction="row" spacing={1}>
+                {isEditing ? (
+                  <>
+                    <Button 
+                      variant="outlined" 
+                      color="inherit" 
+                      onClick={() => setIsEditing(false)} 
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        bgcolor: 'white', 
+                        height: '36px', 
+                        fontSize: '0.75rem', 
+                        borderRadius: 1, 
+                        minWidth: 90 
+                      }}
+                    >
+                      취소
+                    </Button>
+                    <Button 
+                      onClick={handleSaveRequest} 
+                      variant="contained" 
+                      color="primary" 
+                      disabled={saving} 
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        height: '36px', 
+                        fontSize: '0.75rem', 
+                        borderRadius: 1, 
+                        minWidth: 90 
+                      }}
+                    >
+                      {saving ? <CircularProgress size={16} color="inherit" /> : '저장'}
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="contained" 
+                      color="primary" 
+                      onClick={handleToggleEdit} 
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        height: '36px', 
+                        fontSize: '0.75rem', 
+                        borderRadius: 1, 
+                        minWidth: 90 
+                      }}
+                    >
+                      수정
+                    </Button>
+                    <Button 
+                      onClick={onClose} 
+                      variant="outlined" 
+                      color="inherit" 
+                      sx={{ 
+                        fontWeight: 'bold', 
+                        bgcolor: 'white', 
+                        height: '36px', 
+                        fontSize: '0.75rem', 
+                        borderRadius: 1, 
+                        minWidth: 90 
+                      }}
+                    >
+                      닫기
+                    </Button>
+                  </>
+                )}
+              </Stack>
             </>
           )}
         </Box>

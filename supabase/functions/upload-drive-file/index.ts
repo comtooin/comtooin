@@ -98,20 +98,66 @@ async function uploadToDrive(accessToken: string, folderId: string, fileName: st
   if (!response.ok) throw new Error(`파일 업로드 실패: ${data.error?.message || '알 수 없는 오류'}`);
   return data;
 }
+async function deleteFromDrive(accessToken: string, fileId: string) {
+  const trashUrl = `https://www.googleapis.com/drive/v3/files/${fileId}`;
+  const response = await fetch(trashUrl, {
+    method: 'PATCH',
+    headers: { 
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ trashed: true })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    let errorMsg = '알 수 없는 오류';
+    try {
+      const data = JSON.parse(text);
+      errorMsg = data.error?.message || errorMsg;
+    } catch (_) {}
+    throw new Error(`파일을 휴지통으로 이동 실패: ${errorMsg}`);
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { targetFolder, fileName, fileData, mimeType } = await req.json();
+    const { targetFolder, folderId: requestedFolderId, fileName, fileData, mimeType, createFolderOnly, newFolderName, deleteFileOnly, fileIdToDelete } = await req.json();
 
+    const accessToken = await getGoogleAccessToken();
+
+    // 파일/폴더 삭제 단독 요청인 경우
+    if (deleteFileOnly) {
+      if (!fileIdToDelete) {
+        throw new Error("삭제할 파일 ID(fileIdToDelete)가 필수입니다.");
+      }
+      await deleteFromDrive(accessToken, fileIdToDelete);
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // 폴더 생성 단독 요청인 경우
+    if (createFolderOnly) {
+      if (!newFolderName) {
+        throw new Error("생성할 폴더명(newFolderName)이 필수입니다.");
+      }
+      const parentFolderId = requestedFolderId || ROOT_FOLDER_ID;
+      const createdFolderId = await getOrCreateFolder(accessToken, newFolderName, parentFolderId);
+      return new Response(JSON.stringify({ success: true, folderId: createdFolderId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
+    }
+
+    // 파일 업로드 요청인 경우
     if (!fileName || !fileData || !mimeType) {
       throw new Error("파일명, 파일데이터, mimeType은 필수입니다.");
     }
     
-    const folderName = targetFolder || '5. 견적서';
-    const accessToken = await getGoogleAccessToken();
-    const folderId = await getOrCreateFolder(accessToken, folderName, ROOT_FOLDER_ID);
+    // 특정 folderId가 들어온 경우 해당 폴더를 우선 사용하고, 없으면 기존처럼 명칭 기준 탐색 생성
+    const folderId = requestedFolderId || await getOrCreateFolder(accessToken, targetFolder || '5. 견적서', ROOT_FOLDER_ID);
     
     // fileData는 base64 문자열 (데이터 URI의 "data:application/pdf;base64," 부분은 제외하고 순수 base64 데이터만 전달해야 함)
     const result = await uploadToDrive(accessToken, folderId, fileName, fileData, mimeType);

@@ -3,7 +3,8 @@ import {
   Typography, Box, Paper, Divider, Stack, Container, Button, 
   CircularProgress, Alert, List, ListItem, ListItemIcon, ListItemText, 
   IconButton, TextField, InputAdornment, Breadcrumbs, Link, ListItemButton,
-  Grid
+  Grid, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText,
+  DialogActions, LinearProgress
 } from '@mui/material';
 import { 
   CloudDownload as CloudDownloadIcon,
@@ -19,8 +20,15 @@ import {
   FileDownload as DirectDownloadIcon,
   NavigateNext as NavigateNextIcon,
   Home as HomeIcon,
-  ArrowBack as ArrowBackIcon
+  ArrowBack as ArrowBackIcon,
+  GridView as GridIcon,
+  ViewList as ListIcon,
+  CreateNewFolder as CreateFolderIcon,
+  CloudUpload as CloudUploadIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '../api';
 
@@ -41,24 +49,24 @@ interface IFolderHistory {
 
 const ROOT_FOLDER_ID = '1YV2vEIhNU0rPSiyHUgyDV0pSuBcuOKfJ';
 
-const getFileIconWithWrapper = (mimeType: string) => {
-  let icon = <UnknownFileIcon sx={{ fontSize: 20, color: '#64748b' }} />;
+const getFileIconWithWrapper = (mimeType: string, isGrid: boolean = false) => {
+  let icon = <UnknownFileIcon sx={{ fontSize: isGrid ? 28 : 20, color: '#64748b' }} />;
   let bgColor = 'rgba(100, 116, 139, 0.08)'; // Slate 500
   
   if (mimeType === 'application/vnd.google-apps.folder') {
-    icon = <FolderIcon sx={{ fontSize: 20, color: '#eab308' }} />;
+    icon = <FolderIcon sx={{ fontSize: isGrid ? 32 : 20, color: '#eab308' }} />;
     bgColor = 'rgba(234, 179, 8, 0.1)'; // Yellow 500
   } else if (mimeType.includes('pdf')) {
-    icon = <PdfIcon sx={{ fontSize: 20, color: '#ef4444' }} />;
+    icon = <PdfIcon sx={{ fontSize: isGrid ? 28 : 20, color: '#ef4444' }} />;
     bgColor = 'rgba(239, 68, 68, 0.1)'; // Red 500
   } else if (mimeType.includes('image')) {
-    icon = <ImageIcon sx={{ fontSize: 20, color: '#3b82f6' }} />;
+    icon = <ImageIcon sx={{ fontSize: isGrid ? 28 : 20, color: '#3b82f6' }} />;
     bgColor = 'rgba(59, 130, 246, 0.1)'; // Blue 500
   } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) {
-    icon = <ExcelIcon sx={{ fontSize: 20, color: '#10b981' }} />;
+    icon = <ExcelIcon sx={{ fontSize: isGrid ? 28 : 20, color: '#10b981' }} />;
     bgColor = 'rgba(16, 185, 129, 0.1)'; // Emerald 500
   } else if (mimeType.includes('word') || mimeType.includes('document')) {
-    icon = <FileIcon sx={{ fontSize: 20, color: '#06b6d4' }} />;
+    icon = <FileIcon sx={{ fontSize: isGrid ? 28 : 20, color: '#06b6d4' }} />;
     bgColor = 'rgba(6, 182, 212, 0.1)'; // Cyan 500
   }
   
@@ -68,8 +76,8 @@ const getFileIconWithWrapper = (mimeType: string) => {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        width: 40, 
-        height: 40, 
+        width: isGrid ? 56 : 40, 
+        height: isGrid ? 56 : 40, 
         borderRadius: 1, 
         bgcolor: bgColor,
         flexShrink: 0
@@ -93,12 +101,62 @@ const formatFileSize = (bytes?: string) => {
 };
 
 const ArchivePage: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
   const [files, setFiles] = useState<IDriveFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<IFolderHistory>({ id: ROOT_FOLDER_ID, name: 'Home' });
   const [folderHistory, setFolderHistory] = useState<IFolderHistory[]>([{ id: ROOT_FOLDER_ID, name: 'Home' }]);
+
+  // 리스트 뷰를 기본 상태로 설정 (사용자 피드백 반영)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragOver, setDragOver] = useState(false);
+
+  // 삭제 제어 관련 상태
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<IDriveFile | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteClick = (file: IDriveFile, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFileToDelete(file);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete) return;
+    setDeleting(true);
+    setError('');
+    try {
+      const { data, error: deleteError } = await supabase.functions.invoke('upload-drive-file', {
+        body: {
+          deleteFileOnly: true,
+          fileIdToDelete: fileToDelete.id
+        }
+      });
+      if (deleteError) throw new Error(deleteError.message || "구글 드라이브 파일 삭제에 실패했습니다.");
+      if (data && data.success) {
+        setDeleteConfirmOpen(false);
+        setFileToDelete(null);
+        alert("삭제가 완료되었습니다.");
+        fetchFiles(currentFolder.id);
+      } else {
+        throw new Error(data?.error || "구글 드라이브 파일 삭제에 실패했습니다.");
+      }
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      setError(err.message || "삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchFiles = useCallback(async (folderId: string) => {
     setLoading(true);
@@ -156,6 +214,149 @@ const ArchivePage: React.FC = () => {
     setSearchQuery('');
   };
 
+  const triggerDirectDownload = (file: IDriveFile) => {
+    const downloadUrl = `https://szwiejswmfivultxxywb.supabase.co/functions/v1/download-drive-file?fileId=${file.id}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mimeType)}`;
+    window.location.href = downloadUrl;
+  };
+
+  // 모바일/데스크톱 뷰포트 고려한 다운로드 링크 분기 처리
+  const handleFileClick = (file: IDriveFile) => {
+    const isMobileDevice = /Mobi|Android|iPhone|iPad|Macintosh/i.test(navigator.userAgent) || isMobile;
+
+    if (file.mimeType === 'application/vnd.google-apps.folder') {
+      handleFolderClick(file.id, file.name);
+    } else {
+      if (isMobileDevice) {
+        // 모바일 사파리/크롬 브라우저는 direct stream(webContentLink) 다운 시 오류를 내뿜으므로 웹 뷰어를 통해 확인/저장 처리
+        window.open(file.webViewLink, '_blank');
+      } else {
+        if (file.webContentLink) {
+          triggerDirectDownload(file);
+        } else {
+          window.open(file.webViewLink, '_blank');
+        }
+      }
+    }
+  };
+
+  // Drag & Drop 이벤트 제어 (구글 드라이브식 화면 오버레이)
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    handleFileUpload(e);
+  };
+
+  // 비동기 파일 업로드 (Base64 인코딩)
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement> | React.DragEvent<any>) => {
+    let fileList: FileList | null = null;
+    if ('files' in event.target && event.target.files) {
+      fileList = event.target.files;
+    } else if ('dataTransfer' in event) {
+      event.preventDefault();
+      fileList = event.dataTransfer.files;
+    }
+    
+    if (!fileList || fileList.length === 0) return;
+    const file = fileList[0];
+    
+    // 최대 50MB 크기 제한
+    if (file.size > 50 * 1024 * 1024) {
+      alert("파일 용량이 너무 큽니다. 최대 50MB 파일까지만 업로드할 수 있습니다.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(20);
+    setError('');
+    
+    try {
+      const base64Content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+          const result = reader.result as string;
+          const base64Data = result.split(',')[1];
+          resolve(base64Data);
+        };
+        reader.onerror = (err) => reject(err);
+      });
+
+      setUploadProgress(50);
+
+      const { data, error: uploadError } = await supabase.functions.invoke('upload-drive-file', {
+        body: {
+          folderId: currentFolder.id,
+          fileName: file.name,
+          fileData: base64Content,
+          mimeType: file.type
+        }
+      });
+
+      setUploadProgress(80);
+
+      if (uploadError) throw new Error(uploadError.message || "구글 드라이브 업로드에 실패했습니다.");
+      if (data && data.success) {
+        setUploadProgress(100);
+        setTimeout(() => {
+          alert("파일 업로드가 완료되었습니다!");
+          fetchFiles(currentFolder.id);
+        }, 300);
+      } else {
+        throw new Error(data?.error || "구글 드라이브 업로드에 실패했습니다.");
+      }
+    } catch (err: any) {
+      console.error("Upload error:", err);
+      setError(err.message || "파일 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  // 새 폴더 동적 생성 연동
+  const handleCreateFolder = async () => {
+    if (!newFolderName.trim()) {
+      alert("폴더명을 입력해주세요.");
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const { data, error: createError } = await supabase.functions.invoke('upload-drive-file', {
+        body: {
+          createFolderOnly: true,
+          newFolderName: newFolderName.trim(),
+          folderId: currentFolder.id
+        }
+      });
+
+      if (createError) throw new Error(createError.message || "폴더 생성에 실패했습니다.");
+      if (data && data.success) {
+        setCreateFolderOpen(false);
+        setNewFolderName('');
+        alert("폴더가 생성되었습니다.");
+        fetchFiles(currentFolder.id);
+      } else {
+        throw new Error(data?.error || "폴더 생성에 실패했습니다.");
+      }
+    } catch (err: any) {
+      console.error("Create folder error:", err);
+      setError(err.message || "폴더 생성 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredFiles = useMemo(() => {
     return files.filter(file => file.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [files, searchQuery]);
@@ -164,6 +365,7 @@ const ArchivePage: React.FC = () => {
     <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 }, pb: 10 }}>
       <Helmet><title>자료실 | COMTOOIN</title></Helmet>
 
+      {/* 헤더 타이틀 바 */}
       <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={{ xs: 1, sm: 1.5, md: 2 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
           <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }}>
@@ -186,6 +388,7 @@ const ArchivePage: React.FC = () => {
       
       <Divider sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }} />
 
+      {/* 통계 요약 카드 현황 */}
       <Grid container spacing={{ xs: 1, sm: 1.5 }} sx={{ mb: 3 }}>
         {[
           { 
@@ -273,13 +476,16 @@ const ArchivePage: React.FC = () => {
 
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: 1 }}>{error}</Alert>}
 
+      {/* 액션 및 검색 바 */}
       <Stack 
-        direction={{ xs: 'column', sm: 'row' }} 
-        spacing={1.5} 
-        alignItems={{ xs: 'stretch', sm: 'center' }} 
-        sx={{ mb: 2.5 }}
+        direction={{ xs: 'column', md: 'row' }} 
+        spacing={2} 
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        justifyContent="space-between"
+        sx={{ mb: 3 }}
       >
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+        {/* 네비게이션 브레드크럼 */}
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', md: 'auto' }, flexGrow: 1, minWidth: 0 }}>
           {folderHistory.length > 1 && (
             <IconButton 
               onClick={() => handleBreadcrumbClick(folderHistory.length - 2)} 
@@ -345,151 +551,440 @@ const ArchivePage: React.FC = () => {
             ))}
           </Breadcrumbs>
         </Stack>
-        
-        <TextField 
-          placeholder="파일명 검색..." 
-          size="small" 
-          value={searchQuery} 
-          onChange={(e) => setSearchQuery(e.target.value)} 
-          InputProps={{ 
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon color="action" sx={{ fontSize: 18 }} />
-              </InputAdornment>
-            ), 
-            sx: { 
-              borderRadius: 1, 
-              bgcolor: 'background.paper',
-              height: 38,
-              boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-            } 
-          }} 
-          sx={{ 
-            width: { xs: '100%', sm: '240px' },
-            flexShrink: 0
-          }} 
-        />
+
+        {/* 검색창, 업로드/새폴더 버튼 및 레이아웃 토글 그룹 */}
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5} 
+          alignItems="center" 
+          sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}
+        >
+          <TextField 
+            placeholder="파일명 검색..." 
+            size="small" 
+            value={searchQuery} 
+            onChange={(e) => setSearchQuery(e.target.value)} 
+            InputProps={{ 
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon color="action" sx={{ fontSize: 18 }} />
+                </InputAdornment>
+              ), 
+              sx: { 
+                borderRadius: 1, 
+                bgcolor: 'background.paper',
+                height: 38,
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+              } 
+            }} 
+            sx={{ 
+              width: { xs: '100%', sm: '180px', md: '200px' }
+            }} 
+          />
+          
+          <Stack 
+            direction="row" 
+            spacing={1} 
+            alignItems="center" 
+            justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <Stack direction="row" spacing={1} sx={{ flexGrow: { xs: 1, sm: 0 } }}>
+              {/* 업로드 버튼 */}
+              <Button
+                variant="contained"
+                color="primary"
+                component="label"
+                startIcon={<CloudUploadIcon />}
+                sx={{ 
+                  height: 38, 
+                  fontWeight: 'bold', 
+                  borderRadius: 1,
+                  boxShadow: 'none',
+                  flexGrow: { xs: 1, sm: 0 },
+                  whiteSpace: 'nowrap',
+                  '&:hover': { boxShadow: 'none' }
+                }}
+              >
+                업로드
+                <input
+                  type="file"
+                  hidden
+                  onChange={handleFileUpload}
+                />
+              </Button>
+
+              {/* 새 폴더 버튼 */}
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => setCreateFolderOpen(true)}
+                startIcon={<CreateFolderIcon />}
+                sx={{ 
+                  height: 38, 
+                  fontWeight: 'bold', 
+                  borderRadius: 1,
+                  bgcolor: 'background.paper',
+                  borderColor: 'divider',
+                  color: 'text.secondary',
+                  flexGrow: { xs: 1, sm: 0 },
+                  whiteSpace: 'nowrap',
+                  '&:hover': {
+                    borderColor: 'primary.main',
+                    color: 'primary.main',
+                    bgcolor: 'action.hover'
+                  }
+                }}
+              >
+                새 폴더
+              </Button>
+            </Stack>
+            
+            <Stack direction="row" spacing={0.5} sx={{ flexShrink: 0 }}>
+              <Tooltip title="그리드 뷰">
+                <IconButton 
+                  onClick={() => setViewMode('grid')}
+                  color={viewMode === 'grid' ? 'primary' : 'default'}
+                  sx={{ 
+                    height: 38,
+                    width: 38,
+                    borderRadius: 1, 
+                    border: '1px solid',
+                    borderColor: viewMode === 'grid' ? 'primary.light' : 'divider',
+                    bgcolor: viewMode === 'grid' ? 'rgba(77, 182, 172, 0.05)' : 'background.paper'
+                  }}
+                >
+                  <GridIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="리스트 뷰">
+                <IconButton 
+                  onClick={() => setViewMode('list')}
+                  color={viewMode === 'list' ? 'primary' : 'default'}
+                  sx={{ 
+                    height: 38,
+                    width: 38,
+                    borderRadius: 1, 
+                    border: '1px solid',
+                    borderColor: viewMode === 'list' ? 'primary.light' : 'divider',
+                    bgcolor: viewMode === 'list' ? 'rgba(77, 182, 172, 0.05)' : 'background.paper'
+                  }}
+                >
+                  <ListIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Stack>
+        </Stack>
       </Stack>
 
-      <Box sx={{ minHeight: '300px' }}>
+      {/* 파일 및 폴더 브라우저 본체 (구글 드라이브식 Drag & Drop 오버레이 지원) */}
+      <Box 
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        sx={{ 
+          minHeight: '400px',
+          position: 'relative',
+          borderRadius: 2,
+          border: dragOver ? '2px dashed' : '1px solid transparent',
+          borderColor: dragOver ? 'primary.main' : 'transparent',
+          bgcolor: dragOver ? 'rgba(77, 182, 172, 0.03)' : 'transparent',
+          transition: 'all 0.2s ease',
+          p: dragOver ? 1 : 0
+        }}
+      >
+        {/* 드래그 오버 시 화면 전역 가이드 오버레이 */}
+        {dragOver && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              bgcolor: 'rgba(255, 255, 255, 0.92)',
+              zIndex: 10,
+              borderRadius: 2,
+              pointerEvents: 'none'
+            }}
+          >
+            <CloudUploadIcon sx={{ fontSize: 64, color: 'primary.main', mb: 2 }} />
+            <Typography variant="h6" fontWeight="bold" color="primary.main">
+              여기에 파일을 드롭하여 업로드
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              현재 폴더에 바로 저장됩니다.
+            </Typography>
+          </Box>
+        )}
+
         {loading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 12, gap: 2, bgcolor: 'background.paper', borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
             <CircularProgress size={32} />
             <Typography variant="body2" color="text.secondary">자료실 목록을 불러오는 중입니다...</Typography>
           </Box>
         ) : (
-          <List sx={{ py: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {filteredFiles.length > 0 ? filteredFiles.map((file, index) => (
-              <ListItem 
-                key={file.id} 
-                disablePadding 
-                sx={{ 
-                  bgcolor: 'background.paper',
-                  borderRadius: 1,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': { 
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
-                    borderColor: 'primary.light',
-                    transform: 'translateY(-2px)'
-                  }
-                }}
-                secondaryAction={
-                <Stack direction="row" spacing={1} sx={{ pr: 1 }}>
-                  {file.mimeType !== 'application/vnd.google-apps.folder' && file.webContentLink && (
-                    <IconButton 
-                      component="a" 
-                      href={file.webContentLink} 
-                      target="_blank" 
-                      sx={{ 
-                        bgcolor: 'background.paper', 
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        width: 32,
-                        height: 32,
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: 'primary.main',
-                          borderColor: 'primary.main',
-                          '& svg': { color: 'white !important' }
-                        }
-                      }}
-                      title="직접 다운로드"
-                    >
-                      <DirectDownloadIcon sx={{ fontSize: 16, color: 'primary.main', transition: 'color 0.2s' }} />
-                    </IconButton>
-                  )}
-                  {file.mimeType !== 'application/vnd.google-apps.folder' && (
-                    <IconButton 
-                      component="a" 
-                      href={file.webViewLink} 
-                      target="_blank" 
-                      sx={{ 
-                        bgcolor: 'background.paper', 
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 1,
-                        width: 32,
-                        height: 32,
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          bgcolor: 'action.hover',
-                          borderColor: 'text.primary',
-                        }
-                      }}
-                      title="구글 드라이브에서 보기 (미리보기)"
-                    >
-                      <OpenInNewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                    </IconButton>
-                  )}
-                </Stack>
-              }>
-                <ListItemButton 
-                  onClick={() => { 
-                    if (file.mimeType === 'application/vnd.google-apps.folder') {
-                      handleFolderClick(file.id, file.name);
-                    } else {
-                      const downloadUrl = file.webContentLink || file.webViewLink;
-                      window.open(downloadUrl, '_blank');
-                    }
-                  }} 
-                  sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderRadius: 1 }}
-                  title={file.mimeType === 'application/vnd.google-apps.folder' ? "폴더 열기" : "클릭하여 바로 다운로드"}
-                >
-                  <ListItemIcon sx={{ minWidth: 'auto', mr: 2 }}>
-                    {getFileIconWithWrapper(file.mimeType)}
-                  </ListItemIcon>
-                  <ListItemText 
-                    primary={file.name} 
-                    primaryTypographyProps={{ 
-                      variant: 'body1', 
-                      fontWeight: file.mimeType === 'application/vnd.google-apps.folder' ? 700 : 500, 
-                      noWrap: true, 
-                      component: 'div', 
-                      sx: { 
-                        fontSize: { xs: '0.875rem', sm: '0.95rem' },
-                        color: 'text.primary'
-                      } 
-                    }} 
-                    secondary={
-                      <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                        <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
-                          {new Date(file.modifiedTime).toLocaleDateString()}
-                        </Typography>
-                        {file.size && (
-                          <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
-                            {formatFileSize(file.size)}
-                          </Typography>
-                        )}
-                      </Box>
-                    } 
-                    secondaryTypographyProps={{ component: 'div' }} 
-                  />
-                </ListItemButton>
-              </ListItem>
-            )) : (
+          <>
+            {filteredFiles.length > 0 ? (
+              <>
+                {/* 1. 그리드 뷰 */}
+                {viewMode === 'grid' && (
+                  <Grid container spacing={2}>
+                    {filteredFiles.map((file) => {
+                      const isFolder = file.mimeType === 'application/vnd.google-apps.folder';
+                      return (
+                        <Grid item xs={6} sm={4} md={3} lg={2.4} key={file.id}>
+                          <Paper
+                            variant="outlined"
+                            onClick={() => handleFileClick(file)}
+                            sx={{
+                              p: 2,
+                              height: 160,
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              textAlign: 'center',
+                              borderRadius: 2,
+                              cursor: 'pointer',
+                              position: 'relative',
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                borderColor: 'primary.light',
+                                transform: 'translateY(-4px)',
+                                boxShadow: '0 8px 16px rgba(0,0,0,0.06)',
+                                '& .action-buttons': {
+                                  opacity: 1
+                                }
+                              }
+                            }}
+                          >
+                            {getFileIconWithWrapper(file.mimeType, true)}
+                            
+                            <Typography
+                              variant="body2"
+                              fontWeight={isFolder ? 700 : 500}
+                              sx={{
+                                mt: 1.5,
+                                width: '100%',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                fontSize: '0.85rem',
+                                color: 'text.primary'
+                              }}
+                              title={file.name}
+                            >
+                              {file.name}
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ mt: 0.5, fontSize: '0.75rem' }}
+                            >
+                              {isFolder ? '폴더' : formatFileSize(file.size)}
+                            </Typography>
+                            
+                            {/* 데스크톱 마우스 호버 시 퀵다운로드/뷰/삭제 단추 노출 */}
+                            {!isMobile && (
+                              <Box
+                                className="action-buttons"
+                                onClick={(e) => e.stopPropagation()}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  opacity: 0,
+                                  transition: 'opacity 0.2s',
+                                  display: 'flex',
+                                  gap: 0.5,
+                                  bgcolor: 'rgba(255, 255, 255, 0.95)',
+                                  borderRadius: 1.5,
+                                  p: 0.25,
+                                  boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+                                  zIndex: 5
+                                }}
+                              >
+                                {!isFolder && file.webContentLink && (
+                                  <Tooltip title="직접 다운로드">
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => triggerDirectDownload(file)}
+                                      sx={{
+                                        p: 0.5,
+                                        '&:hover': { color: 'primary.main' }
+                                      }}
+                                    >
+                                      <DirectDownloadIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                                <Tooltip title="구글 뷰어 보기">
+                                  <IconButton
+                                    size="small"
+                                    component="a"
+                                    href={file.webViewLink}
+                                    target="_blank"
+                                    sx={{
+                                      p: 0.5,
+                                      '&:hover': { color: 'text.primary' }
+                                    }}
+                                  >
+                                    <OpenInNewIcon sx={{ fontSize: 16 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Box>
+                            )}
+                          </Paper>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                )}
+
+                {/* 2. 클래식 리스트 뷰 (기본 뷰) */}
+                {viewMode === 'list' && (
+                  <List sx={{ py: 0, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {filteredFiles.map((file) => (
+                      <ListItem 
+                        key={file.id} 
+                        disablePadding 
+                        sx={{ 
+                          bgcolor: 'background.paper',
+                          borderRadius: 1,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          transition: 'all 0.2s ease-in-out',
+                          '&:hover': { 
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+                            borderColor: 'primary.light',
+                            transform: 'translateY(-2px)'
+                          }
+                        }}
+                        secondaryAction={
+                        <Stack direction="row" spacing={1} sx={{ pr: 1 }}>
+                          {file.mimeType !== 'application/vnd.google-apps.folder' && file.webContentLink && (
+                            <IconButton 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const isMobileDevice = /Mobi|Android|iPhone|iPad|Macintosh/i.test(navigator.userAgent) || isMobile;
+                                if (isMobileDevice) {
+                                  window.open(file.webViewLink, '_blank');
+                                } else {
+                                  triggerDirectDownload(file);
+                                }
+                              }}
+                              sx={{ 
+                                bgcolor: 'background.paper', 
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                width: 32,
+                                height: 32,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  bgcolor: 'primary.main',
+                                  borderColor: 'primary.main',
+                                  '& svg': { color: 'white !important' }
+                                }
+                              }}
+                              title="직접 다운로드"
+                            >
+                              <DirectDownloadIcon sx={{ fontSize: 16, color: 'primary.main', transition: 'color 0.2s' }} />
+                            </IconButton>
+                          )}
+                          {file.mimeType !== 'application/vnd.google-apps.folder' && (
+                            <IconButton 
+                              component="a" 
+                              href={file.webViewLink} 
+                              target="_blank" 
+                              sx={{ 
+                                bgcolor: 'background.paper', 
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                width: 32,
+                                height: 32,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                  bgcolor: 'action.hover',
+                                  borderColor: 'text.primary',
+                                }
+                              }}
+                              title="구글 드라이브에서 보기 (미리보기)"
+                            >
+                              <OpenInNewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            </IconButton>
+                          )}
+                          <IconButton 
+                            onClick={(e) => handleDeleteClick(file, e)}
+                            sx={{ 
+                              bgcolor: 'background.paper', 
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 1,
+                              width: 32,
+                              height: 32,
+                              transition: 'all 0.2s',
+                              '&:hover': {
+                                bgcolor: 'error.main',
+                                borderColor: 'error.main',
+                                '& svg': { color: 'white !important' }
+                              }
+                            }}
+                            title="삭제"
+                          >
+                            <DeleteIcon sx={{ fontSize: 16, color: 'error.main', transition: 'color 0.2s' }} />
+                          </IconButton>
+                        </Stack>
+                      }>
+                        <ListItemButton 
+                          onClick={() => handleFileClick(file)} 
+                          sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderRadius: 1 }}
+                          title={file.mimeType === 'application/vnd.google-apps.folder' ? "폴더 열기" : "클릭하여 바로 다운로드"}
+                        >
+                          <ListItemIcon sx={{ minWidth: 'auto', mr: 2 }}>
+                            {getFileIconWithWrapper(file.mimeType)}
+                          </ListItemIcon>
+                          <ListItemText 
+                            primary={file.name} 
+                            primaryTypographyProps={{ 
+                              variant: 'body1', 
+                              fontWeight: file.mimeType === 'application/vnd.google-apps.folder' ? 700 : 500, 
+                              noWrap: true, 
+                              component: 'div', 
+                              sx: { 
+                                fontSize: { xs: '0.875rem', sm: '0.95rem' },
+                                color: 'text.primary'
+                              } 
+                            }} 
+                            secondary={
+                              <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                                <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
+                                  {new Date(file.modifiedTime).toLocaleDateString()}
+                                </Typography>
+                                {file.size && (
+                                  <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
+                                    {formatFileSize(file.size)}
+                                  </Typography>
+                                )}
+                              </Box>
+                            } 
+                            secondaryTypographyProps={{ component: 'div' }} 
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </>
+            ) : (
               <Paper 
                 variant="outlined" 
                 sx={{ 
@@ -531,9 +1026,70 @@ const ArchivePage: React.FC = () => {
                 </Box>
               </Paper>
             )}
-          </List>
+          </>
         )}
       </Box>
+
+      {/* 업로드 로딩 대화상자 */}
+      <Dialog open={uploading} disableEscapeKeyDown>
+        <DialogTitle sx={{ fontWeight: 800, pb: 1 }}>파일 업로드 중</DialogTitle>
+        <DialogContent sx={{ minWidth: 280, pt: 1 }}>
+          <DialogContentText sx={{ mb: 2, fontSize: '0.875rem' }}>
+            선택한 파일을 구글 드라이브로 암호화 전송하는 중입니다. 잠시만 기다려 주십시오...
+          </DialogContentText>
+          <Box sx={{ width: '100%', mr: 1 }}>
+            <LinearProgress variant="determinate" value={uploadProgress} sx={{ height: 6, borderRadius: 3 }} />
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'right' }}>
+            {uploadProgress}% 완료
+          </Typography>
+        </DialogContent>
+      </Dialog>
+
+      {/* 새 폴더 만들기 대화상자 */}
+      <Dialog open={createFolderOpen} onClose={() => setCreateFolderOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1 }}>새 폴더 생성</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText sx={{ mb: 1.5, fontSize: '0.85rem' }}>
+            현재 폴더 위치에 생성할 새 폴더명을 입력해 주세요.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="폴더 이름"
+            type="text"
+            fullWidth
+            variant="outlined"
+            size="small"
+            value={newFolderName}
+            onChange={(e) => setNewFolderName(e.target.value)}
+            InputProps={{ style: { fontSize: '0.875rem' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setCreateFolderOpen(false)} size="small" sx={{ fontWeight: 'bold' }}>취소</Button>
+          <Button onClick={handleCreateFolder} variant="contained" size="small" sx={{ fontWeight: 'bold' }}>생성</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 삭제 확인 대화상자 */}
+      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1, color: 'error.main' }}>자료 삭제 (휴지통 이동)</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <DialogContentText sx={{ mb: 1.5, fontSize: '0.875rem', color: 'text.primary', fontWeight: 500 }}>
+            정말로 '{fileToDelete?.name}'을(를) 휴지통으로 이동하시겠습니까?
+          </DialogContentText>
+          <DialogContentText sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+            삭제된 자료는 구글 드라이브 휴지통에 임시 보관되며 필요 시 구글 드라이브에서 복구할 수 있습니다.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setDeleteConfirmOpen(false)} size="small" sx={{ fontWeight: 'bold' }}>취소</Button>
+          <Button onClick={handleDeleteConfirm} variant="contained" color="error" size="small" disabled={deleting} sx={{ fontWeight: 'bold' }}>
+            {deleting ? '이동 중...' : '휴지통 이동'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
