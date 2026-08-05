@@ -89,7 +89,7 @@ const AdminMessengerPage: React.FC = () => {
       alert(voiceRecorder.error);
       voiceRecorder.setError(null);
     }
-  }, [voiceRecorder.error, voiceRecorder.setError]);
+  }, [voiceRecorder.error, voiceRecorder.setError, voiceRecorder]);
   
   // 모바일 화면용 마스터-디테일 상태 (true: 방 목록, false: 활성 대화창)
   const [mobileShowList, setMobileShowList] = useState(true);

@@ -151,7 +151,7 @@ const AdminSchedulePage: React.FC = () => {
       alert(voiceRecorder.error);
       voiceRecorder.setError(null);
     }
-  }, [voiceRecorder.error, voiceRecorder.setError]);
+  }, [voiceRecorder.error, voiceRecorder.setError, voiceRecorder]);
   const [error, setError] = useState<string | null>(null);
 
   // 팝업 상태 관리

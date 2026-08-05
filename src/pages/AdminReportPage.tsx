@@ -195,14 +195,14 @@ const AdminReportPage: React.FC = () => {
       alert(voiceContent.error);
       voiceContent.setError(null);
     }
-  }, [voiceContent.error, voiceContent.setError]);
+  }, [voiceContent.error, voiceContent.setError, voiceContent]);
 
   useEffect(() => {
     if (voiceProcessing.error) {
       alert(voiceProcessing.error);
       voiceProcessing.setError(null);
     }
-  }, [voiceProcessing.error, voiceProcessing.setError]);
+  }, [voiceProcessing.error, voiceProcessing.setError, voiceProcessing]);
 
   useEffect(() => {
     const storedName = sessionStorage.getItem('adminName');

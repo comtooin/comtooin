@@ -100,7 +100,7 @@ export function useVoiceTyping(
 
       if (data?.text) {
         const trimmedText = data.text.trim();
-        const lowerText = trimmedText.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "").replace(/\s+/g, "");
+        const lowerText = trimmedText.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()?]/g, "").replace(/\s+/g, "");
         
         const WHISPER_HALLUCINATIONS = [
           '감사합니다',
