@@ -32,7 +32,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { VoiceRecorderDialog } from '../components/VoiceRecorderDialog';
+import { useVoiceTyping } from '../hooks/useVoiceTyping';
 
 interface ChatRoom {
   id: string;
@@ -77,7 +77,19 @@ const AdminMessengerPage: React.FC = () => {
   const [currentStaffId, setCurrentStaffId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const voiceRecorder = useVoiceTyping({
+    onTranscriptionComplete: (text) => {
+      setContent(prev => prev + (prev ? ' ' : '') + text);
+    },
+    promptText: "컴투인, 유지보수, 메신저, 채팅, 대화, 메세지, 업무보고, 장애공유, 확인바람"
+  });
+
+  useEffect(() => {
+    if (voiceRecorder.error) {
+      alert(voiceRecorder.error);
+      voiceRecorder.setError(null);
+    }
+  }, [voiceRecorder.error, voiceRecorder.setError]);
   
   // 모바일 화면용 마스터-디테일 상태 (true: 방 목록, false: 활성 대화창)
   const [mobileShowList, setMobileShowList] = useState(true);
@@ -770,7 +782,15 @@ const AdminMessengerPage: React.FC = () => {
             fullWidth
             multiline
             maxRows={4}
-            placeholder={isMobileMode ? "메시지를 입력하세요..." : "메시지를 입력하세요... (Enter로 전송, 줄바꿈은 Shift + Enter)"}
+            placeholder={
+              voiceRecorder.isListening
+                ? "음성 인식 녹음 중... 말씀이 끝나면 자동으로 전송/입력됩니다."
+                : voiceRecorder.isProcessing
+                ? "음성을 텍스트로 변환 중입니다..."
+                : isMobileMode
+                ? "메시지를 입력하세요..."
+                : "메시지를 입력하세요... (Enter로 전송, 줄바꿈은 Shift + Enter)"
+            }
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -779,26 +799,35 @@ const AdminMessengerPage: React.FC = () => {
             InputProps={{
               style: { fontSize: isMobileMode ? '16px' : '0.875rem', fontWeight: 500, borderRadius: 6 },
             }}
-            disabled={submitting}
+            disabled={submitting || voiceRecorder.isProcessing}
           />
           <IconButton
-            color="primary"
-            onClick={() => setVoiceOpen(true)}
-            disabled={submitting}
+            color={voiceRecorder.isListening ? "error" : "primary"}
+            onClick={voiceRecorder.toggleRecording}
+            disabled={submitting || voiceRecorder.isProcessing}
             sx={{
               p: 1.25,
               borderRadius: 1.5,
               border: '1px solid',
-              borderColor: 'divider',
-              color: 'text.secondary',
+              borderColor: voiceRecorder.isListening ? 'error.main' : 'divider',
+              color: voiceRecorder.isListening ? 'error.main' : 'text.secondary',
               transition: 'all 0.15s ease',
+              animation: voiceRecorder.isListening ? 'pulse 1.5s infinite alternate' : 'none',
+              '@keyframes pulse': {
+                '0%': { opacity: 0.6, transform: 'scale(1.0)' },
+                '100%': { opacity: 1.0, transform: 'scale(1.15)' }
+              },
               '&:hover': {
-                bgcolor: 'rgba(25, 118, 210, 0.04)',
+                bgcolor: voiceRecorder.isListening ? 'rgba(211, 47, 47, 0.04)' : 'rgba(25, 118, 210, 0.04)',
                 transform: 'scale(1.05)',
               },
             }}
           >
-            <MicIcon sx={{ fontSize: 18 }} />
+            {voiceRecorder.isProcessing ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <MicIcon sx={{ fontSize: 18 }} />
+            )}
           </IconButton>
           <IconButton
             color="primary"
@@ -988,14 +1017,7 @@ const AdminMessengerPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <VoiceRecorderDialog
-        open={voiceOpen}
-        onClose={() => setVoiceOpen(false)}
-        onTranscriptionComplete={(text) => {
-          setContent(prev => prev + (prev ? ' ' : '') + text);
-        }}
-        promptText="컴투인, 유지보수, 메신저, 채팅, 대화, 메세지, 업무보고, 장애공유, 확인바람"
-      />
+      {/* VoiceRecorderDialog Removed - inline transcription used */}
     </Container>
   );
 };

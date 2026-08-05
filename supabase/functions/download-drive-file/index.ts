@@ -5,7 +5,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+let cachedAccessToken: string | null = null;
+let tokenExpiry = 0;
+
 async function getGoogleAccessToken() {
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedAccessToken && now < tokenExpiry) {
+    return cachedAccessToken;
+  }
+
   const clientId = Deno.env.get('GOOGLE_CLIENT_ID')?.trim();
   const clientSecret = Deno.env.get('GOOGLE_CLIENT_SECRET')?.trim();
   const refreshToken = Deno.env.get('GOOGLE_REFRESH_TOKEN')?.trim();
@@ -29,6 +37,9 @@ async function getGoogleAccessToken() {
 
   const data = await response.json();
   if (!response.ok) throw new Error(`구글 인증 실패: ${data.error_description || data.error}`);
+  
+  cachedAccessToken = data.access_token;
+  tokenExpiry = now + 3500; // 3600초 중 100초 여유
   return data.access_token;
 }
 

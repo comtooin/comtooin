@@ -4,7 +4,7 @@ import {
   Box, Container, Typography, Button, Paper, IconButton, Dialog, DialogTitle, 
   DialogContent, TextField, DialogActions, MenuItem, Select, FormControl, 
   InputLabel, Alert, Divider, Stack, Chip, useMediaQuery, useTheme,
-  Checkbox, FormControlLabel, Autocomplete, Grid, Tooltip
+  Checkbox, FormControlLabel, Autocomplete, Grid, Tooltip, CircularProgress
 } from '@mui/material';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -23,7 +23,7 @@ import {
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase, sendPushNotification } from '../api';
-import { VoiceRecorderDialog } from '../components/VoiceRecorderDialog';
+import { useVoiceTyping } from '../hooks/useVoiceTyping';
 
 // 타입 정의
 interface Staff { id: string; name: string; email: string; }
@@ -139,7 +139,19 @@ const AdminSchedulePage: React.FC = () => {
   const [staffList, setStaffList] = useState<Staff[]>([]);
   const [customerList, setCustomerList] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isSTTActive, setIsSTTActive] = useState(false);
+  const voiceRecorder = useVoiceTyping({
+    onTranscriptionComplete: (text) => {
+      setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + text }));
+    },
+    promptText: "컴투인, 유지보수, 일정등록, 스케줄, 담당자, 거래처, 업무기록, 방문점검"
+  });
+
+  useEffect(() => {
+    if (voiceRecorder.error) {
+      alert(voiceRecorder.error);
+      voiceRecorder.setError(null);
+    }
+  }, [voiceRecorder.error, voiceRecorder.setError]);
   const [error, setError] = useState<string | null>(null);
 
   // 팝업 상태 관리
@@ -270,7 +282,11 @@ const AdminSchedulePage: React.FC = () => {
   };
 
   const handleSTT = () => {
-    setIsSTTActive(true);
+    if (voiceRecorder.isListening) {
+      voiceRecorder.stopRecording(false);
+    } else {
+      voiceRecorder.startRecording();
+    }
   };
 
   const handleAIPolish = async () => {
@@ -811,9 +827,47 @@ const AdminSchedulePage: React.FC = () => {
               </Grid>
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                  <TextField fullWidth multiline rows={4} label="상세 메모" value={formData.content} onChange={(e) => setFormData({...formData, content: e.target.value})} />
+                  <TextField 
+                    fullWidth 
+                    multiline 
+                    rows={4} 
+                    label={
+                      voiceRecorder.isListening 
+                        ? "상세 메모 (음성 인식 녹음 중...)" 
+                        : voiceRecorder.isProcessing
+                        ? "상세 메모 (음성 변환 중...)"
+                        : "상세 메모"
+                    }
+                    placeholder={
+                      voiceRecorder.isListening 
+                        ? "말씀이 끝나면 자동으로 음성이 텍스트로 채워집니다..." 
+                        : ""
+                    }
+                    value={formData.content} 
+                    onChange={(e) => setFormData({...formData, content: e.target.value})} 
+                  />
                   <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Tooltip title="음성 입력"><IconButton color={isSTTActive ? "secondary" : "default"} onClick={handleSTT}><MicIcon /></IconButton></Tooltip>
+                    <Tooltip title={voiceRecorder.isListening ? "음성 인식 중 (클릭 시 중단)" : "음성 입력"}>
+                      <IconButton 
+                        color={voiceRecorder.isListening ? "error" : "default"} 
+                        onClick={handleSTT}
+                        disabled={voiceRecorder.isProcessing}
+                        sx={{
+                          animation: voiceRecorder.isListening ? 'pulse 1.5s infinite alternate' : 'none',
+                          '@keyframes pulse': {
+                            '0%': { opacity: 0.6, transform: 'scale(1.0)' },
+                            '100%': { opacity: 1.0, transform: 'scale(1.15)' }
+                          },
+                          color: voiceRecorder.isListening ? 'error.main' : 'inherit'
+                        }}
+                      >
+                        {voiceRecorder.isProcessing ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <MicIcon />
+                        )}
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="AI 문장 정돈"><IconButton sx={{ color: '#673ab7' }} onClick={handleAIPolish} disabled={loading}><AIPIcon /></IconButton></Tooltip>
                   </Box>
                 </Box>
@@ -950,14 +1004,7 @@ const AdminSchedulePage: React.FC = () => {
         )}
       </Dialog>
 
-      <VoiceRecorderDialog
-        open={isSTTActive}
-        onClose={() => setIsSTTActive(false)}
-        onTranscriptionComplete={(text) => {
-          setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + text }));
-        }}
-        promptText="컴투인, 유지보수, 일정등록, 스케줄, 담당자, 거래처, 업무기록, 방문점검"
-      />
+      {/* VoiceRecorderDialog Removed - inline transcription used */}
     </Container>
   );
 };

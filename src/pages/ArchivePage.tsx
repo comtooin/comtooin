@@ -4,7 +4,7 @@ import {
   CircularProgress, Alert, List, ListItem, ListItemIcon, ListItemText, 
   IconButton, TextField, InputAdornment, Breadcrumbs, Link, ListItemButton,
   Grid, Tooltip, Dialog, DialogTitle, DialogContent, DialogContentText,
-  DialogActions, LinearProgress
+  DialogActions, LinearProgress, Menu, MenuItem
 } from '@mui/material';
 import { 
   CloudDownload as CloudDownloadIcon,
@@ -25,7 +25,8 @@ import {
   ViewList as ListIcon,
   CreateNewFolder as CreateFolderIcon,
   CloudUpload as CloudUploadIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  MoreVert as MoreVertIcon
 } from '@mui/icons-material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -100,12 +101,17 @@ const formatFileSize = (bytes?: string) => {
   return `${size.toFixed(1)} ${units[unitIndex]}`;
 };
 
+// 컴포넌트 외부에 캐시 정의하여 마운트 해제되어도 탭 활성 동안 유지
+const cacheStorage: { [folderId: string]: { files: IDriveFile[]; timestamp: number } } = {};
+const CACHE_TTL = 3 * 60 * 1000; // 3분 캐시 유효
+
 const ArchivePage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const [files, setFiles] = useState<IDriveFile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [backgroundLoading, setBackgroundLoading] = useState(false);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentFolder, setCurrentFolder] = useState<IFolderHistory>({ id: ROOT_FOLDER_ID, name: 'Home' });
@@ -123,6 +129,25 @@ const ArchivePage: React.FC = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<IDriveFile | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // 다운로드 제어 관련 상태
+  const [downloadingFile, setDownloadingFile] = useState<IDriveFile | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+
+  // 팝업 더보기 메뉴 관련 상태
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null);
+  const [activeMenuFile, setActiveMenuFile] = useState<IDriveFile | null>(null);
+
+  const handleMenuOpen = (file: IDriveFile, event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setMenuAnchorEl(event.currentTarget);
+    setActiveMenuFile(file);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchorEl(null);
+    setActiveMenuFile(null);
+  };
 
   const handleDeleteClick = (file: IDriveFile, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -146,7 +171,7 @@ const ArchivePage: React.FC = () => {
         setDeleteConfirmOpen(false);
         setFileToDelete(null);
         alert("삭제가 완료되었습니다.");
-        fetchFiles(currentFolder.id);
+        fetchFiles(currentFolder.id, true);
       } else {
         throw new Error(data?.error || "구글 드라이브 파일 삭제에 실패했습니다.");
       }
@@ -158,32 +183,72 @@ const ArchivePage: React.FC = () => {
     }
   };
 
-  const fetchFiles = useCallback(async (folderId: string) => {
+  const executeFetch = useCallback(async (folderId: string): Promise<IDriveFile[]> => {
+    const { data, error: funcError } = await supabase.functions.invoke(`list-drive-files?folderId=${folderId}`, {
+      method: 'GET'
+    });
+    if (funcError) throw new Error(funcError.message || '서버 함수 호출 중 오류가 발생했습니다.');
+    if (data && data.success) {
+      const sortedFiles = (data.files || []).sort((a: IDriveFile, b: IDriveFile) => {
+        const aIsFolder = a.mimeType === 'application/vnd.google-apps.folder';
+        const bIsFolder = b.mimeType === 'application/vnd.google-apps.folder';
+        if (aIsFolder && !bIsFolder) return -1;
+        if (!aIsFolder && bIsFolder) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      return sortedFiles;
+    } else {
+      throw new Error(data?.error || '서버에서 알 수 없는 응답을 보냈습니다.');
+    }
+  }, []);
+
+  const fetchBackground = useCallback(async (folderId: string) => {
+    setBackgroundLoading(true);
+    try {
+      const remoteData = await executeFetch(folderId);
+      setFiles(prev => {
+        const isSame = JSON.stringify(prev) === JSON.stringify(remoteData);
+        if (isSame) return prev;
+        return remoteData;
+      });
+      cacheStorage[folderId] = { files: remoteData, timestamp: Date.now() };
+    } catch (err) {
+      console.warn('Background sync failed:', err);
+    } finally {
+      setBackgroundLoading(false);
+    }
+  }, [executeFetch]);
+
+  const fetchFiles = useCallback(async (folderId: string, forceRefresh = false) => {
+    const cached = cacheStorage[folderId];
+    const now = Date.now();
+
+    if (cached && (now - cached.timestamp < CACHE_TTL) && !forceRefresh) {
+      setFiles(cached.files);
+      setLoading(false);
+      fetchBackground(folderId);
+      return;
+    }
+
+    if (cached && !forceRefresh) {
+      setFiles(cached.files);
+      setLoading(false);
+      fetchBackground(folderId);
+      return;
+    }
+
     setLoading(true);
     setError('');
     try {
-      const { data, error: funcError } = await supabase.functions.invoke(`list-drive-files?folderId=${folderId}`, {
-        method: 'GET'
-      });
-      if (funcError) throw new Error(funcError.message || '서버 함수 호출 중 오류가 발생했습니다.');
-      if (data && data.success) {
-        const sortedFiles = (data.files || []).sort((a: IDriveFile, b: IDriveFile) => {
-          const aIsFolder = a.mimeType === 'application/vnd.google-apps.folder';
-          const bIsFolder = b.mimeType === 'application/vnd.google-apps.folder';
-          if (aIsFolder && !bIsFolder) return -1;
-          if (!aIsFolder && bIsFolder) return 1;
-          return a.name.localeCompare(b.name);
-        });
-        setFiles(sortedFiles);
-      } else {
-        throw new Error(data?.error || '서버에서 알 수 없는 응답을 보냈습니다.');
-      }
+      const remoteData = await executeFetch(folderId);
+      setFiles(remoteData);
+      cacheStorage[folderId] = { files: remoteData, timestamp: now };
     } catch (err: any) {
       setError(err.message || '파일 목록을 가져오는 중 오류가 발생했습니다.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [executeFetch, fetchBackground]);
 
   useEffect(() => {
     fetchFiles(currentFolder.id);
@@ -214,27 +279,77 @@ const ArchivePage: React.FC = () => {
     setSearchQuery('');
   };
 
-  const triggerDirectDownload = (file: IDriveFile) => {
-    const downloadUrl = `https://szwiejswmfivultxxywb.supabase.co/functions/v1/download-drive-file?fileId=${file.id}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mimeType)}`;
-    window.location.href = downloadUrl;
+  const downloadFileWithProgress = async (file: IDriveFile) => {
+    setDownloadingFile(file);
+    setDownloadProgress(0);
+    try {
+      const downloadUrl = `https://szwiejswmfivultxxywb.supabase.co/functions/v1/download-drive-file?fileId=${file.id}&fileName=${encodeURIComponent(file.name)}&mimeType=${encodeURIComponent(file.mimeType)}`;
+      
+      const response = await fetch(downloadUrl);
+      if (!response.ok) throw new Error("파일 다운로드에 실패했습니다.");
+      
+      const contentLength = response.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      
+      if (total === 0 || !response.body) {
+        const blob = await response.blob();
+        triggerBlobDownload(blob, file.name);
+        return;
+      }
+      
+      const reader = response.body.getReader();
+      let loaded = 0;
+      const chunks: Uint8Array[] = [];
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        if (value) {
+          chunks.push(value);
+          loaded += value.length;
+          setDownloadProgress(total > 0 ? Math.round((loaded / total) * 100) : 0);
+        }
+      }
+      
+      const allChunks = new Uint8Array(loaded);
+      let position = 0;
+      for (const chunk of chunks) {
+        allChunks.set(chunk, position);
+        position += chunk.length;
+      }
+      
+      const blob = new Blob([allChunks], { type: file.mimeType });
+      triggerBlobDownload(blob, file.name);
+    } catch (err: any) {
+      console.error("Download progress error:", err);
+      alert(err.message || "다운로드 중 오류가 발생했습니다.");
+    } finally {
+      setDownloadingFile(null);
+      setDownloadProgress(0);
+    }
+  };
+
+  const triggerBlobDownload = (blob: Blob, fileName: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   // 모바일/데스크톱 뷰포트 고려한 다운로드 링크 분기 처리
   const handleFileClick = (file: IDriveFile) => {
-    const isMobileDevice = /Mobi|Android|iPhone|iPad|Macintosh/i.test(navigator.userAgent) || isMobile;
-
     if (file.mimeType === 'application/vnd.google-apps.folder') {
       handleFolderClick(file.id, file.name);
     } else {
-      if (isMobileDevice) {
-        // 모바일 사파리/크롬 브라우저는 direct stream(webContentLink) 다운 시 오류를 내뿜으므로 웹 뷰어를 통해 확인/저장 처리
-        window.open(file.webViewLink, '_blank');
+      if (file.webContentLink) {
+        downloadFileWithProgress(file);
       } else {
-        if (file.webContentLink) {
-          triggerDirectDownload(file);
-        } else {
-          window.open(file.webViewLink, '_blank');
-        }
+        window.open(file.webViewLink, '_blank');
       }
     }
   };
@@ -308,7 +423,7 @@ const ArchivePage: React.FC = () => {
         setUploadProgress(100);
         setTimeout(() => {
           alert("파일 업로드가 완료되었습니다!");
-          fetchFiles(currentFolder.id);
+          fetchFiles(currentFolder.id, true);
         }, 300);
       } else {
         throw new Error(data?.error || "구글 드라이브 업로드에 실패했습니다.");
@@ -345,7 +460,7 @@ const ArchivePage: React.FC = () => {
         setCreateFolderOpen(false);
         setNewFolderName('');
         alert("폴더가 생성되었습니다.");
-        fetchFiles(currentFolder.id);
+        fetchFiles(currentFolder.id, true);
       } else {
         throw new Error(data?.error || "폴더 생성에 실패했습니다.");
       }
@@ -376,7 +491,7 @@ const ArchivePage: React.FC = () => {
             variant="outlined" 
             size="small" 
             startIcon={<RefreshIcon />} 
-            onClick={() => fetchFiles(currentFolder.id)} 
+            onClick={() => fetchFiles(currentFolder.id, true)} 
             disabled={loading} 
             sx={{ fontWeight: 'bold', borderRadius: 1, height: '32px' }}
           >
@@ -694,6 +809,21 @@ const ArchivePage: React.FC = () => {
           p: dragOver ? 1 : 0
         }}
       >
+        {/* 백그라운드 동기화 시 얇은 progress bar 표출 */}
+        {!loading && backgroundLoading && (
+          <LinearProgress 
+            color="primary" 
+            sx={{ 
+              height: 2, 
+              width: '100%', 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              zIndex: 6,
+              borderRadius: '4px 4px 0 0'
+            }} 
+          />
+        )}
         {/* 드래그 오버 시 화면 전역 가이드 오버레이 */}
         {dragOver && (
           <Box
@@ -815,7 +945,10 @@ const ArchivePage: React.FC = () => {
                                   <Tooltip title="직접 다운로드">
                                     <IconButton
                                       size="small"
-                                      onClick={() => triggerDirectDownload(file)}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        downloadFileWithProgress(file);
+                                      }}
                                       sx={{
                                         p: 0.5,
                                         '&:hover': { color: 'primary.main' }
@@ -831,6 +964,9 @@ const ArchivePage: React.FC = () => {
                                     component="a"
                                     href={file.webViewLink}
                                     target="_blank"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                    }}
                                     sx={{
                                       p: 0.5,
                                       '&:hover': { color: 'text.primary' }
@@ -839,7 +975,43 @@ const ArchivePage: React.FC = () => {
                                     <OpenInNewIcon sx={{ fontSize: 16 }} />
                                   </IconButton>
                                 </Tooltip>
+                                <Tooltip title="삭제">
+                                  <IconButton
+                                    size="small"
+                                    onClick={(e) => handleDeleteClick(file, e)}
+                                    sx={{
+                                      p: 0.5,
+                                      '&:hover': { color: 'error.main' }
+                                    }}
+                                  >
+                                    <DeleteIcon sx={{ fontSize: 16, color: 'error.main' }} />
+                                  </IconButton>
+                                </Tooltip>
                               </Box>
+                            )}
+
+                            {/* 모바일 터치 환경 전용 상시 노출 삭제 단추 */}
+                            {isMobile && (
+                              <IconButton
+                                size="small"
+                                onClick={(e) => handleDeleteClick(file, e)}
+                                sx={{
+                                  position: 'absolute',
+                                  top: 6,
+                                  right: 6,
+                                  bgcolor: 'rgba(255, 255, 255, 0.9)',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
+                                  borderRadius: '50%',
+                                  width: 28,
+                                  height: 28,
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                  zIndex: 5,
+                                  '&:hover': { bgcolor: 'rgba(255, 255, 255, 1)' }
+                                }}
+                              >
+                                <DeleteIcon sx={{ fontSize: 14, color: 'error.main' }} />
+                              </IconButton>
                             )}
                           </Paper>
                         </Grid>
@@ -868,62 +1040,8 @@ const ArchivePage: React.FC = () => {
                           }
                         }}
                         secondaryAction={
-                        <Stack direction="row" spacing={1} sx={{ pr: 1 }}>
-                          {file.mimeType !== 'application/vnd.google-apps.folder' && file.webContentLink && (
-                            <IconButton 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const isMobileDevice = /Mobi|Android|iPhone|iPad|Macintosh/i.test(navigator.userAgent) || isMobile;
-                                if (isMobileDevice) {
-                                  window.open(file.webViewLink, '_blank');
-                                } else {
-                                  triggerDirectDownload(file);
-                                }
-                              }}
-                              sx={{ 
-                                bgcolor: 'background.paper', 
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                width: 32,
-                                height: 32,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                  bgcolor: 'primary.main',
-                                  borderColor: 'primary.main',
-                                  '& svg': { color: 'white !important' }
-                                }
-                              }}
-                              title="직접 다운로드"
-                            >
-                              <DirectDownloadIcon sx={{ fontSize: 16, color: 'primary.main', transition: 'color 0.2s' }} />
-                            </IconButton>
-                          )}
-                          {file.mimeType !== 'application/vnd.google-apps.folder' && (
-                            <IconButton 
-                              component="a" 
-                              href={file.webViewLink} 
-                              target="_blank" 
-                              sx={{ 
-                                bgcolor: 'background.paper', 
-                                border: '1px solid',
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                width: 32,
-                                height: 32,
-                                transition: 'all 0.2s',
-                                '&:hover': {
-                                  bgcolor: 'action.hover',
-                                  borderColor: 'text.primary',
-                                }
-                              }}
-                              title="구글 드라이브에서 보기 (미리보기)"
-                            >
-                              <OpenInNewIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                            </IconButton>
-                          )}
                           <IconButton 
-                            onClick={(e) => handleDeleteClick(file, e)}
+                            onClick={(e) => handleMenuOpen(file, e)}
                             sx={{ 
                               bgcolor: 'background.paper', 
                               border: '1px solid',
@@ -933,20 +1051,19 @@ const ArchivePage: React.FC = () => {
                               height: 32,
                               transition: 'all 0.2s',
                               '&:hover': {
-                                bgcolor: 'error.main',
-                                borderColor: 'error.main',
-                                '& svg': { color: 'white !important' }
+                                bgcolor: 'action.hover',
+                                borderColor: 'text.primary',
                               }
                             }}
-                            title="삭제"
+                            title="더보기"
                           >
-                            <DeleteIcon sx={{ fontSize: 16, color: 'error.main', transition: 'color 0.2s' }} />
+                            <MoreVertIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
                           </IconButton>
-                        </Stack>
-                      }>
+                        }
+                      >
                         <ListItemButton 
                           onClick={() => handleFileClick(file)} 
-                          sx={{ px: { xs: 2, sm: 3 }, py: 1.5, borderRadius: 1 }}
+                          sx={{ px: { xs: 2, sm: 3 }, py: 1.5, pr: 8, borderRadius: 1 }}
                           title={file.mimeType === 'application/vnd.google-apps.folder' ? "폴더 열기" : "클릭하여 바로 다운로드"}
                         >
                           <ListItemIcon sx={{ minWidth: 'auto', mr: 2 }}>
@@ -966,17 +1083,16 @@ const ArchivePage: React.FC = () => {
                             }} 
                             secondary={
                               <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
-                                <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
+                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                                   {new Date(file.modifiedTime).toLocaleDateString()}
                                 </Typography>
                                 {file.size && (
-                                  <Typography variant="caption" color="text.secondary" component="span" sx={{ fontWeight: 500 }}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                                     {formatFileSize(file.size)}
                                   </Typography>
                                 )}
                               </Box>
                             } 
-                            secondaryTypographyProps={{ component: 'div' }} 
                           />
                         </ListItemButton>
                       </ListItem>
@@ -1029,6 +1145,25 @@ const ArchivePage: React.FC = () => {
           </>
         )}
       </Box>
+
+      {/* 다운로드 로딩 대화상자 (심플 미니 UI) */}
+      <Dialog open={Boolean(downloadingFile)} disableEscapeKeyDown maxWidth="xs" fullWidth>
+        <DialogContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', minWidth: 0, gap: 1.5 }}>
+            <Typography variant="subtitle2" fontWeight="bold" noWrap sx={{ color: 'text.primary', flexGrow: 1, minWidth: 0 }}>
+              {downloadingFile?.name}
+            </Typography>
+            <Typography variant="caption" color="primary" fontWeight="bold" sx={{ flexShrink: 0 }}>
+              {downloadProgress > 0 ? `${downloadProgress}%` : '준비 중...'}
+            </Typography>
+          </Box>
+          <LinearProgress 
+            variant={downloadProgress > 0 ? "determinate" : "indeterminate"} 
+            value={downloadProgress} 
+            sx={{ height: 4, borderRadius: 2 }} 
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* 업로드 로딩 대화상자 */}
       <Dialog open={uploading} disableEscapeKeyDown>
@@ -1090,6 +1225,58 @@ const ArchivePage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 파일별 더보기 컨텍스트 메뉴 */}
+      <Menu
+        anchorEl={menuAnchorEl}
+        open={Boolean(menuAnchorEl)}
+        onClose={handleMenuClose}
+        PaperProps={{
+          elevation: 2,
+          sx: { 
+            minWidth: 140,
+            borderRadius: 1.5,
+            border: '1px solid',
+            borderColor: 'divider',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
+          }
+        }}
+      >
+        {activeMenuFile?.mimeType !== 'application/vnd.google-apps.folder' && activeMenuFile?.webContentLink && (
+          <MenuItem 
+            onClick={() => {
+              handleMenuClose();
+              downloadFileWithProgress(activeMenuFile);
+            }}
+            sx={{ gap: 1.5, py: 1 }}
+          >
+            <DirectDownloadIcon fontSize="small" color="primary" />
+            <ListItemText primary="다운로드" primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }} />
+          </MenuItem>
+        )}
+        {activeMenuFile?.mimeType !== 'application/vnd.google-apps.folder' && (
+          <MenuItem 
+            component="a"
+            href={activeMenuFile?.webViewLink}
+            target="_blank"
+            onClick={handleMenuClose}
+            sx={{ gap: 1.5, py: 1, textDecoration: 'none', color: 'inherit' }}
+          >
+            <OpenInNewIcon fontSize="small" color="action" />
+            <ListItemText primary="미리보기" primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500 }} />
+          </MenuItem>
+        )}
+        <MenuItem 
+          onClick={(e) => {
+            handleMenuClose();
+            handleDeleteClick(activeMenuFile!, e as any);
+          }}
+          sx={{ gap: 1.5, py: 1, color: 'error.main' }}
+        >
+          <DeleteIcon fontSize="small" color="error" />
+          <ListItemText primary="삭제" primaryTypographyProps={{ fontSize: '0.85rem', fontWeight: 500, color: 'error.main' }} />
+        </MenuItem>
+      </Menu>
     </Container>
   );
 };

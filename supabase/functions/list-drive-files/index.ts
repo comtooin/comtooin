@@ -87,7 +87,7 @@ serve(async (req) => {
 
     const driveParams = new URLSearchParams({
       q: `'${folderId}' in parents and trashed = false`,
-      fields: 'files(id, name, mimeType, size, webViewLink, modifiedTime)',
+      fields: 'files(id, name, mimeType, size, webViewLink, webContentLink, modifiedTime)',
       orderBy: 'folder,name',
       pageSize: '500', 
     });

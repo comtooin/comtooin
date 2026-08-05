@@ -49,6 +49,7 @@ export function useVoiceTyping(
   const analyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
   const lastActiveTimeRef = useRef<number>(0);
+  const hasSpokenRef = useRef<boolean>(false);
 
   // 리소스 청정화 (Cleanup)
   const cleanup = useCallback(() => {
@@ -98,7 +99,29 @@ export function useVoiceTyping(
       if (functionError) throw functionError;
 
       if (data?.text) {
-        onTranscriptionComplete(data.text);
+        const trimmedText = data.text.trim();
+        const lowerText = trimmedText.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?]/g, "").replace(/\s+/g, "");
+        
+        const WHISPER_HALLUCINATIONS = [
+          '감사합니다',
+          'mbc뉴스',
+          'mbc뉴스입니다',
+          '시청해주셔서감사합니다',
+          '구독과좋아요',
+          '구독과좋아요부탁드립니다',
+          'thankyou',
+          'you',
+          'oh',
+          'ah'
+        ];
+
+        const isHallucination = WHISPER_HALLUCINATIONS.some(phrase => lowerText === phrase || lowerText.includes('시청해주셔서') || lowerText.includes('구독과좋아요'));
+        
+        if (isHallucination && trimmedText.length < 20) {
+          console.log('Filtered Whisper silence hallucination:', trimmedText);
+        } else {
+          onTranscriptionComplete(data.text);
+        }
       } else {
         throw new Error('변환된 텍스트를 받아오지 못했습니다.');
       }
@@ -116,11 +139,13 @@ export function useVoiceTyping(
     cleanup();
     setIsRecording(false);
 
-    if (shouldProcess && audioChunksRef.current.length > 0) {
+    if (shouldProcess && audioChunksRef.current.length > 0 && hasSpokenRef.current) {
       const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
       if (audioBlob.size > 1000) {
         uploadAndTranscribe(audioBlob);
       }
+      audioChunksRef.current = [];
+    } else {
       audioChunksRef.current = [];
     }
   }, [cleanup, uploadAndTranscribe]);
@@ -130,6 +155,7 @@ export function useVoiceTyping(
     cleanup();
     setError(null);
     audioChunksRef.current = [];
+    hasSpokenRef.current = false;
 
     if (typeof MediaRecorder === 'undefined') {
       setError('이 브라우저는 오디오 녹음(MediaRecorder) 기능을 지원하지 않습니다. 최신 브라우저를 사용해 주세요.');
@@ -205,6 +231,7 @@ export function useVoiceTyping(
         if (rms > SILENCE_THRESHOLD) {
           // 사용자가 말하고 있으면 침묵 시간 리셋
           lastActiveTimeRef.current = now;
+          hasSpokenRef.current = true;
         } else {
           // 침묵 상태가 기준 임계치 시간을 초과했는지 확인
           if (now - lastActiveTimeRef.current > SILENCE_DURATION) {
