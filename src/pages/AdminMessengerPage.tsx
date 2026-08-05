@@ -28,9 +28,11 @@ import ForumIcon from '@mui/icons-material/Forum';
 import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+import MicIcon from '@mui/icons-material/Mic';
 import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { VoiceRecorderDialog } from '../components/VoiceRecorderDialog';
 
 interface ChatRoom {
   id: string;
@@ -75,6 +77,7 @@ const AdminMessengerPage: React.FC = () => {
   const [currentStaffId, setCurrentStaffId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [voiceOpen, setVoiceOpen] = useState(false);
   
   // 모바일 화면용 마스터-디테일 상태 (true: 방 목록, false: 활성 대화창)
   const [mobileShowList, setMobileShowList] = useState(true);
@@ -780,6 +783,25 @@ const AdminMessengerPage: React.FC = () => {
           />
           <IconButton
             color="primary"
+            onClick={() => setVoiceOpen(true)}
+            disabled={submitting}
+            sx={{
+              p: 1.25,
+              borderRadius: 1.5,
+              border: '1px solid',
+              borderColor: 'divider',
+              color: 'text.secondary',
+              transition: 'all 0.15s ease',
+              '&:hover': {
+                bgcolor: 'rgba(25, 118, 210, 0.04)',
+                transform: 'scale(1.05)',
+              },
+            }}
+          >
+            <MicIcon sx={{ fontSize: 18 }} />
+          </IconButton>
+          <IconButton
+            color="primary"
             onClick={handleSend}
             disabled={!content.trim() || submitting}
             sx={{
@@ -965,6 +987,15 @@ const AdminMessengerPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <VoiceRecorderDialog
+        open={voiceOpen}
+        onClose={() => setVoiceOpen(false)}
+        onTranscriptionComplete={(text) => {
+          setContent(prev => prev + (prev ? ' ' : '') + text);
+        }}
+        promptText="컴투인, 유지보수, 메신저, 채팅, 대화, 메세지, 업무보고, 장애공유, 확인바람"
+      />
     </Container>
   );
 };

@@ -23,6 +23,7 @@ import {
 } from '@mui/icons-material';
 import { Helmet } from 'react-helmet-async';
 import { supabase, sendPushNotification } from '../api';
+import { VoiceRecorderDialog } from '../components/VoiceRecorderDialog';
 
 // 타입 정의
 interface Staff { id: string; name: string; email: string; }
@@ -268,72 +269,8 @@ const AdminSchedulePage: React.FC = () => {
     setOpen(true);
   };
 
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
-
   const handleSTT = () => {
-    if (isSTTActive) {
-      if (recognitionInstance) {
-        recognitionInstance.manualStop = true;
-        recognitionInstance.stop();
-        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
-      }
-      setIsSTTActive(false);
-      return;
-    }
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-    if (!SpeechRecognition) return alert('음성 인식을 지원하지 않는 브라우저입니다.');
-    
-    if (recognitionInstance) {
-      recognitionInstance.manualStop = true;
-      recognitionInstance.stop();
-      if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ko-KR';
-    recognition.continuous = true; 
-    recognition.interimResults = false; 
-    recognition.manualStop = false;
-    recognition.lastProcessedResultIndex = -1;
-    
-    const resetSilenceTimeout = () => {
-      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
-      recognition.silenceTimeout = setTimeout(() => {
-        recognition.manualStop = true;
-        recognition.stop();
-        setIsSTTActive(false);
-      }, 10000); 
-    };
-
-    recognition.onstart = () => {
-      setIsSTTActive(true);
-      resetSilenceTimeout();
-    };
-
-    recognition.onend = () => {
-      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
-      if (!recognition.manualStop) {
-        try { recognition.start(); } catch (e) { setIsSTTActive(false); }
-      } else {
-        setIsSTTActive(false);
-      }
-    };
-
-    recognition.onresult = (e: any) => {
-      resetSilenceTimeout();
-      
-      const latestIndex = e.results.length - 1;
-      if (latestIndex <= recognition.lastProcessedResultIndex) return; // 중복 방지
-      recognition.lastProcessedResultIndex = latestIndex;
-
-      const transcript = e.results[latestIndex][0].transcript;
-      if (transcript) {
-        setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + transcript }));
-      }
-    };
-    
-    setRecognitionInstance(recognition);
-    recognition.start();
+    setIsSTTActive(true);
   };
 
   const handleAIPolish = async () => {
@@ -1012,6 +949,15 @@ const AdminSchedulePage: React.FC = () => {
           </>
         )}
       </Dialog>
+
+      <VoiceRecorderDialog
+        open={isSTTActive}
+        onClose={() => setIsSTTActive(false)}
+        onTranscriptionComplete={(text) => {
+          setFormData(p => ({ ...p, content: p.content + (p.content ? ' ' : '') + text }));
+        }}
+        promptText="컴투인, 유지보수, 일정등록, 스케줄, 담당자, 거래처, 업무기록, 방문점검"
+      />
     </Container>
   );
 };

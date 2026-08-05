@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useVoiceTyping as useVoiceRecorder } from '../hooks/useVoiceTyping';
 
 import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
@@ -179,10 +180,15 @@ const AdminReportPage: React.FC = () => {
   const [processingContent, setProcessingContent] = useState(''); 
   const [images, setImages] = useState<File[]>([]);
   const [logError, setLogError] = useState('');
-  const [isListening, setIsListening] = useState<'content' | 'processingContent' | null>(null);
   const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [recognitionInstance, setRecognitionInstance] = useState<any>(null);
+
+  const voiceContent = useVoiceRecorder((text) => {
+    setContent(prev => prev ? `${prev} ${text}` : text);
+  });
+  const voiceProcessing = useVoiceRecorder((text) => {
+    setProcessingContent(prev => prev ? `${prev} ${text}` : text);
+  });
 
   useEffect(() => {
     const storedName = sessionStorage.getItem('adminName');
@@ -218,72 +224,7 @@ const AdminReportPage: React.FC = () => {
     });
   };
 
-  const handleVoiceInput = (target: 'content' | 'processingContent') => {
-    if (isListening === target) {
-      if (recognitionInstance) {
-        recognitionInstance.manualStop = true;
-        recognitionInstance.stop();
-        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
-      }
-      setIsListening(null);
-      return;
-    }
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) return alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
-    
-    if (recognitionInstance) {
-        recognitionInstance.manualStop = true;
-        recognitionInstance.stop();
-        if (recognitionInstance.silenceTimeout) clearTimeout(recognitionInstance.silenceTimeout);
-    }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ko-KR';
-    recognition.continuous = true; 
-    recognition.interimResults = false; 
-    recognition.manualStop = false;
-    recognition.lastProcessedResultIndex = -1;
-    
-    const resetSilenceTimeout = () => {
-      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
-      recognition.silenceTimeout = setTimeout(() => {
-        recognition.manualStop = true;
-        recognition.stop();
-        setIsListening(null);
-      }, 10000); 
-    };
-
-    recognition.onstart = () => {
-      setIsListening(target);
-      resetSilenceTimeout();
-    };
-    
-    recognition.onend = () => {
-      if (recognition.silenceTimeout) clearTimeout(recognition.silenceTimeout);
-      if (!recognition.manualStop) {
-        try { recognition.start(); } catch (e) { setIsListening(null); }
-      } else {
-        setIsListening(null);
-      }
-    };
-
-    recognition.onresult = (event: any) => {
-      resetSilenceTimeout(); 
-      
-      const latestIndex = event.results.length - 1;
-      if (latestIndex <= recognition.lastProcessedResultIndex) return;
-      recognition.lastProcessedResultIndex = latestIndex;
-
-      const transcript = event.results[latestIndex][0].transcript;
-      if (transcript) {
-        if (target === 'content') setContent(prev => prev ? `${prev} ${transcript}` : transcript);
-        else setProcessingContent(prev => prev ? `${prev} ${transcript}` : transcript);
-      }
-    };
-    
-    setRecognitionInstance(recognition);
-    recognition.start();
-  };
 
   const handlePolishText = async (target: 'content' | 'processingContent') => {
     const textToPolish = target === 'content' ? content : processingContent;
@@ -2542,7 +2483,11 @@ const AdminReportPage: React.FC = () => {
       <Dialog 
         open={workLogOpen} 
         onClose={() => {
-          if (!submitting) setWorkLogOpen(false);
+          if (!submitting) {
+            voiceContent.stopRecording(false);
+            voiceProcessing.stopRecording(false);
+            setWorkLogOpen(false);
+          }
         }} 
         maxWidth="md" 
         fullWidth
@@ -2652,7 +2597,14 @@ const AdminReportPage: React.FC = () => {
                           variant="outlined" 
                           size="small" 
                           startIcon={<MicIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
-                          onClick={() => handleVoiceInput('content')} 
+                          onClick={() => {
+                            if (voiceContent.isListening) {
+                              voiceContent.stopRecording(false);
+                            } else {
+                              if (voiceProcessing.isListening) voiceProcessing.stopRecording(false);
+                              voiceContent.startRecording();
+                            }
+                          }} 
                           sx={{ 
                             fontWeight: 'bold',
                             fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
@@ -2661,13 +2613,13 @@ const AdminReportPage: React.FC = () => {
                             minWidth: 'auto', 
                             px: { xs: 0.75, sm: 1.5 }, 
                             whiteSpace: 'nowrap',
-                            borderColor: isListening === 'content' ? 'primary.main' : 'divider',
+                            borderColor: voiceContent.isListening ? 'primary.main' : 'divider',
                             '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
-                          color={isListening === 'content' ? 'primary' : 'inherit'}
-                          disabled={!!isPolishing || submitting}
+                          color={voiceContent.isListening ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing || submitting || voiceProcessing.isListening}
                         >
-                          {isListening === 'content' ? '인식 중...' : '음성'}
+                          {voiceContent.isListening ? '인식 중...' : '음성'}
                         </Button>
                         <Button 
                           variant="outlined" 
@@ -2686,7 +2638,7 @@ const AdminReportPage: React.FC = () => {
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
                             '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
-                          disabled={!!isPolishing || !!isListening || submitting}
+                          disabled={!!isPolishing || voiceContent.isListening || voiceProcessing.isListening || submitting}
                         >
                           {isPolishing === 'content' ? '정돈 중...' : 'AI 정돈'}
                         </Button>
@@ -2719,7 +2671,14 @@ const AdminReportPage: React.FC = () => {
                           variant="outlined" 
                           size="small" 
                           startIcon={<MicIcon sx={{ fontSize: { xs: '0.8rem !important', sm: '0.95rem !important' } }} />} 
-                          onClick={() => handleVoiceInput('processingContent')} 
+                          onClick={() => {
+                            if (voiceProcessing.isListening) {
+                              voiceProcessing.stopRecording(false);
+                            } else {
+                              if (voiceContent.isListening) voiceContent.stopRecording(false);
+                              voiceProcessing.startRecording();
+                            }
+                          }} 
                           sx={{ 
                             fontWeight: 'bold',
                             fontSize: { xs: '0.68rem', sm: '0.75rem' }, 
@@ -2728,13 +2687,13 @@ const AdminReportPage: React.FC = () => {
                             minWidth: 'auto', 
                             px: { xs: 0.75, sm: 1.5 }, 
                             whiteSpace: 'nowrap',
-                            borderColor: isListening === 'processingContent' ? 'primary.main' : 'divider',
+                            borderColor: voiceProcessing.isListening ? 'primary.main' : 'divider',
                             '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
-                          color={isListening === 'processingContent' ? 'primary' : 'inherit'}
-                          disabled={!!isPolishing || submitting}
+                          color={voiceProcessing.isListening ? 'primary' : 'inherit'}
+                          disabled={!!isPolishing || submitting || voiceContent.isListening}
                         >
-                          {isListening === 'processingContent' ? '인식 중...' : '음성'}
+                          {voiceProcessing.isListening ? '인식 중...' : '음성'}
                         </Button>
                         <Button 
                           variant="outlined" 
@@ -2753,7 +2712,7 @@ const AdminReportPage: React.FC = () => {
                             '&:hover': { bgcolor: 'rgba(103, 58, 183, 0.04)', borderColor: '#512da8' },
                             '& .MuiButton-startIcon': { mr: { xs: 0.5, sm: 1 } }
                           }}
-                          disabled={!!isPolishing || !!isListening || submitting}
+                          disabled={!!isPolishing || voiceContent.isListening || voiceProcessing.isListening || submitting}
                         >
                           {isPolishing === 'processingContent' ? '정돈 중...' : 'AI 정돈'}
                         </Button>
