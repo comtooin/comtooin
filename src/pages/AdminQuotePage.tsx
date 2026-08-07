@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ExcelJS from 'exceljs';
 import {
   Container, Typography, Box, Paper, TextField, Button, 
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -306,7 +307,7 @@ const AdminQuotePage: React.FC = () => {
         scrollY: 0,
         backgroundColor: '#ffffff' // 배경을 하얗게 채워 투명화 방지
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       
       const pdf = new jsPDF('p', 'mm', 'a4');
@@ -325,6 +326,361 @@ const AdminQuotePage: React.FC = () => {
     } finally {
       // 캡처 완료 후 클론 제거
       document.body.removeChild(clone);
+    }
+  };
+
+  const handleDownloadExcel = async () => {
+    if (items.length === 0) return;
+
+    const fileName = `컴투인_견적서_${customerName || '고객'}_${format(new Date(), 'yyyyMMdd')}.xlsx`;
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('견적서', {
+        views: [{ showGridLines: false }]
+      });
+
+      // 1. 이미지 로드용 헬퍼 비동기 함수
+      const loadImage = async (url: string): Promise<ArrayBuffer> => {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`Failed to load image: ${url}`);
+        return await response.arrayBuffer();
+      };
+
+      // 2. 18개 미세 컬럼(A~R) 생성 및 너비 지정 (그리드 분할 및 가로 마진 확장 기법)
+      worksheet.columns = Array.from({ length: 18 }, (_, i) => ({
+        key: String.fromCharCode(65 + i),
+        width: 6.5
+      }));
+
+      // 3. 대제목 '견 적 서' 행 작성 (동적 행 추적)
+      const titleRow = worksheet.addRow(['견 적 서', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+      titleRow.height = 60;
+      const tRowIdx = titleRow.number;
+      worksheet.mergeCells(`A${tRowIdx}:R${tRowIdx}`);
+      const titleCell = worksheet.getCell(`A${tRowIdx}`);
+      titleCell.font = { name: '맑은 고딕', size: 20, bold: true };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // 3.1. 상단 사명 로고 이미지 가져오기 및 삽입
+      try {
+        const logoBuffer = await loadImage('/comtooin_logo.jpg');
+        const logoId = workbook.addImage({
+          buffer: logoBuffer,
+          extension: 'jpeg'
+        });
+        // 대제목 행 A~D열 부근에 로고 얹기
+        worksheet.addImage(logoId, {
+          tl: { col: 0.15, row: tRowIdx - 1 + 0.1 },
+          ext: { width: 130, height: 48 }
+        });
+      } catch (err) {
+        console.warn('Excel Logo Image Loading Bypass:', err);
+      }
+
+      // 2행: 빈행
+      const spaceRow1 = worksheet.addRow([]);
+      spaceRow1.height = 12;
+
+      // 3행 ~ 8행: 공급받는자 / 공급자 영역 로우 조립 (18개 그리드 구조)
+      const dateStr = format(new Date(), 'yyyy년 MM월 dd일');
+      
+      // 3행 (수신 | 값 | 공급자 세로 | 등록번호 | 값)
+      const row3 = worksheet.addRow(['수 신', '', '', '', `${customerName || ''} 귀하`, '', '', '', '', '공\n급\n자', '등록번호', '', '108-17-56709', '', '', '', '', '']);
+      // 4행 (견적일자 | 값 | 공급자 | 상호 | 값 | 성명 | 값 | 도장용빈셀)
+      const row4 = worksheet.addRow(['견적일자', '', '', '', dateStr, '', '', '', '', '', '상호(명칭)', '', '컴투인', '', '', '성 명', '김종범', '']);
+      // 5행 (유효기간 | 값 | 공급자 | 주소 | 값)
+      const row5 = worksheet.addRow(['유효기간', '', '', '', '견적일로부터 7일', '', '', '', '', '', '사업장주소', '', '경기도 의정부시 신촌로63번길42 501호', '', '', '', '', '']);
+      // 6행 (아래와같이 | 공급자 | 업태 | 값 | 종목 | 값)
+      const row6 = worksheet.addRow(['아래와 같이 견적합니다.', '', '', '', '', '', '', '', '', '', '업 태', '', '도소매', '', '종 목', '컴퓨터 및 주변기기', '', '']);
+      // 7행 (합계금액 | 값 | 공급자 | 담당자 | 값)
+      const row7 = worksheet.addRow(['합계금액\n(VAT포함)', '', `${Math.round(totalFinal * 1.1).toLocaleString()} 원`, '', '', '', '', '', '', '', '담당자', '', currentUser?.name || '관리자', '', '', '', '', '']);
+      // 8행 (빈칸 | 값 | 공급자 | 연락처 | 값 | 이메일 | 값)
+      const row8 = worksheet.addRow(['', '', '', '', '', '', '', '', '', '', '연락처', '', currentUser?.phone || '-', '', '이메일', currentUser?.email || '-', '', '']);
+
+      const startRow = row3.number; 
+      const endRow = row8.number;   
+
+      // 18개 그리드 기반 정밀 셀 병합(Merge) 규칙 실행
+      worksheet.mergeCells(`A${startRow}:D${startRow}`); // 수신 타이틀
+      worksheet.mergeCells(`E${startRow}:I${startRow}`); // 수신 귀하 값
+      worksheet.mergeCells(`J${startRow}:J${endRow}`);     // 공급자 세로 표기 병합 (J열)
+      worksheet.mergeCells(`K${startRow}:L${startRow}`); // 등록번호 타이틀
+      worksheet.mergeCells(`M${startRow}:R${startRow}`); // 등록번호 값 (6칸 병합으로 짤림 제로!)
+
+      worksheet.mergeCells(`A${row4.number}:D${row4.number}`); // 견적일자 타이틀
+      worksheet.mergeCells(`E${row4.number}:I${row4.number}`); // 견적일자 값
+      worksheet.mergeCells(`K${row4.number}:L${row4.number}`); // 상호 타이틀 (2칸 병합으로 상호(명칭) 짤림 방어!)
+      worksheet.mergeCells(`M${row4.number}:O${row4.number}`); // 상호 값 (3칸 병합으로 컴투인 수용)
+      // P4는 성명 타이틀(1칸), Q4는 김종범(1칸), R4는 도장칸(1칸)으로 배치!
+
+      worksheet.mergeCells(`A${row5.number}:D${row5.number}`); // 유효기간 타이틀
+      worksheet.mergeCells(`E${row5.number}:I${row5.number}`); // 유효기간 값
+      worksheet.mergeCells(`K${row5.number}:L${row5.number}`); // 주소 타이틀 (2칸)
+      worksheet.mergeCells(`M${row5.number}:R${row5.number}`); // 주소 값 (6칸 병합으로 주소 짤림 방어!)
+
+      worksheet.mergeCells(`A${row6.number}:I${row6.number}`); // 아래와 같이 견적합니다
+      worksheet.mergeCells(`K${row6.number}:L${row6.number}`); // 업태 타이틀 (2칸)
+      worksheet.mergeCells(`M${row6.number}:N${row6.number}`); // 업태 값 (L6 대신 M6:N6 병합하여 도소매 2칸 수용!)
+      worksheet.mergeCells(`P${row6.number}:R${row6.number}`); // 종목 값 병합 (3칸 병합하여 컴퓨터 및 주변기기 수용)
+      // O6은 종목 타이틀 (1칸)
+
+      worksheet.mergeCells(`A${row7.number}:B${row8.number}`); // 합계금액 / (VAT포함) 가로 2칸 및 세로 2행 전격 병합!
+      worksheet.mergeCells(`C${row7.number}:I${row8.number}`); // 합계금액 값 영역 가로 7칸 및 세로 2행 전체 병합!
+      worksheet.mergeCells(`K${row7.number}:L${row7.number}`); // 담당자 타이틀 (2칸)
+      worksheet.mergeCells(`M${row7.number}:R${row7.number}`); // 담당자 값 (6칸)
+
+      worksheet.mergeCells(`K${row8.number}:L${row8.number}`); // 연락처 타이틀 (2칸)
+      worksheet.mergeCells(`M${row8.number}:N${row8.number}`); // 연락처 값 (2칸 병합으로 연락처 짤림 박멸!)
+      worksheet.mergeCells(`P${row8.number}:R${row8.number}`); // 이메일 값 (3칸 병합으로 긴 이메일 주소 짤림 박멸!)
+      // O8은 이메일 타이틀 (1칸)
+
+      // 행 높이 지정
+      for (let i = startRow; i <= endRow; i++) {
+        worksheet.getRow(i).height = 20;
+      }
+      worksheet.getRow(row7.number).height = 24; 
+
+      // 5. 대표자 직인 도장 이미지 가져오기 및 성명 셀 우측 전용 칸(R4) 오버레이 삽입
+      try {
+        const stampBuffer = await loadImage('/stamp.png');
+        const stampId = workbook.addImage({
+          buffer: stampBuffer,
+          extension: 'png'
+        });
+        // R4 (18번째 열, 0-based index 17) 빈 칸 정중앙에 직인을 투영하여 이름을 절대 가리지 않음!
+        worksheet.addImage(stampId, {
+          tl: { col: 17.05, row: row4.number - 1 + 0.1 }, 
+          ext: { width: 32, height: 32 }
+        });
+      } catch (err) {
+        console.warn('Excel Stamp Image Loading Bypass:', err);
+      }
+
+      // 공통 셀 테두리 및 서식 디자인 정의
+      const thinBorder = {
+        top: { style: 'thin' as const, color: { argb: 'CCCCCC' } },
+        left: { style: 'thin' as const, color: { argb: 'CCCCCC' } },
+        bottom: { style: 'thin' as const, color: { argb: 'CCCCCC' } },
+        right: { style: 'thin' as const, color: { argb: 'CCCCCC' } }
+      };
+
+      for (let r = startRow; r <= endRow; r++) {
+        for (let c = 1; c <= 18; c++) {
+          const cell = worksheet.getCell(r, c);
+          cell.border = thinBorder;
+          cell.font = { name: '맑은 고딕', size: 9 };
+          
+          // 기본값: 정갈한 가운데 정렬 적용
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          
+          // 긴 값 셀만 왼쪽 정렬 오버라이드
+          const isLeftAlign = 
+            (c >= 5 && c <= 9 && r !== row6.number) || // 수신 귀하 값, 견적일자 값, 유효기간 값
+            (c >= 13 && c <= 18 && r === row5.number) || // 사업장주소 값 (6칸)
+            (c >= 16 && c <= 18 && r === row8.number);   // 이메일 값 (3칸)
+
+          if (isLeftAlign) {
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          }
+          
+          // 헤더 및 회색 타이틀 영역 처리 (18열 그리드 정합성 보완)
+          const isGray = 
+            (c >= 1 && c <= 4 && r !== row6.number && r !== row7.number && r !== row8.number) || // 수신, 견적일자, 유효기간 타이틀
+            (c === 10) || // 공급자 세로 셀
+            (c >= 11 && c <= 12 && r === row3.number) || // 등록번호 타이틀
+            (c >= 11 && c <= 12 && r === row5.number) || // 사업장주소 타이틀
+            (c >= 11 && c <= 12 && r === row4.number) || // 상호(명칭) 타이틀
+            (c === 16 && r === row4.number) || // 성 명 타이틀
+            (c >= 11 && c <= 12 && r === row6.number) || // 업 태 타이틀
+            (c === 15 && r === row6.number) || // 종 목 타이틀
+            (c >= 11 && c <= 12 && r === row7.number) || // 담당자 타이틀
+            (c >= 11 && c <= 12 && r === row8.number) || // 연락처 타이틀
+            (c === 15 && r === row8.number) || // 이메일 타이틀
+            (c >= 1 && c <= 2 && (r === row7.number || r === row8.number)); // 합계금액/VAT포함 타이틀
+
+          if (isGray) {
+            cell.fill = {
+              type: 'pattern',
+              pattern: 'solid',
+              fgColor: { argb: 'F2F2F2' }
+            };
+            cell.font = { name: '맑은 고딕', size: 9, bold: true };
+          }
+        }
+      }
+
+      // 특정 셀 정렬 미세 보정
+      worksheet.getCell(`J${startRow}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      worksheet.getCell(`A${row6.number}`).alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getCell(`A${row7.number}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      worksheet.getCell(`C${row7.number}`).alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getCell(`C${row7.number}`).font = { name: '맑은 고딕', size: 12, bold: true };
+
+      // 상하단 굵은 검정 테두리 마감선
+      for (let c = 1; c <= 18; c++) {
+        const topCell = worksheet.getCell(startRow, c);
+        topCell.border = { ...topCell.border, top: { style: 'medium' as const, color: { argb: '000000' } } };
+        const bottomCell = worksheet.getCell(endRow, c);
+        bottomCell.border = { ...bottomCell.border, bottom: { style: 'medium' as const, color: { argb: '000000' } } };
+      }
+
+      // 9행: 빈행
+      const spaceRow2 = worksheet.addRow([]);
+      spaceRow2.height = 15;
+
+      // 10행: 품목 목록 헤더 (18칸 분할 정렬)
+      const headerRow = worksheet.addRow(['NO', '', '분류', '', '품목명 / 규격', '', '', '', '', '', '', '', '수량', '단가', '', '공급가액', '', '']);
+      headerRow.height = 24;
+      const hRowIdx = headerRow.number;
+      
+      worksheet.mergeCells(`A${hRowIdx}:B${hRowIdx}`); // NO (2칸)
+      worksheet.mergeCells(`C${hRowIdx}:D${hRowIdx}`); // 분류 (2칸)
+      worksheet.mergeCells(`E${hRowIdx}:L${hRowIdx}`); // 품목명 / 규격 (8칸!)
+      // M10은 수량 (1칸)
+      worksheet.mergeCells(`N${hRowIdx}:O${hRowIdx}`); // 단가 (2칸)
+      worksheet.mergeCells(`P${hRowIdx}:R${hRowIdx}`); // 공급가액 (3칸!)
+
+      for (let c = 1; c <= 18; c++) {
+        const cell = worksheet.getCell(hRowIdx, c);
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'E6E6E6' }
+        };
+        cell.font = { name: '맑은 고딕', size: 9, bold: true };
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = thinBorder;
+      }
+
+      // 11행 ~ : 품목 리스트 작성 (18칸 그리드 대응)
+      items.forEach((item, index) => {
+        const row = worksheet.addRow([
+          index + 1, '',
+          item.category || '', '',
+          item.name || '', '', '', '', '', '', '', '',
+          item.quantity,
+          item.finalPrice, '',
+          item.finalPrice * item.quantity, '', ''
+        ]);
+        row.height = 20;
+        const curRowIdx = row.number;
+
+        worksheet.mergeCells(`A${curRowIdx}:B${curRowIdx}`); // NO (2칸)
+        worksheet.mergeCells(`C${curRowIdx}:D${curRowIdx}`); // 분류 (2칸)
+        worksheet.mergeCells(`E${curRowIdx}:L${curRowIdx}`); // 품목명 (8칸)
+        // M열 수량
+        worksheet.mergeCells(`N${curRowIdx}:O${curRowIdx}`); // 단가 (2칸)
+        worksheet.mergeCells(`P${curRowIdx}:R${curRowIdx}`); // 공급가액 (3칸)
+
+        for (let c = 1; c <= 18; c++) {
+          const cell = worksheet.getCell(curRowIdx, c);
+          cell.border = thinBorder;
+          cell.font = { name: '맑은 고딕', size: 9 };
+          
+          if (c === 1 || c === 3) {
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+          } else if (c === 5) {
+            cell.alignment = { vertical: 'middle', horizontal: 'left' };
+          } else if (c === 13) {
+            cell.numFmt = '#,##0';
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          } else if (c === 14 || c === 16) {
+            cell.numFmt = '#,##0';
+            cell.alignment = { vertical: 'middle', horizontal: 'right' };
+          }
+        }
+      });
+
+      // 패딩 빈 줄 추가 (총 10개 행 확보, 18칸 그리드)
+      const paddingLength = Math.max(0, 10 - items.length);
+      for (let i = 0; i < paddingLength; i++) {
+        const row = worksheet.addRow(['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
+        row.height = 20;
+        const curRowIdx = row.number;
+
+        worksheet.mergeCells(`A${curRowIdx}:B${curRowIdx}`);
+        worksheet.mergeCells(`C${curRowIdx}:D${curRowIdx}`);
+        worksheet.mergeCells(`E${curRowIdx}:L${curRowIdx}`);
+        worksheet.mergeCells(`N${curRowIdx}:O${curRowIdx}`);
+        worksheet.mergeCells(`P${curRowIdx}:R${curRowIdx}`);
+
+        for (let c = 1; c <= 18; c++) {
+          const cell = worksheet.getCell(curRowIdx, c);
+          cell.border = thinBorder;
+        }
+      }
+
+      // 총 합계 행 생성 및 이식 (18칸 대응)
+      const totalQty = items.reduce((sum, item) => sum + item.quantity, 0);
+      const totalRow = worksheet.addRow([
+        '총 합계', '', '', '', '', '', '', '', '', '', '', '',
+        totalQty,
+        totalFinal, '',
+        totalFinal, '', ''
+      ]);
+      totalRow.height = 22;
+      const totalRowIdx = totalRow.number;
+
+      worksheet.mergeCells(`A${totalRowIdx}:L${totalRowIdx}`); // 합계 텍스트 병합 (12칸)
+      worksheet.mergeCells(`N${totalRowIdx}:O${totalRowIdx}`); // 단가 영역 병합
+      worksheet.mergeCells(`P${totalRowIdx}:R${totalRowIdx}`); // 최종 합계 금액 (3칸)
+
+      for (let c = 1; c <= 18; c++) {
+        const cell = worksheet.getCell(totalRowIdx, c);
+        cell.border = thinBorder;
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'F9F9F9' }
+        };
+        cell.font = { name: '맑은 고딕', size: 9, bold: true };
+
+        if (c === 1) {
+          cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        } else if (c === 12) {
+          cell.numFmt = '#,##0';
+          cell.alignment = { vertical: 'middle', horizontal: 'right' };
+        } else if (c === 15) {
+          cell.numFmt = '#,##0';
+          cell.alignment = { vertical: 'middle', horizontal: 'right' };
+        }
+      }
+
+      // 품목 테이블 상하단 굵은 검정 테두리 마감선 (18열 전 영역 마감)
+      for (let c = 1; c <= 18; c++) {
+        const headerTopCell = worksheet.getCell(hRowIdx, c);
+        headerTopCell.border = { ...headerTopCell.border, top: { style: 'medium' as const, color: { argb: '000000' } } };
+        const footerBottomCell = worksheet.getCell(totalRowIdx, c);
+        footerBottomCell.border = { ...footerBottomCell.border, bottom: { style: 'medium' as const, color: { argb: '000000' } } };
+      }
+
+      // 안내 문구 추가
+      worksheet.addRow([]); // 빈줄
+      worksheet.addRow(['* 부품 수급 상황에 따라 동급의 타사 제품으로 대체될 수 있습니다.']);
+      worksheet.mergeCells(`A${totalRowIdx + 2}:R${totalRowIdx + 2}`);
+      worksheet.getCell(`A${totalRowIdx + 2}`).font = { name: '맑은 고딕', size: 8, color: { argb: '666666' } };
+
+      worksheet.addRow([]); // 빈줄
+      worksheet.addRow(['* 가격정보가 수시로 변경 되므로 구매시 최종 단가를 반드시 다시 확인하시기 바랍니다.']);
+      worksheet.mergeCells(`A${totalRowIdx + 4}:R${totalRowIdx + 4}`);
+      worksheet.getCell(`A${totalRowIdx + 4}`).font = { name: '맑은 고딕', size: 8, color: { argb: '666666' } };
+
+      // 10. 진짜 .xlsx 바이너리 버퍼 생성 및 브라우저 다운로드 연계
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+    } catch (error) {
+      console.error('ExcelJS generation failed:', error);
+      alert('엑셀 파일 생성에 실패했습니다.');
     }
   };
 
@@ -905,6 +1261,16 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
             sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}
           >
             PDF 다운로드
+          </Button>
+          <Button 
+            variant="contained" 
+            color="success" 
+            startIcon={<DownloadIcon />}
+            onClick={() => { handleDownloadExcel(); setPreviewOpen(false); }}
+            disabled={items.length === 0}
+            sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, bgcolor: '#2e7d32', '&:hover': { bgcolor: '#1b5e20' } }}
+          >
+            엑셀 다운로드
           </Button>
           <Button onClick={() => setPreviewOpen(false)} variant="outlined" color="inherit" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1 }}>
             닫기
