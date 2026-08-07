@@ -983,7 +983,17 @@ const AdminMessengerPage: React.FC = () => {
       </Dialog>
 
       {/* 새 채팅방 개설 모달 다이얼로그 */}
-      <Dialog open={createRoomOpen} onClose={() => setCreateRoomOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog 
+        open={createRoomOpen} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setCreateRoomOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
+        maxWidth="xs" 
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1 }}>새 채팅방 개설</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <TextField

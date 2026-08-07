@@ -775,7 +775,12 @@ const AdminSchedulePage: React.FC = () => {
       {/* 등록 팝업 */}
       <Dialog 
         open={open} 
-        onClose={() => setOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="md" 
         fullWidth
         transitionDuration={0}
@@ -909,7 +914,12 @@ const AdminSchedulePage: React.FC = () => {
       {/* 상세 보기 팝업 */}
       <Dialog 
         open={detailOpen} 
-        onClose={() => setDetailOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setDetailOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="md" 
         fullWidth
         transitionDuration={0}
@@ -929,7 +939,23 @@ const AdminSchedulePage: React.FC = () => {
                 <CalendarMonthIcon color="action" sx={{ fontSize: '1.25rem' }} />
                 <span>일정 상세</span>
               </Box>
-              <Chip label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} size="small" color="primary" variant="outlined" sx={{ borderRadius: 1 }} />
+              <Chip 
+                icon={<AccessTimeIcon sx={{ fontSize: '0.85rem !important', color: '#ffffff !important' }} />}
+                label={selectedEvent.all_day ? selectedEvent.start_time.split('T')[0] : `${selectedEvent.start_time.split('T')[0]} ${selectedEvent.start_time.split('T')[1].substring(0, 5)}`} 
+                size="small" 
+                color="primary" 
+                variant="filled" 
+                sx={{ 
+                  borderRadius: 1, 
+                  fontWeight: 'bold', 
+                  fontSize: '0.75rem',
+                  height: '26px',
+                  px: 0.5,
+                  '& .MuiChip-label': {
+                    color: '#ffffff'
+                  }
+                }} 
+              />
             </DialogTitle>
             <DialogContent dividers sx={{ p: { xs: 1.5, sm: 3 } }}>
               <Stack spacing={{ xs: 1.5, sm: 2 }} sx={{ pt: 1 }}>

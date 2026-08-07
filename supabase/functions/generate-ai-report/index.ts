@@ -160,9 +160,9 @@ serve(async (req) => {
 # 리포트 구성 및 시인성 강화 지침:
 1. 출력은 마크다운이 아닌 반드시 **HTML 형식**으로만 작성해주세요. <html> 이나 <body> 태그는 포함하지 말고 <h1>, <h2>, <p>, <ul>, <li>, <table>, <tr>, <th>, <td>, <span> 등 내용 태그만 사용하세요.
 2. 각 세션 사이에 구분선(<hr style="border:0;border-top:1px solid #eee;margin:20px 0;"/>) 또는 스타일링을 지정하여 세련되게 분리하세요. 주 컬러는 보라색(#673ab7)을 사용하세요.
-3. 데이터 시각화 (막대그래프):
-   장애 유형 분포 및 발생 빈도는 반드시 아래와 같은 가로 막대 그래프 형식의 HTML/CSS 코드를 출력에 활용하여 시각화해주세요:
-   <div style="margin-bottom:10px;"><span style="display:inline-block;width:150px;font-size:13px;">[장애유형] ([비율]%)</span><span style="display:inline-block;vertical-align:middle;width:200px;height:12px;background:#e0e0e0;border-radius:6px;margin-right:8px;overflow:hidden;"><span style="display:block;width:[비율]%;height:100%;background:#673ab7;border-radius:6px;"></span></span> <strong>[건수]건</strong></div>
+3. 데이터 시각화 (유형별 장애 분포 표):
+   장애 유형 분포 및 발생 빈도는 차트 대신 반드시 깔끔한 테두리와 연한 보라색 배경 헤더가 적용된 HTML 요약 표(Table) 구조를 사용하여 텍스트로 시각화해 주십시오:
+   예: <table style="width:100%;border-collapse:collapse;margin:15px 0;font-size:12.5px;"><thead><tr style="background-color:#673ab7;color:white;"><th style="border:1px solid #ddd;padding:8px;text-align:center;">장애 유형</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:80px;">비율 (%)</th><th style="border:1px solid #ddd;padding:8px;text-align:center;width:80px;">발생 건수</th></tr></thead><tbody><tr><td style="border:1px solid #ddd;padding:8px;text-align:center;">[장애유형]</td><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;color:#673ab7;">[비율]%</td><td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;">[건수]건</td></tr></tbody></table>
 4. 하드웨어 상태 등급 및 처리 조치 표:
    장비 현황이나 장애 조치 목록은 반드시 깔끔한 테두리와 배경색이 적용된 HTML <table> 구조를 사용하여 작성하십시오.
    예: <table style="width:100%;border-collapse:collapse;margin:15px 0;"><tr style="background:#673ab7;color:white;"><th style="border:1px solid #ddd;padding:8px;text-align:center;">항목</th>...</tr>...</table>

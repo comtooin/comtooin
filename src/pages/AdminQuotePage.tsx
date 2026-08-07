@@ -668,7 +668,12 @@ const AdminQuotePage: React.FC = () => {
       {/* 텍스트 견적 자동입력 모달 */}
       <Dialog 
         open={pasteDialogOpen} 
-        onClose={() => setPasteDialogOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setPasteDialogOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="sm" 
         fullWidth
         sx={{
@@ -721,7 +726,12 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       {/* Preview Dialog */}
       <Dialog 
         open={previewOpen} 
-        onClose={() => setPreviewOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setPreviewOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="lg" 
         fullWidth
         sx={{
@@ -905,7 +915,13 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       {/* Save Template Dialog */}
       <Dialog 
         open={!!newTemplateName || saveDialogOpen} 
-        onClose={() => { setNewTemplateName(''); setSaveDialogOpen(false); }} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setNewTemplateName(''); 
+            setSaveDialogOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="xs" 
         fullWidth
         sx={{
@@ -938,7 +954,12 @@ CPU [AMD] 라이젠5 7500F 210,000 원 1 210,000 원
       {/* Load Template Dialog */}
       <Dialog 
         open={loadDialogOpen} 
-        onClose={() => setLoadDialogOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setLoadDialogOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="sm" 
         fullWidth
         sx={{

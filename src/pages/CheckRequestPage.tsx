@@ -255,7 +255,12 @@ const CheckRequestPage: React.FC = () => {
       {/* 상세 보기 다이얼로그 (표준화) */}
       <Dialog 
         open={selectedRequest !== null} 
-        onClose={() => setSelectedRequest(null)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setSelectedRequest(null);
+          }
+        }} 
+        disableEscapeKeyDown
         fullWidth 
         maxWidth="md"
         sx={{

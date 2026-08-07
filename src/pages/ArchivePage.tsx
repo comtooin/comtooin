@@ -1182,7 +1182,17 @@ const ArchivePage: React.FC = () => {
       </Dialog>
 
       {/* 새 폴더 만들기 대화상자 */}
-      <Dialog open={createFolderOpen} onClose={() => setCreateFolderOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog 
+        open={createFolderOpen} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setCreateFolderOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
+        maxWidth="xs" 
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1 }}>새 폴더 생성</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <DialogContentText sx={{ mb: 1.5, fontSize: '0.85rem' }}>
@@ -1208,7 +1218,17 @@ const ArchivePage: React.FC = () => {
       </Dialog>
 
       {/* 삭제 확인 대화상자 */}
-      <Dialog open={deleteConfirmOpen} onClose={() => setDeleteConfirmOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog 
+        open={deleteConfirmOpen} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setDeleteConfirmOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
+        maxWidth="xs" 
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1, color: 'error.main' }}>자료 삭제 (휴지통 이동)</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <DialogContentText sx={{ mb: 1.5, fontSize: '0.875rem', color: 'text.primary', fontWeight: 500 }}>

@@ -299,7 +299,12 @@ const SubmissionDetailPage: React.FC = () => {
       {/* Delete Confirmation Dialog */}
       <Dialog 
         open={openDeleteDialog} 
-        onClose={() => setOpenDeleteDialog(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setOpenDeleteDialog(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="sm" 
         fullWidth
         sx={{

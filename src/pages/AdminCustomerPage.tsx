@@ -15,7 +15,8 @@ import {
   Edit as EditIcon,
   VpnKey as VpnKeyIcon,
   Info as InfoIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  CalendarMonth as CalendarMonthIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../api';
@@ -35,6 +36,9 @@ interface Customer {
   auth_user_id?: string;
   login_id?: string;
   login_email?: string;
+  contract_date?: string;
+  contract_terms?: string;
+  contract_amount?: number;
 }
 
 const AdminCustomerPage: React.FC = () => {
@@ -53,6 +57,9 @@ const AdminCustomerPage: React.FC = () => {
   const [newManagerName2, setNewManagerName2] = useState('');
   const [newManagerPhone2, setNewManagerPhone2] = useState('');
   const [newManagerEmail2, setNewManagerEmail2] = useState('');
+  const [newContractDate, setNewContractDate] = useState('');
+  const [newContractTerms, setNewContractTerms] = useState('');
+  const [newContractAmount, setNewContractAmount] = useState('');
 
   // 새 거래처 등록 팝업 모달 상태
   const [registerOpen, setRegisterOpen] = useState(false);
@@ -71,6 +78,9 @@ const AdminCustomerPage: React.FC = () => {
   const [editManagerName2, setEditManagerName2] = useState('');
   const [editManagerPhone2, setEditManagerPhone2] = useState('');
   const [editManagerEmail2, setEditManagerEmail2] = useState('');
+  const [editContractDate, setEditContractDate] = useState('');
+  const [editContractTerms, setEditContractTerms] = useState('');
+  const [editContractAmount, setEditContractAmount] = useState('');
 
   // 거래처 계정 관리 모달 상태
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
@@ -136,6 +146,9 @@ const AdminCustomerPage: React.FC = () => {
           manager_name_2: newManagerName2.trim(),
           manager_phone_2: newManagerPhone2.trim(),
           manager_email_2: newManagerEmail2.trim(),
+          contract_date: newContractDate ? newContractDate : null,
+          contract_terms: newContractTerms.trim() || null,
+          contract_amount: newContractAmount ? parseInt(newContractAmount) : null,
         }])
         .select();
 
@@ -178,6 +191,9 @@ const AdminCustomerPage: React.FC = () => {
       setNewManagerName2('');
       setNewManagerPhone2('');
       setNewManagerEmail2('');
+      setNewContractDate('');
+      setNewContractTerms('');
+      setNewContractAmount('');
       setCreateAccountOption(false);
       setNewLoginId('');
       setNewPassword('');
@@ -202,6 +218,9 @@ const AdminCustomerPage: React.FC = () => {
     setEditManagerName2(customer.manager_name_2 || '');
     setEditManagerPhone2(customer.manager_phone_2 || '');
     setEditManagerEmail2(customer.manager_email_2 || '');
+    setEditContractDate(customer.contract_date || '');
+    setEditContractTerms(customer.contract_terms || '');
+    setEditContractAmount(customer.contract_amount ? String(customer.contract_amount) : '');
     setEditOpen(true);
   };
 
@@ -223,6 +242,9 @@ const AdminCustomerPage: React.FC = () => {
           manager_name_2: editManagerName2.trim(),
           manager_phone_2: editManagerPhone2.trim(),
           manager_email_2: editManagerEmail2.trim(),
+          contract_date: editContractDate ? editContractDate : null,
+          contract_terms: editContractTerms.trim() || null,
+          contract_amount: editContractAmount ? parseInt(editContractAmount) : null,
         })
         .eq('id', selectedCustomer.id);
 
@@ -399,7 +421,17 @@ const AdminCustomerPage: React.FC = () => {
       setAccountDialogOpen(false);
       setAccountPassword('');
     } catch (err: any) {
-      setAccountError(err.message || '비밀번호 변경 중 오류가 발생했습니다.');
+      let msg = err.message || '비밀번호 변경 중 오류가 발생했습니다.';
+      const rawMessage = String(err.message || '');
+      
+      if (rawMessage.includes('should be different') || rawMessage.includes('different from the old')) {
+        msg = '이전과 동일한 비밀번호로는 변경할 수 없습니다.';
+      } else if (rawMessage.includes('at least 6 characters')) {
+        msg = '비밀번호는 최소 6자 이상이어야 합니다.';
+      } else if (rawMessage.includes('Too many requests')) {
+        msg = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      }
+      setAccountError(msg);
     } finally {
       setAccountSubmitting(false);
     }
@@ -595,6 +627,26 @@ const AdminCustomerPage: React.FC = () => {
                               {customer.manager_name_2 && (
                                 <Typography variant="caption" color="text.secondary">
                                   <strong>담당자2:</strong> {customer.manager_name_2} ({customer.manager_phone_2 || '-'})
+                                </Typography>
+                              )}
+                            </Stack>
+                          )}
+                          
+                          {isAdmin && (customer.contract_date || customer.contract_terms || customer.contract_amount) && (
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 2 }} sx={{ mt: 0.5 }}>
+                              {customer.contract_date && (
+                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                                  <strong>계약일:</strong> {customer.contract_date}
+                                </Typography>
+                              )}
+                              {customer.contract_amount && (
+                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                                  <strong>계약금액:</strong> {customer.contract_amount.toLocaleString()}원
+                                </Typography>
+                              )}
+                              {customer.contract_terms && (
+                                <Typography variant="caption" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                                  <strong>계약조건:</strong> {customer.contract_terms}
                                 </Typography>
                               )}
                             </Stack>
@@ -796,6 +848,51 @@ const AdminCustomerPage: React.FC = () => {
                   disabled={!isAdmin}
                 />
               </Grid>
+              
+              {isAdmin && (
+                <>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 1.5 }} />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <CalendarMonthIcon sx={{ fontSize: '1.1rem' }} /> 계약 정보 (관리자 전용)
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="계약 날짜"
+                      type="date"
+                      fullWidth
+                      size="small"
+                      value={editContractDate}
+                      onChange={(e) => setEditContractDate(e.target.value)}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="계약 금액 (원)"
+                      type="number"
+                      fullWidth
+                      size="small"
+                      value={editContractAmount}
+                      onChange={(e) => setEditContractAmount(e.target.value)}
+                      placeholder="예: 5000000"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="계약 조건"
+                      fullWidth
+                      size="small"
+                      value={editContractTerms}
+                      onChange={(e) => setEditContractTerms(e.target.value)}
+                      placeholder="예: 월 1회 정기점검"
+                    />
+                  </Grid>
+                </>
+              )}
             </Grid>
           </Box>
         </DialogContent>
@@ -1038,20 +1135,65 @@ const AdminCustomerPage: React.FC = () => {
                   placeholder="010-1111-1111"
                 />
               </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="이메일 2"
-                  fullWidth
-                  size="small"
-                  value={newManagerEmail2}
-                  onChange={(e) => setNewManagerEmail2(e.target.value)}
-                  placeholder="user2@example.com"
-                />
-              </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="이메일 2"
+                    fullWidth
+                    size="small"
+                    value={newManagerEmail2}
+                    onChange={(e) => setNewManagerEmail2(e.target.value)}
+                    placeholder="user2@example.com"
+                  />
+                </Grid>
 
-              <Grid item xs={12}>
-                <Divider sx={{ my: 0.5 }} />
-              </Grid>
+                {isAdmin && (
+                  <>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 1.5 }} />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle2" color="primary" fontWeight="bold" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <CalendarMonthIcon sx={{ fontSize: '1.1rem' }} /> 계약 정보 (관리자 전용)
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="계약 날짜"
+                        type="date"
+                        fullWidth
+                        size="small"
+                        value={newContractDate}
+                        onChange={(e) => setNewContractDate(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="계약 금액 (원)"
+                        type="number"
+                        fullWidth
+                        size="small"
+                        value={newContractAmount}
+                        onChange={(e) => setNewContractAmount(e.target.value)}
+                        placeholder="예: 5000000"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <TextField
+                        label="계약 조건"
+                        fullWidth
+                        size="small"
+                        value={newContractTerms}
+                        onChange={(e) => setNewContractTerms(e.target.value)}
+                        placeholder="예: 월 1회 정기점검"
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 0.5 }} />
+                </Grid>
 
               <Grid item xs={12}>
                 <FormControlLabel

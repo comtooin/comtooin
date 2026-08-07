@@ -203,7 +203,17 @@ const AdminStaffPage: React.FC = () => {
       setResetDialogOpen(false);
       setResetPassword('');
     } catch (err: any) {
-      setError(err.message || '비밀번호 초기화 중 오류가 발생했습니다.');
+      let msg = err.message || '비밀번호 초기화 중 오류가 발생했습니다.';
+      const rawMessage = String(err.message || '');
+      
+      if (rawMessage.includes('should be different') || rawMessage.includes('different from the old')) {
+        msg = '이전과 동일한 비밀번호로는 변경할 수 없습니다.';
+      } else if (rawMessage.includes('at least 6 characters')) {
+        msg = '비밀번호는 최소 6자 이상이어야 합니다.';
+      } else if (rawMessage.includes('Too many requests')) {
+        msg = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      }
+      setError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -500,7 +510,12 @@ const AdminStaffPage: React.FC = () => {
       {/* 수정 다이얼로그 */}
       <Dialog 
         open={editDialogOpen} 
-        onClose={() => setEditDialogOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setEditDialogOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         fullWidth 
         maxWidth="sm"
         sx={{
@@ -583,7 +598,12 @@ const AdminStaffPage: React.FC = () => {
       {/* 비밀번호 초기화 다이얼로그 */}
       <Dialog 
         open={resetDialogOpen} 
-        onClose={() => setResetDialogOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setResetDialogOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         fullWidth 
         maxWidth="xs"
         sx={{
@@ -621,7 +641,12 @@ const AdminStaffPage: React.FC = () => {
       {/* 새 멤버 등록 팝업 Dialog */}
       <Dialog 
         open={registerOpen} 
-        onClose={() => setRegisterOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setRegisterOpen(false);
+          }
+        }} 
+        disableEscapeKeyDown
         maxWidth="sm" 
         fullWidth
         scroll="paper"

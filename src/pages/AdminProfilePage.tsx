@@ -158,7 +158,17 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
         confirmPassword: ''
       });
     } catch (err: any) {
-      setError(err.message || '비밀번호 변경 중 오류가 발생했습니다.');
+      let msg = err.message || '비밀번호 변경 중 오류가 발생했습니다.';
+      const rawMessage = String(err.message || '');
+      
+      if (rawMessage.includes('should be different') || rawMessage.includes('different from the old')) {
+        msg = '이전과 동일한 비밀번호로는 변경할 수 없습니다.';
+      } else if (rawMessage.includes('at least 6 characters')) {
+        msg = '비밀번호는 최소 6자 이상이어야 합니다.';
+      } else if (rawMessage.includes('Too many requests')) {
+        msg = '요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.';
+      }
+      setError(msg);
     } finally {
       setSubmitting(false);
     }

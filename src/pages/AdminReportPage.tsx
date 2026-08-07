@@ -1751,7 +1751,7 @@ const AdminReportPage: React.FC = () => {
                 fullWidth
                 variant="outlined" 
                 color="secondary" 
-                startIcon={exportLoading ? <CircularProgress size={16} color="inherit" /> : <FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
+                startIcon={exportLoading ? null : <FileDownloadIcon sx={{ fontSize: 18, display: { xs: 'none', sm: 'inline-block' } }} />}
                 onClick={handleExportExcel}
                 disabled={exportLoading}
                 sx={{ 
@@ -1763,7 +1763,7 @@ const AdminReportPage: React.FC = () => {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {exportLoading ? "중..." : "다운로드"}
+                {exportLoading ? <CircularProgress size={16} color="inherit" /> : "다운로드"}
               </Button>
             </Grid>
             <Grid item xs={4} sm="auto">
@@ -2048,24 +2048,24 @@ const AdminReportPage: React.FC = () => {
                                 }}
                                 sx={{ cursor: 'pointer', '&:active': { bgcolor: 'action.selected' } }}
                               >
-                                <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', color: 'text.secondary', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                <TableCell sx={{ py: 2, pl: 3, pr: 1, whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
                                   {(() => {
                                     const d = new Date(request.created_at);
                                     return `${d.getFullYear().toString().substring(2)}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
                                   })()}
                                 </TableCell>
-                                <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                <TableCell sx={{ py: 2, px: 1, fontWeight: 'medium', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.8125rem' }}>
                                   {request.customer_name}
                                 </TableCell>
-                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem' }}>
                                   {request.requester_name}
                                 </TableCell>
-                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem', letterSpacing: '-0.01em' }}>
+                                <TableCell sx={{ py: 2, px: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: '0.8125rem' }}>
                                   {request.user_name}
                                 </TableCell>
                                 {!isMobile && (
                                   <TableCell sx={{ py: 2, px: 1 }}>
-                                    <Typography variant="caption" color="text.secondary" sx={{ letterSpacing: '-0.01em', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <Typography variant="caption" color="text.primary" sx={{ fontWeight: 500, display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                       {stripHtmlTags(request.content)}
                                     </Typography>
                                   </TableCell>
@@ -2077,7 +2077,7 @@ const AdminReportPage: React.FC = () => {
                                     sx={{ 
                                       fontSize: '0.7rem', 
                                       width: '65px', 
-                                      letterSpacing: '-0.01em', 
+                                      letterSpacing: '-0.015em', 
                                       borderRadius: 1,
                                       ...getStatusChipStyle(request.status)
                                     }} 
@@ -2239,10 +2239,64 @@ const AdminReportPage: React.FC = () => {
         </Box>
       )}
 
+      {/* AI 리포트 생성 대기 모달 */}
+      <Dialog
+        open={isGenerating}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 3,
+            maxWidth: 400,
+            width: '100%',
+            textAlign: 'center',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+          }
+        }}
+      >
+        <DialogContent sx={{ py: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+          <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+            <CircularProgress 
+              size={64} 
+              thickness={4} 
+              sx={{ color: '#673ab7' }} 
+            />
+            <Box
+              sx={{
+                top: 0,
+                left: 0,
+                bottom: 0,
+                right: 0,
+                position: 'absolute',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <AiIcon sx={{ fontSize: 28, color: '#673ab7' }} />
+            </Box>
+          </Box>
+          <Stack spacing={1}>
+            <Typography variant="h6" fontWeight="bold" color="text.primary">
+              AI 분석 리포트 생성 중
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+              등록된 유지보수 내역 및 장애 조치 데이터를<br />
+              AI가 분석하여 요약 리포트를 생성하고 있습니다.<br />
+              잠시만 기다려 주세요 (약 10~15초 소요).
+            </Typography>
+          </Stack>
+        </DialogContent>
+      </Dialog>
+
       {/* AI 리포트 미리보기 모달 */}
       <Dialog 
         open={aiModalOpen} 
-        onClose={() => setAiModalOpen(false)}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setAiModalOpen(false);
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="lg"
         fullWidth
         sx={{
@@ -2351,7 +2405,12 @@ const AdminReportPage: React.FC = () => {
       {/* 엑셀/CSV 업로드 검증 모달 */}
       <Dialog 
         open={validationOpen} 
-        onClose={() => !importing && setValidationOpen(false)} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && !importing) {
+            setValidationOpen(false);
+          }
+        }}
+        disableEscapeKeyDown
         maxWidth="lg" 
         fullWidth
         scroll="paper"
@@ -2496,13 +2555,14 @@ const AdminReportPage: React.FC = () => {
       {/* 신규 업무 기록 등록 모달 */}
       <Dialog 
         open={workLogOpen} 
-        onClose={() => {
-          if (!submitting) {
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && !submitting) {
             voiceContent.stopRecording(false);
             voiceProcessing.stopRecording(false);
             setWorkLogOpen(false);
           }
         }} 
+        disableEscapeKeyDown
         maxWidth="md" 
         fullWidth
         transitionDuration={0}

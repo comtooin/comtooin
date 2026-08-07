@@ -38,12 +38,38 @@ const theme = createTheme({
       paper: '#ffffff',
     },
     text: {
-      primary: '#1e293b', // Slate 800
-      secondary: '#64748b', // Slate 500
+      primary: '#000000', // 완벽한 리얼 블랙
+      secondary: '#1a1a1a', // 짙은 서브 블랙으로 모바일 가독성 동반 확보
     },
   },
   typography: {
     fontFamily: '"Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif',
+    allVariants: {
+      letterSpacing: '-0.015em',
+    },
+    body1: {
+      lineHeight: 1.65,
+      letterSpacing: '-0.01em',
+    },
+    body2: {
+      lineHeight: 1.6,
+      letterSpacing: '-0.01em',
+    },
+    subtitle1: {
+      fontWeight: 600,
+      lineHeight: 1.5,
+      letterSpacing: '-0.015em',
+    },
+    subtitle2: {
+      fontWeight: 600,
+      lineHeight: 1.5,
+      letterSpacing: '-0.015em',
+    },
+    button: {
+      fontWeight: 600,
+      fontSize: '0.95rem',
+      letterSpacing: '-0.01em',
+    },
     h4: {
       fontWeight: 700,
       fontSize: '1.75rem',
@@ -63,27 +89,10 @@ const theme = createTheme({
     h6: {
       fontWeight: 600,
       fontSize: '1.15rem',
-      letterSpacing: '-0.01em',
+      letterSpacing: '-0.02em',
       '@media (max-width:600px)': {
-        fontSize: '1.1rem',
+        fontSize: '1.05rem',
       },
-    },
-    subtitle1: {
-      fontWeight: 600,
-    },
-    subtitle2: {
-      fontWeight: 600,
-    },
-    body1: {
-      letterSpacing: '-0.01em',
-    },
-    body2: {
-      letterSpacing: '-0.01em',
-    },
-    button: {
-      fontWeight: 600,
-      fontSize: '0.95rem',
-      letterSpacing: '-0.01em',
     },
   },
   shape: {
@@ -95,7 +104,8 @@ const theme = createTheme({
         body: {
           backgroundColor: '#f8fafc',
           minHeight: '100vh',
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.015em',
+          color: '#000000', // 완벽한 블랙
         },
       },
     },
@@ -206,6 +216,44 @@ const SessionManager = () => {
       }
     }
   }, []);
+
+  // 사용자가 활동 중일 때 세션 만료 시점을 30분 뒤로 연장(슬라이딩 윈도우)
+  const extendSession = useCallback(() => {
+    const token = sessionStorage.getItem('adminToken');
+    const expiresAt = sessionStorage.getItem('adminSessionExpiresAt');
+    
+    if (token && expiresAt) {
+      const now = new Date().getTime();
+      const currentExpiresAt = parseInt(expiresAt);
+      
+      if (now <= currentExpiresAt) {
+        // 성능 최적화: 만료 시간이 25분 이하로 남았을 때만 연장하도록 Throttling 처리
+        if (currentExpiresAt - now < 25 * 60 * 1000) {
+          const newExpiresAt = now + 30 * 60 * 1000;
+          sessionStorage.setItem('adminSessionExpiresAt', newExpiresAt.toString());
+        }
+      }
+    }
+  }, []);
+
+  // 사용자 활동 감지 이벤트 수신기 설정
+  useEffect(() => {
+    const handleActivity = () => {
+      extendSession();
+    };
+
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+
+    return () => {
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+    };
+  }, [extendSession]);
 
   useEffect(() => {
     checkSession();
