@@ -38,58 +38,58 @@ const theme = createTheme({
       paper: '#ffffff',
     },
     text: {
-      primary: '#000000', // 완벽한 리얼 블랙
-      secondary: '#1a1a1a', // 짙은 서브 블랙으로 모바일 가독성 동반 확보
+      primary: '#222222', // 대비 피로도를 없애고 번짐(Halation)을 억제하는 짙은 차콜블랙 (네이버 뉴스 규격)
+      secondary: '#475569', // Muted Slate 600
     },
   },
   typography: {
     fontFamily: '"Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif',
     allVariants: {
-      letterSpacing: '-0.015em',
+      letterSpacing: '-0.01em',
     },
     body1: {
       lineHeight: 1.65,
-      letterSpacing: '-0.01em',
+      letterSpacing: '-0.005em',
     },
     body2: {
       lineHeight: 1.6,
-      letterSpacing: '-0.01em',
+      letterSpacing: '-0.005em',
     },
     subtitle1: {
-      fontWeight: 600,
+      fontWeight: 500, // 볼드 뭉개짐 방지를 위한 세미볼드
       lineHeight: 1.5,
-      letterSpacing: '-0.015em',
-    },
-    subtitle2: {
-      fontWeight: 600,
-      lineHeight: 1.5,
-      letterSpacing: '-0.015em',
-    },
-    button: {
-      fontWeight: 600,
-      fontSize: '0.95rem',
       letterSpacing: '-0.01em',
     },
+    subtitle2: {
+      fontWeight: 500,
+      lineHeight: 1.5,
+      letterSpacing: '-0.01em',
+    },
+    button: {
+      fontWeight: 500,
+      fontSize: '0.95rem',
+      letterSpacing: '-0.005em',
+    },
     h4: {
-      fontWeight: 700,
+      fontWeight: 600, // 과도한 볼드를 경량화하여 획 뭉치기 방지
       fontSize: '1.75rem',
-      letterSpacing: '-0.02em',
+      letterSpacing: '-0.015em',
       '@media (max-width:600px)': {
         fontSize: '1.5rem',
       },
     },
     h5: {
-      fontWeight: 700,
+      fontWeight: 600,
       fontSize: '1.5rem',
-      letterSpacing: '-0.02em',
+      letterSpacing: '-0.015em',
       '@media (max-width:600px)': {
         fontSize: '1.25rem',
       },
     },
     h6: {
-      fontWeight: 600,
+      fontWeight: 500, // SemiBold
       fontSize: '1.15rem',
-      letterSpacing: '-0.02em',
+      letterSpacing: '-0.01em',
       '@media (max-width:600px)': {
         fontSize: '1.05rem',
       },
@@ -104,8 +104,8 @@ const theme = createTheme({
         body: {
           backgroundColor: '#f8fafc',
           minHeight: '100vh',
-          letterSpacing: '-0.015em',
-          color: '#000000', // 완벽한 블랙
+          letterSpacing: '-0.01em',
+          color: '#222222', // 차콜 그레이로 통일
         },
       },
     },

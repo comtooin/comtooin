@@ -1,14 +1,13 @@
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  font-family: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+  text-rendering: optimizeSpeed; /* 크롬 브라우저 한글 자간 강제 오버랩 결함 차단 */
+  -webkit-font-smoothing: antialiased; /* 맥 및 고해상도 디스플레이에서의 안티앨리어싱 */
+  -moz-osx-font-smoothing: auto;
   line-height: 1.65;
   letter-spacing: -0.01em;
-  color: #000000;
+  color: #222222; /* 눈이 편안한 차콜 그레이 통일 */
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.05); /* 초미세 그림자로 GPU 벡터 가속을 강제하여 글자 계단(비트맵화) 현상 영구 박멸! */
 }
 
 code {
