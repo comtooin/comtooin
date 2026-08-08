@@ -996,7 +996,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, flex: { xs: 1, sm: 'initial' }, width: { sm: 'auto' }, ml: { xs: 0, sm: 1 } }}
                 >
-                  비번 변경
+                  저장
                 </Button>
               ) : (
                 <Button 
