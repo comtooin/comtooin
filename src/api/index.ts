@@ -57,11 +57,13 @@ export const getCurrentStaffId = async () => {
  * @param message 알림 내용
  * @param targetStaffIds 특정 직원에게만 보낼 경우 ID 배열. 없거나 'all'이면 전체 발송. (관리자는 항상 제외됨)
  */
-export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all', url?: string) => {
+export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all' | 'member_only', url?: string) => {
   try {
     let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null);
     
-    if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
+    if (targetStaffIds === 'member_only') {
+      query = query.eq('role', 'member');
+    } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
       query = query.in('id', targetStaffIds);
     }
     
