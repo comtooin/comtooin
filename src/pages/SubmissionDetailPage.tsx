@@ -181,6 +181,9 @@ const SubmissionDetailPage: React.FC = () => {
                 driveFileIds.map(async (fileId) => {
                     try {
                         const { data, error: funcErr } = await supabase.functions.invoke('upload-drive-file', {
+                            headers: {
+                                Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY || ''}`
+                            },
                             body: {
                                 deleteFileOnly: true,
                                 fileIdToDelete: fileId

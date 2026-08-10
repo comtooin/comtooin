@@ -97,9 +97,57 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
     if (!selectedRequest) return;
     if (!window.confirm('정말로 이 기록을 삭제하시겠습니까?')) return;
     try {
+      // 1. Supabase Storage에 저장된 이미지 경로 추출
+      const imagesToRemove = parsedImages
+        ?.filter((url: string) => typeof url === 'string' && url.includes('/uploads/'))
+        .map((url: string) => {
+          return url.split('/uploads/').pop();
+        }).filter(Boolean) as string[];
+
+      // 2. 구글 드라이브에 저장된 이미지 파일 ID 추출
+      const driveFileIds = parsedImages
+        ?.filter((url: string) => typeof url === 'string' && url.includes('drive.google.com'))
+        ?.map((url: string) => {
+          const decodedUrl = decodeURIComponent(url);
+          let match = decodedUrl.match(/[?&]id=([^&]+)/);
+          if (match) return match[1];
+          match = decodedUrl.match(/\/d\/([^/]+)/);
+          if (match) return match[1];
+          return null;
+        }).filter(Boolean) as string[];
+
       const { error } = await supabase.from('requests').delete().eq('id', selectedRequest.id);
       if (error) throw error;
       
+      // DB 삭제 성공 후 실물 파일들 및 구글 드라이브 정리
+      if (imagesToRemove && imagesToRemove.length > 0) {
+        await supabase.storage.from('uploads').remove(imagesToRemove);
+      }
+
+      if (driveFileIds && driveFileIds.length > 0) {
+        console.log("Starting deletion of drive files from modal:", driveFileIds);
+        await Promise.all(
+          driveFileIds.map(async (fileId) => {
+            try {
+              const { data, error: funcErr } = await supabase.functions.invoke('upload-drive-file', {
+                headers: {
+                  Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY || ''}`
+                },
+                body: {
+                  deleteFileOnly: true,
+                  fileIdToDelete: fileId
+                }
+              });
+              if (funcErr) throw funcErr;
+              if (data && data.error) throw new Error(data.error);
+              console.log(`Successfully deleted drive file from modal: ${fileId}`, data);
+            } catch (driveErr: any) {
+              console.error(`Failed to delete drive file ${fileId} on modal deletion:`, driveErr.message || driveErr);
+            }
+          })
+        );
+      }
+
       // 관련 스케줄 및 구글 캘린더 자동 삭제 시도
       try {
         const scheduleTitle = `업무기록 접수 (${selectedRequest.user_name})`;
