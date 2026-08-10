@@ -140,11 +140,22 @@ const SubmissionDetailPage: React.FC = () => {
     if (!id) return;
     try {
         setDeleteError('');
-        // Supabase Storage에 저장된 이미지인 경우만 경로를 추출 (구글 드라이브 등 외부 링크는 제외)
+        // 1. Supabase Storage에 저장된 이미지인 경우 경로 추출
         const imagesToRemove = request?.images
             ?.filter(url => url.includes('/uploads/'))
             .map((url: string) => {
                 return url.split('/uploads/').pop();
+            }).filter(Boolean) as string[];
+
+        // 2. 구글 드라이브에 저장된 이미지 파일 ID 추출
+        const driveFileIds = request?.images
+            ?.filter(url => url.includes('drive.google.com'))
+            ?.map((url: string) => {
+                let match = url.match(/[?&]id=([^&]+)/);
+                if (match) return match[1];
+                match = url.match(/\/d\/([^/]+)/);
+                if (match) return match[1];
+                return null;
             }).filter(Boolean) as string[];
 
         const { data: success, error: deleteError } = await supabase.rpc(
@@ -158,8 +169,26 @@ const SubmissionDetailPage: React.FC = () => {
             return;
         }
 
+        // DB 삭제 성공 후 실물 파일들 정리
         if (imagesToRemove && imagesToRemove.length > 0) {
             await supabase.storage.from('uploads').remove(imagesToRemove);
+        }
+
+        if (driveFileIds && driveFileIds.length > 0) {
+            await Promise.all(
+                driveFileIds.map(async (fileId) => {
+                    try {
+                        await supabase.functions.invoke('upload-drive-file', {
+                            body: {
+                                deleteFileOnly: true,
+                                fileIdToDelete: fileId
+                            }
+                        });
+                    } catch (driveErr) {
+                        console.error(`Failed to delete drive file ${fileId} on request deletion:`, driveErr);
+                    }
+                })
+            );
         }
 
         alert('성공적으로 삭제되었습니다.');
@@ -245,7 +274,10 @@ const SubmissionDetailPage: React.FC = () => {
                   if (!image.startsWith('http')) {
                     imageUrl = `${assetBaseURL}/uploads/${image}`;
                   } else if (image.includes('drive.google.com')) {
-                    const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                    let fileId = image.match(/[?&]id=([^&]+)/)?.[1];
+                    if (!fileId) {
+                      fileId = image.match(/\/d\/([^/]+)/)?.[1];
+                    }
                     if (fileId) {
                       imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                     }
@@ -264,7 +296,7 @@ const SubmissionDetailPage: React.FC = () => {
                         }}
                         onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}
                       >
-                        <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 150, objectFit: 'cover', display: 'block' }} />
+                        <img src={imageUrl} alt={`attachment ${index}`} referrerPolicy="no-referrer" style={{ width: '100%', height: 150, objectFit: 'cover', display: 'block' }} />
                       </Paper>
                     </Grid>
                   );

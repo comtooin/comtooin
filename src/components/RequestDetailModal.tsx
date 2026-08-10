@@ -335,14 +335,17 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
                   let imageUrl = image;
                   if (!image.startsWith('http')) imageUrl = `${assetBaseURL}/uploads/${image}`;
                   else if (image.includes('drive.google.com')) {
-                    const fileId = image.match(/\/d\/(.+?)\//)?.[1];
+                    let fileId = image.match(/[?&]id=([^&]+)/)?.[1];
+                    if (!fileId) {
+                      fileId = image.match(/\/d\/([^/]+)/)?.[1];
+                    }
                     if (fileId) imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                   }
                   console.log("RequestDetailModal rendering imageUrl:", imageUrl);
                   return (
                     <Grid item key={index} xs={6} sm={4}>
                       <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 1, cursor: 'pointer', '&:hover': { transform: 'scale(1.02)' } }} onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}>
-                        <img src={imageUrl} alt={`attachment ${index}`} style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
+                        <img src={imageUrl} alt={`attachment ${index}`} referrerPolicy="no-referrer" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
                       </Paper>
                     </Grid>
                   );
