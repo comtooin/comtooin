@@ -142,18 +142,19 @@ const SubmissionDetailPage: React.FC = () => {
         setDeleteError('');
         // 1. Supabase Storage에 저장된 이미지인 경우 경로 추출
         const imagesToRemove = request?.images
-            ?.filter(url => url.includes('/uploads/'))
+            ?.filter(url => typeof url === 'string' && url.includes('/uploads/'))
             .map((url: string) => {
                 return url.split('/uploads/').pop();
             }).filter(Boolean) as string[];
 
-        // 2. 구글 드라이브에 저장된 이미지 파일 ID 추출
+        // 2. 구글 드라이브에 저장된 이미지 파일 ID 추출 (이중 인코딩 방어용 decode 처리 추가)
         const driveFileIds = request?.images
-            ?.filter(url => url.includes('drive.google.com'))
+            ?.filter(url => typeof url === 'string' && url.includes('drive.google.com'))
             ?.map((url: string) => {
-                let match = url.match(/[?&]id=([^&]+)/);
+                const decodedUrl = decodeURIComponent(url);
+                let match = decodedUrl.match(/[?&]id=([^&]+)/);
                 if (match) return match[1];
-                match = url.match(/\/d\/([^/]+)/);
+                match = decodedUrl.match(/\/d\/([^/]+)/);
                 if (match) return match[1];
                 return null;
             }).filter(Boolean) as string[];
@@ -175,17 +176,21 @@ const SubmissionDetailPage: React.FC = () => {
         }
 
         if (driveFileIds && driveFileIds.length > 0) {
+            console.log("Starting deletion of drive files:", driveFileIds);
             await Promise.all(
                 driveFileIds.map(async (fileId) => {
                     try {
-                        await supabase.functions.invoke('upload-drive-file', {
+                        const { data, error: funcErr } = await supabase.functions.invoke('upload-drive-file', {
                             body: {
                                 deleteFileOnly: true,
                                 fileIdToDelete: fileId
                             }
                         });
-                    } catch (driveErr) {
-                        console.error(`Failed to delete drive file ${fileId} on request deletion:`, driveErr);
+                        if (funcErr) throw funcErr;
+                        if (data && data.error) throw new Error(data.error);
+                        console.log(`Successfully deleted drive file: ${fileId}`, data);
+                    } catch (driveErr: any) {
+                        console.error(`Failed to delete drive file ${fileId} on request deletion:`, driveErr.message || driveErr);
                     }
                 })
             );
