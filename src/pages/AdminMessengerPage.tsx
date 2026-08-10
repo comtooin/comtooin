@@ -29,7 +29,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import MicIcon from '@mui/icons-material/Mic';
-import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
+import { supabase, sendPushNotification } from '../api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useVoiceTyping } from '../hooks/useVoiceTyping';
@@ -104,9 +104,10 @@ const AdminMessengerPage: React.FC = () => {
     setUserRole(role);
 
     const initPage = async () => {
-      const staffId = await getCurrentStaffId();
-      setCurrentStaffId(staffId);
-      await fetchRooms();
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id || null;
+      setCurrentStaffId(userId);
+      await fetchRooms(userId);
     };
 
     initPage();
@@ -180,7 +181,11 @@ const AdminMessengerPage: React.FC = () => {
   };
 
   // 대화방 목록 조회
-  const fetchRooms = async () => {
+  const fetchRooms = async (forcedUserId?: string | null) => {
+    const activeUserId = forcedUserId !== undefined ? forcedUserId : currentStaffId;
+    const role = sessionStorage.getItem('adminRole') || userRole;
+    const myName = sessionStorage.getItem('adminName') || '';
+
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
@@ -188,14 +193,25 @@ const AdminMessengerPage: React.FC = () => {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      const fetchedRooms = data || [];
+      let fetchedRooms = data || [];
+
+      // 거래처 사용자 로그인 시에는 보안 격리 필터링 적용
+      if (role === 'customer' && myName) {
+        fetchedRooms = fetchedRooms.filter(r => 
+          r.name.includes(myName) || 
+          r.created_by === activeUserId
+        );
+      }
+
       setRooms(fetchedRooms);
 
       // 활성화된 방이 없거나 리스트에 존재하지 않을 경우 기본 대화방으로 세팅
       if (fetchedRooms.length > 0) {
         const hasActiveRoom = fetchedRooms.some(r => r.id === activeRoomId);
         if (!activeRoomId || !hasActiveRoom) {
-          const defaultRoom = fetchedRooms.find(r => r.id === '00000000-0000-0000-0000-000000000000');
+          const defaultRoom = role === 'customer' 
+            ? fetchedRooms[0] 
+            : fetchedRooms.find(r => r.id === '00000000-0000-0000-0000-000000000000');
           setActiveRoomId(defaultRoom ? defaultRoom.id : fetchedRooms[0].id);
         }
       }
@@ -212,29 +228,13 @@ const AdminMessengerPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('memos')
-        .select(`
-          id,
-          created_at,
-          content,
-          color,
-          author_id,
-          room_id,
-          author:author_id ( name )
-        `)
+        .select('id, created_at, content, color, author_id, room_id, author_name')
         .eq('room_id', roomId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
 
       const formattedMemos: Memo[] = (data || []).map((item: any) => {
-        let authorName = '';
-        if (item.author) {
-          if (Array.isArray(item.author)) {
-            authorName = item.author[0]?.name || '';
-          } else {
-            authorName = item.author.name || '';
-          }
-        }
         return {
           id: item.id,
           created_at: item.created_at,
@@ -242,7 +242,7 @@ const AdminMessengerPage: React.FC = () => {
           color: item.color || '#f8fafc',
           author_id: item.author_id,
           room_id: item.room_id,
-          author: { name: authorName }
+          author: { name: item.author_name || '알 수 없음' }
         };
       });
 
@@ -259,11 +259,17 @@ const AdminMessengerPage: React.FC = () => {
     if (!newRoomName.trim() || !currentStaffId) return;
     setSubmitting(true);
 
+    const role = sessionStorage.getItem('adminRole') || userRole;
+    const myName = sessionStorage.getItem('adminName') || '거래처';
+    const formattedRoomName = role === 'customer'
+      ? `[${myName}] ${newRoomName.trim()}`
+      : newRoomName.trim();
+
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
         .insert({
-          name: newRoomName.trim(),
+          name: formattedRoomName,
           created_by: currentStaffId
         })
         .select()
@@ -320,18 +326,20 @@ const AdminMessengerPage: React.FC = () => {
     if (!content.trim() || !currentStaffId || !activeRoomId) return;
     setSubmitting(true);
 
+    const myName = sessionStorage.getItem('adminName') || '이름 없음';
+
     try {
       const { error } = await supabase.from('memos').insert({
         content: content.trim(),
         color: '#f8fafc',
         author_id: currentStaffId,
-        room_id: activeRoomId
+        room_id: activeRoomId,
+        author_name: myName
       });
 
       if (error) throw error;
 
       // 원격 알림 발송 (전체 푸시)
-      const myName = sessionStorage.getItem('adminName') || '동료';
       const activeRoom = rooms.find(r => r.id === activeRoomId);
       const roomPrefix = activeRoom ? `[${activeRoom.name}] ` : '';
       const preview = content.trim().substring(0, 40) + (content.trim().length > 40 ? '...' : '');
@@ -865,7 +873,7 @@ const AdminMessengerPage: React.FC = () => {
           </Typography>
         </Stack>
         <Typography sx={{ color: 'text.secondary', fontSize: { xs: '0.75rem', sm: '0.8rem', md: '0.875rem' }, lineHeight: 1.4 }}>
-          동료 직원들과 실시간으로 메시지를 공유하며 소통합니다.
+          {userRole === 'customer' ? '컴투인 직원들과 실시간으로 메시지를 공유하며 신속하게 소통합니다.' : '동료 직원 및 거래처 고객들과 실시간으로 메시지를 공유하며 소통합니다.'}
         </Typography>
       </Box>
 

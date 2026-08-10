@@ -7,7 +7,7 @@ import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel,
-  Autocomplete, InputAdornment, IconButton, Menu, ListItemIcon, ListItemText
+  Autocomplete, InputAdornment, IconButton, Menu, ListItemIcon, ListItemText, Collapse
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -29,7 +29,9 @@ import {
   Delete as DeleteIcon,
   Today as TodayIcon,
   Info as InfoIcon,
-  KeyboardArrowDown as KeyboardArrowDownIcon
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+  KeyboardArrowUp as KeyboardArrowUpIcon,
+  Add as AddIcon
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId, sendPushNotification } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -146,9 +148,13 @@ const AdminReportPage: React.FC = () => {
   const [status, setStatus] = useState('all');
   const [tabValue, setTabValue] = useState(0);
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
+  // 거래처 대시보드 전용 시각화 분석 접기/펼치기 상태 (기본값: 펼침)
+  const [isChartExpanded, setIsChartExpanded] = useState(true);
 
-  const showVisualization = userRole === 'customer' ? tabValue === 0 : tabValue === 1;
-  const showList = userRole === 'customer' ? tabValue === 1 : tabValue === 0;
+  // 거래처 계정일 때는 펼치기 상태(isChartExpanded)에 연동, 관리자 계정일 때는 기존 탭(tabValue === 1)에 연동
+  const showVisualization = userRole === 'customer' ? isChartExpanded : tabValue === 1;
+  // 거래처 계정일 때는 언제나 리스트 테이블 상시 노출, 관리자 계정일 때는 기존 탭(tabValue === 0)에 연동
+  const showList = userRole === 'customer' ? true : tabValue === 0;
 
   const [statusData, setStatusData] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -182,6 +188,15 @@ const AdminReportPage: React.FC = () => {
   const [logError, setLogError] = useState('');
   const [isPolishing, setIsPolishing] = useState<'content' | 'processingContent' | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // 거래처 기술지원 요청 모달 관련 상태
+  const [customerRequestOpen, setCustomerRequestOpen] = useState(false);
+  const [customerRequesterName, setCustomerRequesterName] = useState('');
+  const [customerRequesterEmail, setCustomerRequesterEmail] = useState('');
+  const [customerRequestContent, setCustomerRequestContent] = useState('');
+  const [customerRequestImages, setCustomerRequestImages] = useState<File[]>([]);
+  const [customerRequestError, setCustomerRequestError] = useState('');
+  const [customerSubmitting, setCustomerSubmitting] = useState(false);
 
   const voiceContent = useVoiceRecorder((text) => {
     setContent(prev => prev ? `${prev} ${text}` : text);
@@ -385,6 +400,114 @@ const AdminReportPage: React.FC = () => {
       setLogError(err.message || '저장 중 오류가 발생했습니다.'); 
     } finally { 
       setSubmitting(false); 
+    }
+  };
+
+  const handleCustomerRequestImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setCustomerRequestImages(prev => {
+        const next = [...prev, ...filesArray];
+        if (next.length > 5) {
+          alert('이미지는 최대 5개까지만 첨부할 수 있습니다.');
+          return next.slice(0, 5);
+        }
+        return next;
+      });
+    }
+  };
+
+  const handleSubmitCustomerRequest = async (e: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setCustomerRequestError('');
+    if (!customerRequesterName.trim() || !customerRequestContent.trim()) {
+      return setCustomerRequestError('요청자 성함과 요청 내용은 필수 항목입니다.');
+    }
+    setCustomerSubmitting(true);
+    try {
+      const customerName = sessionStorage.getItem('adminName') || '알수없는거래처';
+      
+      let uploadedImageUrls: string[] = [];
+      if (customerRequestImages.length > 0) {
+        const formData = new FormData();
+        for (const image of customerRequestImages) {
+          const compressedBlob = await compressImage(image);
+          formData.append('files', compressedBlob, image.name);
+        }
+        formData.append('customerName', customerName);
+        formData.append('userName', '거래처 접수');
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-daily-log-image', { body: formData });
+        if (uploadError) throw uploadError;
+        uploadedImageUrls = uploadData?.urls || [];
+      }
+
+      const requestPayload = {
+        customer_name: customerName,
+        user_name: '거래처 접수',
+        requester_name: customerRequesterName.trim(),
+        user_email: customerRequesterEmail.trim() || null,
+        password: '', // 개별 비밀번호 불필요
+        content: customerRequestContent.trim(),
+        status: 'processing', // 기본 '처리중' 접수
+        created_at: new Date().toISOString(),
+        images: uploadedImageUrls
+      };
+
+      const { data: requestData, error: insertError } = await supabase
+        .from('requests')
+        .insert([requestPayload])
+        .select();
+
+      if (insertError) throw insertError;
+
+      // 실서버 모든 직원/관리자에게 푸시 알림 전송
+      const newRequestId = requestData?.[0]?.id || '';
+      sendPushNotification(
+        '새로운 기술지원 요청 접수',
+        `[${customerName}] ${customerRequesterName}님의 요청: ${customerRequestContent.trim()}`,
+        'all',
+        newRequestId ? (window.location.origin + `/admin/request/detail/${newRequestId}`) : (window.location.origin + '/admin/dashboard')
+      );
+
+      // 접수 완료 시 상세 내용 팝업 자동으로 노출
+      if (requestData?.[0]) {
+        console.log("handleSubmitCustomerRequest raw requestData:", requestData);
+        let parsedImages: string[] = [];
+        if (requestData[0].images) {
+          if (Array.isArray(requestData[0].images)) {
+            parsedImages = requestData[0].images;
+          } else if (typeof requestData[0].images === 'string' && requestData[0].images.trim() !== '') {
+            try {
+              const parsed = JSON.parse(requestData[0].images);
+              parsedImages = Array.isArray(parsed) ? parsed : [parsed];
+            } catch {
+              parsedImages = [requestData[0].images];
+            }
+          }
+        }
+        console.log("handleSubmitCustomerRequest final parsedImages:", parsedImages);
+        setSelectedRequest({
+          ...requestData[0],
+          images: parsedImages,
+          comments: []
+        });
+        setOpenDetailModal(true);
+      }
+
+      alert('기술지원 요청이 정상적으로 접수되었습니다. 담당자가 확인 후 신속하게 처리해 드리겠습니다.');
+      setCustomerRequestOpen(false);
+      setCustomerRequesterName('');
+      setCustomerRequesterEmail('');
+      setCustomerRequestContent('');
+      setCustomerRequestImages([]);
+      
+      applyFilters(true);
+      fetchInitialData();
+    } catch (err: any) {
+      console.error(err);
+      setCustomerRequestError(err.message || '요청 접수 중 오류가 발생했습니다.');
+    } finally {
+      setCustomerSubmitting(false);
     }
   };
 
@@ -1693,7 +1816,33 @@ const AdminReportPage: React.FC = () => {
 
           {/* 우측: 버튼 영역 */}
           <Grid container spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
-            {userRole !== 'customer' && (
+            {userRole === 'customer' ? (
+              <Grid item xs={12} sm="auto">
+                <Button 
+                  fullWidth
+                  variant="contained" 
+                  color="success"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setCustomerRequestOpen(true);
+                    setCustomerRequesterName('');
+                    setCustomerRequesterEmail('');
+                    setCustomerRequestContent('');
+                    setCustomerRequestImages([]);
+                    setCustomerRequestError('');
+                  }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    height: '38px', 
+                    fontSize: '0.75rem', 
+                    borderRadius: 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  기술지원 요청
+                </Button>
+              </Grid>
+            ) : (
               <Grid item xs={12} sm="auto">
                 <Button 
                   fullWidth
@@ -1924,19 +2073,21 @@ const AdminReportPage: React.FC = () => {
         )}
       </Paper>
 
-      {/* 탭 섹션 */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-        <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
-          <Tab 
-            label={userRole === 'customer' ? "시각화 분석" : "업무 상세 리스트"} 
-            sx={{ fontWeight: 'bold' }} 
-          />
-          <Tab 
-            label={userRole === 'customer' ? "업무 상세 리스트" : "시각화 분석"} 
-            sx={{ fontWeight: 'bold' }} 
-          />
-        </Tabs>
-      </Box>
+      {/* 탭 섹션 (사내 관리자/스태프 로그인 시에만 탭바 활성화) */}
+      {userRole !== 'customer' && (
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+          <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
+            <Tab 
+              label="업무 상세 리스트" 
+              sx={{ fontWeight: 'bold' }} 
+            />
+            <Tab 
+              label="시각화 분석" 
+              sx={{ fontWeight: 'bold' }} 
+            />
+          </Tabs>
+        </Box>
+      )}
 
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
@@ -2107,7 +2258,37 @@ const AdminReportPage: React.FC = () => {
             </Box>
           )}
 
-          {showVisualization && (
+          {/* 거래처 계정 전용 시각화 분석 헤더 및 접기/펼치기 컨트롤러 */}
+          {userRole === 'customer' && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pb: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <BarChartIcon sx={{ fontSize: '1.1rem', color: 'primary.main' }} /> 시각화 분석 통계
+              </Typography>
+              <Button
+                variant="outlined"
+                size="small"
+                color="primary"
+                startIcon={isChartExpanded ? <KeyboardArrowUpIcon /> : <BarChartIcon />}
+                onClick={() => setIsChartExpanded(!isChartExpanded)}
+                sx={{ 
+                  fontWeight: 'bold', 
+                  borderRadius: 1,
+                  fontSize: '0.75rem',
+                  py: 0.4,
+                  borderColor: 'primary.main',
+                  bgcolor: isChartExpanded ? 'primary.lighter' : 'transparent',
+                  '&:hover': {
+                    bgcolor: 'primary.lighter',
+                    borderColor: 'primary.dark'
+                  }
+                }}
+              >
+                {isChartExpanded ? "접기" : "펼치기"}
+              </Button>
+            </Box>
+          )}
+
+          <Collapse in={showVisualization} timeout="auto" sx={{ mb: showVisualization ? 3 : 0 }}>
             <Grid container spacing={3}>
               {/* 1. 월별 업무 처리 추이 (Bar) */}
               <Grid item xs={12} md={userRole === 'customer' ? 6 : 6}>
@@ -2120,27 +2301,27 @@ const AdminReportPage: React.FC = () => {
                     <Bar data={barChartData} options={{ 
                       maintainAspectRatio: false, 
                       plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                          backgroundColor: '#1e293b',
-                          titleFont: { size: 13, weight: 'bold' },
-                          bodyFont: { size: 12 },
-                          padding: 10,
-                          cornerRadius: 8,
-                          displayColors: false
-                        }
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: '#1e293b',
+                        titleFont: { size: 13, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false
+                      }
                       },
                       scales: {
-                        y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b' } },
-                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                      y: { grid: { color: '#f1f5f9' }, ticks: { color: '#64748b' } },
+                      x: { grid: { display: false }, ticks: { color: '#64748b' } }
                       },
                       onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                          const index = elements[0].index;
-                          const label = barChartData.labels[index];
-                          setSelectedMonth(label);
-                          setTabValue(userRole === 'customer' ? 1 : 0);
-                        }
+                      if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = barChartData.labels[index];
+                        setSelectedMonth(label);
+                        setTabValue(userRole === 'customer' ? 1 : 0);
+                      }
                       }
                     }} />
                   </Box>
@@ -2158,20 +2339,20 @@ const AdminReportPage: React.FC = () => {
                     <Pie data={statusPieData} options={{ 
                       maintainAspectRatio: false,
                       plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
                       },
                       onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                          const index = elements[0].index;
-                          const label = statusPieData.labels[index];
-                          let filterStatus = 'all';
-                          if (label === '처리중') filterStatus = '처리중';
-                          else if (label === '완료') filterStatus = '처리완료';
-                          else if (label === '취소') filterStatus = 'cancelled';
-                          
-                          setStatus(filterStatus);
-                          setTabValue(userRole === 'customer' ? 1 : 0);
-                        }
+                      if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = statusPieData.labels[index];
+                        let filterStatus = 'all';
+                        if (label === '처리중') filterStatus = '처리중';
+                        else if (label === '완료') filterStatus = '처리완료';
+                        else if (label === '취소') filterStatus = 'cancelled';
+                        
+                        setStatus(filterStatus);
+                        setTabValue(userRole === 'customer' ? 1 : 0);
+                      }
                       }
                     }} />
                   </Box>
@@ -2190,15 +2371,15 @@ const AdminReportPage: React.FC = () => {
                       maintainAspectRatio: false,
                       cutout: '60%',
                       plugins: {
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                      legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
                       },
                       onClick: (event, elements) => {
-                        if (elements.length > 0) {
-                          const index = elements[0].index;
-                          const label = categoryPieData.labels[index];
-                          setSelectedCategoryFilter(label);
-                          setTabValue(userRole === 'customer' ? 1 : 0);
-                        }
+                      if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const label = categoryPieData.labels[index];
+                        setSelectedCategoryFilter(label);
+                        setTabValue(userRole === 'customer' ? 1 : 0);
+                      }
                       }
                     }} />
                   </Box>
@@ -2218,15 +2399,15 @@ const AdminReportPage: React.FC = () => {
                         <Pie data={customerPieData} options={{ 
                           maintainAspectRatio: false,
                           plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                          legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
                           },
                           onClick: (event, elements) => {
-                            if (elements.length > 0) {
-                              const index = elements[0].index;
-                              const label = customerPieData.labels[index];
-                              setSelectedCustomer(label);
-                              setTabValue(userRole === 'customer' ? 1 : 0);
-                            }
+                          if (elements.length > 0) {
+                            const index = elements[0].index;
+                            const label = customerPieData.labels[index];
+                            setSelectedCustomer(label);
+                            setTabValue(userRole === 'customer' ? 1 : 0);
+                          }
                           }
                         }} />
                       </Box>
@@ -2235,7 +2416,7 @@ const AdminReportPage: React.FC = () => {
                 </Grid>
               )}
             </Grid>
-          )}
+          </Collapse>
         </Box>
       )}
 
@@ -2871,6 +3052,141 @@ const AdminReportPage: React.FC = () => {
         onClose={() => setOpenDetailModal(false)} 
         onRefresh={applyFilters} 
       />
+
+      {/* 거래처 전용 기술지원 요청 Dialog */}
+      <Dialog 
+        open={customerRequestOpen} 
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick' && !customerSubmitting) {
+            setCustomerRequestOpen(false);
+          }
+        }}
+        disableEscapeKeyDown
+        maxWidth="sm" 
+        fullWidth
+        scroll="paper"
+        sx={{
+          '& .MuiDialog-paper': {
+            m: { xs: '20px 16px', sm: 3 },
+            maxHeight: { xs: 'calc(100% - 40px)', sm: 'calc(100% - 64px)' },
+            width: { xs: 'calc(100% - 32px)' },
+            maxWidth: { xs: 'calc(100% - 32px)', sm: 'sm' }
+          }
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <AssignmentIcon color="success" sx={{ fontSize: '1.25rem' }} /> 기술지원 요청 접수
+        </DialogTitle>
+        <DialogContent dividers>
+          <Box component="form" onSubmit={handleSubmitCustomerRequest} sx={{ mt: 1 }}>
+            <Stack spacing={2.5}>
+              <Alert severity="info" variant="outlined" sx={{ borderRadius: 1.5 }}>
+                유지보수 및 기술 지원이 필요한 장애나 요청 사항을 적어주시면 담당 직원이 즉시 접수하여 처리 현황을 공유해 드립니다.
+              </Alert>
+
+              <TextField
+                label="거래처명"
+                fullWidth
+                size="small"
+                value={sessionStorage.getItem('adminName') || ''}
+                disabled
+                helperText="보안을 위해 로그인된 거래처로 고정됩니다."
+              />
+
+              <TextField
+                label="요청자 성함"
+                fullWidth
+                required
+                size="small"
+                value={customerRequesterName}
+                onChange={(e) => setCustomerRequesterName(e.target.value)}
+                placeholder="예: 홍길동 대리"
+                disabled={customerSubmitting}
+              />
+
+              <TextField
+                label="연락용 이메일"
+                fullWidth
+                size="small"
+                value={customerRequesterEmail}
+                onChange={(e) => setCustomerRequesterEmail(e.target.value)}
+                placeholder="예: email@example.com"
+                disabled={customerSubmitting}
+                helperText="선택 사항 (진행 상황 피드백용)"
+              />
+
+              <TextField
+                label="요청 상세 내용"
+                multiline
+                rows={5}
+                fullWidth
+                required
+                variant="outlined"
+                value={customerRequestContent}
+                onChange={(e) => setCustomerRequestContent(e.target.value)}
+                placeholder="장애 증상이나 지원 요청 내용을 상세히 적어주세요. 예: 사내 프린터 연결 끊김, PC 부팅 불가 등"
+                disabled={customerSubmitting}
+              />
+
+              {/* 이미지 첨부 */}
+              <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+                  <Button 
+                    variant="outlined" 
+                    component="label" 
+                    startIcon={<PhotoCameraIcon />} 
+                    size="small"
+                    disabled={customerSubmitting}
+                    sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
+                  >
+                    이미지 첨부 (최대 5개)
+                    <input type="file" hidden multiple accept="image/*" onChange={handleCustomerRequestImageChange} />
+                  </Button>
+                  
+                  {customerRequestImages.length > 0 && (
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                      {customerRequestImages.map((img, i) => (
+                        <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+                          <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
+                          <IconButton 
+                            size="small" 
+                            disabled={customerSubmitting}
+                            onClick={() => setCustomerRequestImages(prev => prev.filter((_, idx) => idx !== i))} 
+                            sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                          >
+                            <DeleteIcon sx={{ fontSize: '0.9rem' }} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Stack>
+                  )}
+                </Box>
+              </Box>
+
+              {customerRequestError && <Alert severity="error" sx={{ borderRadius: 1.5 }}>{customerRequestError}</Alert>}
+            </Stack>
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => setCustomerRequestOpen(false)} 
+            disabled={customerSubmitting}
+            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+          >
+            취소
+          </Button>
+          <Button 
+            variant="contained" 
+            color="success"
+            onClick={handleSubmitCustomerRequest} 
+            disabled={customerSubmitting}
+            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+          >
+            {customerSubmitting ? <CircularProgress size={20} color="inherit" /> : "접수하기"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

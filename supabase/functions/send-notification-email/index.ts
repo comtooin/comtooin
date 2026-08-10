@@ -129,10 +129,16 @@ serve(async (req) => {
       </div>
     `;
 
+    // 접수자 이메일(record.user_email)이 기재된 경우 수신인(to)에 추가하여 접수 확인 이메일 자동 발송
+    const toRecipients = [gmailUser];
+    if (record.user_email && record.user_email.trim() !== '') {
+      toRecipients.push(record.user_email.trim());
+    }
+
     const mailOptions = {
       from: `"COMTOOIN 알림" <${gmailUser}>`,
-      to: gmailUser, // To에는 발신자 본인을 넣고,
-      bcc: emailAddresses.join(', '), // Bcc(숨은참조)에 직원 전체를 넣어서 개인정보 보호
+      to: toRecipients.join(', '),
+      bcc: emailAddresses.join(', '), // Bcc(숨은참조)에 직원 전체를 넣어 개인정보 보호
       subject: `[COMTOOIN] 신규 업무 접수: ${record.customer_name}`,
       html: htmlContent,
     };

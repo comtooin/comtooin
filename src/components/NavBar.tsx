@@ -155,6 +155,16 @@ const NavBar: React.FC = () => {
                       <ListItemText primary="자산관리" primaryTypographyProps={{ fontWeight: 500 }} />
                     </ListItem>
                   )}
+                  <ListItem 
+                    button 
+                    component={RouterLink} 
+                    to="/admin/messenger"
+                    selected={location.pathname === '/admin/messenger'}
+                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
+                  >
+                    <ListItemIcon><ForumIcon /></ListItemIcon>
+                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500 }} />
+                  </ListItem>
                 </>
               ) : (
                 <>
@@ -406,6 +416,16 @@ const NavBar: React.FC = () => {
                       <ListItemText primary="자산관리" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                     </ListItem>
                   )}
+                  <ListItem 
+                    button 
+                    component={RouterLink} 
+                    to="/admin/messenger"
+                    selected={location.pathname === '/admin/messenger'}
+                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
+                  >
+                    <ListItemIcon><ForumIcon /></ListItemIcon>
+                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
+                  </ListItem>
                 </>
               ) : (
                 <>

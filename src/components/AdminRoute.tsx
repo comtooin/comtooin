@@ -28,6 +28,7 @@ const AdminRoute: React.FC<AdminRouteProps> = ({ children, requiredRole }) => {
       location.pathname === '/admin/dashboard' || 
       location.pathname === '/admin/profile' || 
       location.pathname === '/admin/help' || 
+      location.pathname === '/admin/messenger' || 
       /^\/admin\/customers\/[^/]+\/inventory$/.test(location.pathname);
 
     if (!isAllowed) {

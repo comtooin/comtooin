@@ -8,7 +8,7 @@ import {
   Assignment as AssignmentIcon,
   AccessTime as AccessTimeIcon
 } from '@mui/icons-material';
-import { supabase, getCurrentStaffId, sendPushNotification } from '../api';
+import { supabase, getCurrentStaffId, sendPushNotification, assetBaseURL } from '../api';
 
 
 
@@ -23,9 +23,64 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingCommentContent, setEditingCommentContent] = useState('');
 
+  // 렌더링에 사용할 최종 파싱 이미지 목록 확보 (로컬 상태 갱신 지연 시 부모 프롭 Fallback)
+  const rawImages = selectedRequest?.images || request?.images || [];
+  let parsedImages: string[] = [];
+  if (Array.isArray(rawImages)) {
+    parsedImages = rawImages.map((img: any) => {
+      if (typeof img === 'string' && img.startsWith('[')) {
+        try {
+          const arr = JSON.parse(img);
+          return Array.isArray(arr) ? arr[0] : img;
+        } catch {
+          return img;
+        }
+      }
+      return img;
+    });
+  } else if (typeof rawImages === 'string' && rawImages.trim() !== '') {
+    try {
+      const parsed = JSON.parse(rawImages);
+      parsedImages = Array.isArray(parsed) ? parsed : [parsed];
+    } catch {
+      parsedImages = [rawImages];
+    }
+  }
+
   useEffect(() => {
     if (open && request) {
-      setSelectedRequest(request);
+      // 이미지 및 코멘트 데이터의 2중 안전 JSON 파싱 가드 이식
+      let parsedImages: string[] = [];
+      if (request.images) {
+        if (Array.isArray(request.images)) {
+          parsedImages = request.images.map((img: any) => {
+            if (typeof img === 'string' && img.startsWith('[')) {
+              try {
+                const arr = JSON.parse(img);
+                return Array.isArray(arr) ? arr[0] : img;
+              } catch {
+                return img;
+              }
+            }
+            return img;
+          });
+        } else if (typeof request.images === 'string' && request.images.trim() !== '') {
+          try {
+            const parsed = JSON.parse(request.images);
+            parsedImages = Array.isArray(parsed) ? parsed : [parsed];
+          } catch (e) {
+            parsedImages = [request.images];
+          }
+        }
+      }
+
+      const sanitizedRequest = {
+        ...request,
+        images: parsedImages,
+        comments: Array.isArray(request.comments) ? request.comments : []
+      };
+
+      setSelectedRequest(sanitizedRequest);
       setNewStatus(request.status);
       setNewComment('');
       setIsEditing(false);
@@ -33,7 +88,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       setEditForm({
         content: request.content || '',
         requester_name: request.requester_name || '',
-        comments: []
+        comments: Array.isArray(request.comments) ? request.comments : []
       });
     }
   }, [open, request]);
@@ -272,17 +327,18 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Stack>
           </Box>
           
-          {selectedRequest.images && selectedRequest.images.length > 0 && (
+          {parsedImages && parsedImages.length > 0 && (
             <Box>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>첨부 이미지</Typography>
               <Grid container spacing={1}>
-                {selectedRequest.images.map((image: string, index: number) => {
+                {parsedImages.map((image: string, index: number) => {
                   let imageUrl = image;
-                  if (!image.startsWith('http')) imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                  if (!image.startsWith('http')) imageUrl = `${assetBaseURL}/uploads/${image}`;
                   else if (image.includes('drive.google.com')) {
                     const fileId = image.match(/\/d\/(.+?)\//)?.[1];
                     if (fileId) imageUrl = `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
                   }
+                  console.log("RequestDetailModal rendering imageUrl:", imageUrl);
                   return (
                     <Grid item key={index} xs={6} sm={4}>
                       <Paper variant="outlined" sx={{ overflow: 'hidden', borderRadius: 1, cursor: 'pointer', '&:hover': { transform: 'scale(1.02)' } }} onClick={() => window.open(image.startsWith('http') ? image : imageUrl, '_blank')}>

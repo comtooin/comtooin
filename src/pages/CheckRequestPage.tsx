@@ -5,7 +5,7 @@ import {
   useTheme, useMediaQuery
 } from '@mui/material';
 import { ReceiptLong as ReceiptLongIcon, SearchOff as SearchOffIcon } from '@mui/icons-material';
-import { supabase } from '../api';
+import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 
@@ -304,7 +304,7 @@ const CheckRequestPage: React.FC = () => {
                     {selectedRequest.images.map((image, index) => {
                       let imageUrl = image;
                       if (!image.startsWith('http')) {
-                        imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                        imageUrl = `${assetBaseURL}/uploads/${image}`;
                       } else if (image.includes('drive.google.com')) {
                         const fileId = image.match(/\/d\/(.+?)\//)?.[1];
                         if (fileId) {

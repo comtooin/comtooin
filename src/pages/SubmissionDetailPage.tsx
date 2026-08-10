@@ -8,7 +8,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Assignment as AssignmentIcon
 } from '@mui/icons-material';
-import { supabase } from '../api';
+import { supabase, assetBaseURL } from '../api';
 import { Helmet } from 'react-helmet-async';
 
 // Define types for our data
@@ -95,7 +95,38 @@ const SubmissionDetailPage: React.FC = () => {
           .single();
 
         if (fetchError) throw fetchError;
-        setRequest(data);
+
+        // 이미지 및 코멘트 데이터의 2중 안전 JSON 파싱 가드 이식
+        let parsedImages: string[] = [];
+        if (data.images) {
+          if (Array.isArray(data.images)) {
+            // 이미 배열인 경우 내부 원소들이 JSON 문자열인지 방어적으로 2차 검증
+            parsedImages = data.images.map((img: any) => {
+              if (typeof img === 'string' && img.startsWith('[')) {
+                try {
+                  const arr = JSON.parse(img);
+                  return Array.isArray(arr) ? arr[0] : img;
+                } catch {
+                  return img;
+                }
+              }
+              return img;
+            });
+          } else if (typeof data.images === 'string' && data.images.trim() !== '') {
+            try {
+              const parsed = JSON.parse(data.images);
+              parsedImages = Array.isArray(parsed) ? parsed : [parsed];
+            } catch (e) {
+              parsedImages = [data.images];
+            }
+          }
+        }
+
+        setRequest({
+          ...data,
+          images: parsedImages,
+          comments: Array.isArray(data.comments) ? data.comments : []
+        });
       } catch (err: any) {
         setError('접수 내역을 불러오는 중 오류가 발생했습니다.');
       } finally {
@@ -212,7 +243,7 @@ const SubmissionDetailPage: React.FC = () => {
                 .map((image, index) => {
                   let imageUrl = image;
                   if (!image.startsWith('http')) {
-                    imageUrl = `https://szwiejswmfivultxxywb.supabase.co/storage/v1/object/public/uploads/${image}`;
+                    imageUrl = `${assetBaseURL}/uploads/${image}`;
                   } else if (image.includes('drive.google.com')) {
                     const fileId = image.match(/\/d\/(.+?)\//)?.[1];
                     if (fileId) {
