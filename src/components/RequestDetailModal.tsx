@@ -95,7 +95,9 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
 
   const handleDeleteRequest = async () => {
     if (!selectedRequest) return;
-    if (!window.confirm('정말로 이 기록을 삭제하시겠습니까?')) return;
+    const isCust = sessionStorage.getItem('adminRole') === 'customer';
+    const confirmMsg = isCust ? '정말로 이 기술지원 요청을 취소하시겠습니까?' : '정말로 이 기록을 삭제하시겠습니까?';
+    if (!window.confirm(confirmMsg)) return;
     try {
       // 1. Supabase Storage에 저장된 이미지 경로 추출
       const imagesToRemove = parsedImages
@@ -172,7 +174,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
         console.warn('연동된 스케줄 삭제 실패:', scheduleErr);
       }
 
-      alert('업무 기록이 삭제되었습니다.');
+      alert(isCust ? '기술지원 요청이 취소되었습니다.' : '업무 기록이 삭제되었습니다.');
       onClose();
       onRefresh();
     } catch (err: any) {
@@ -425,9 +427,27 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       <DialogActions sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: 'grey.50' }}>
         <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
           {userRole === 'customer' ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <Stack direction="row" spacing={1} justifyContent="space-between" width="100%">
+              {selectedRequest.status !== 'completed' ? (
+                <Button 
+                  onClick={handleDeleteRequest} 
+                  color="error" 
+                  variant="outlined" 
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    height: '36px', 
+                    fontSize: '0.75rem', 
+                    borderRadius: 1, 
+                    minWidth: 90 
+                  }}
+                >
+                  요청 취소
+                </Button>
+              ) : (
+                <Box />
+              )}
               <Button onClick={onClose} variant="contained" color="primary" sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, minWidth: 100 }}>닫기</Button>
-            </Box>
+            </Stack>
           ) : (
             <>
               {/* 좌측: 기록 전체 삭제 (읽기 모드일 때만 노출해 오클릭 유도 방지) */}

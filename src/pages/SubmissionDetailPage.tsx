@@ -78,10 +78,82 @@ const SubmissionDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const userRole = sessionStorage.getItem('adminRole');
+  const isCustomer = userRole === 'customer';
+
   // State for delete dialog
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
+
+  const handleCancelRequest = async () => {
+    if (!id || !request) return;
+    if (!window.confirm('정말로 이 기술지원 요청을 취소하시겠습니까?')) return;
+    setLoading(true);
+    try {
+        // 1. Supabase Storage에 저장된 이미지 경로 추출
+        const imagesToRemove = request.images
+            ?.filter(url => typeof url === 'string' && url.includes('/uploads/'))
+            .map((url: string) => {
+                return url.split('/uploads/').pop();
+            }).filter(Boolean) as string[];
+
+        // 2. 구글 드라이브에 저장된 이미지 파일 ID 추출
+        const driveFileIds = request.images
+            ?.filter(url => typeof url === 'string' && url.includes('drive.google.com'))
+            ?.map((url: string) => {
+                const decodedUrl = decodeURIComponent(url);
+                let match = decodedUrl.match(/[?&]id=([^&]+)/);
+                if (match) return match[1];
+                match = decodedUrl.match(/\/d\/([^/]+)/);
+                if (match) return match[1];
+                return null;
+            }).filter(Boolean) as string[];
+
+        // 3. 다이렉트 requests 테이블 삭제 쿼리 실행
+        const { error: deleteError } = await supabase
+            .from('requests')
+            .delete()
+            .eq('id', id);
+
+        if (deleteError) throw deleteError;
+
+        // DB 삭제 성공 후 실물 파일들 정리
+        if (imagesToRemove && imagesToRemove.length > 0) {
+            await supabase.storage.from('uploads').remove(imagesToRemove);
+        }
+
+        if (driveFileIds && driveFileIds.length > 0) {
+            console.log("Starting deletion of drive files on direct cancel:", driveFileIds);
+            await Promise.all(
+                driveFileIds.map(async (fileId) => {
+                    try {
+                        const { data, error: funcErr } = await supabase.functions.invoke('upload-drive-file', {
+                            headers: {
+                                Authorization: `Bearer ${process.env.REACT_APP_SUPABASE_ANON_KEY || ''}`
+                            },
+                            body: {
+                                deleteFileOnly: true,
+                                fileIdToDelete: fileId
+                            }
+                        });
+                        if (funcErr) throw funcErr;
+                        if (data && data.error) throw new Error(data.error);
+                    } catch (driveErr: any) {
+                        console.error(`Failed to delete drive file ${fileId} on request cancel:`, driveErr.message || driveErr);
+                    }
+                })
+            );
+        }
+
+        alert('성공적으로 취소되었습니다.');
+        navigate('/admin/dashboard');
+    } catch (err: any) {
+        alert(err.message || '취소 중 오류가 발생했습니다.');
+    } finally {
+        setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -338,24 +410,42 @@ const SubmissionDetailPage: React.FC = () => {
         )}
 
         <Box sx={{ mt: 2, display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
-              size="large"
-              onClick={() => navigate(`/admin/request/edit/${id}`)} 
-              sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
-            >
-                수정
-            </Button>
-            <Button 
-              variant="contained" 
-              color="error" 
-              size="large"
-              onClick={() => setOpenDeleteDialog(true)} 
-              sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
-            >
-                삭제
-            </Button>
+            {isCustomer ? (
+              <>
+                {request && request.status !== 'completed' && (
+                  <Button 
+                    variant="contained" 
+                    color="error" 
+                    size="large"
+                    onClick={handleCancelRequest} 
+                    sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
+                  >
+                      요청 취소
+                  </Button>
+                )}
+              </>
+            ) : (
+              <>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  size="large"
+                  onClick={() => navigate(`/admin/request/edit/${id}`)} 
+                  sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
+                >
+                    수정
+                </Button>
+                <Button 
+                  variant="contained" 
+                  color="error" 
+                  size="large"
+                  onClick={() => setOpenDeleteDialog(true)} 
+                  sx={{ minWidth: 120, fontWeight: 'bold', borderRadius: 1 }}
+                >
+                    삭제
+                </Button>
+              </>
+            )}
             <Button 
               variant="outlined" 
               size="large"

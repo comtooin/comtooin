@@ -151,10 +151,10 @@ const AdminReportPage: React.FC = () => {
   // 거래처 대시보드 전용 시각화 분석 접기/펼치기 상태 (기본값: 펼침)
   const [isChartExpanded, setIsChartExpanded] = useState(true);
 
-  // 거래처 계정일 때는 펼치기 상태(isChartExpanded)에 연동, 관리자 계정일 때는 기존 탭(tabValue === 1)에 연동
-  const showVisualization = userRole === 'customer' ? isChartExpanded : tabValue === 1;
-  // 거래처 계정일 때는 언제나 리스트 테이블 상시 노출, 관리자 계정일 때는 기존 탭(tabValue === 0)에 연동
-  const showList = userRole === 'customer' ? true : tabValue === 0;
+  // 거래처/직원 구분 없이 언제나 펼치기 상태(isChartExpanded)에 연동하여 그래프 노출
+  const showVisualization = isChartExpanded;
+  // 거래처/직원 구분 없이 언제나 리스트 테이블 상시 노출
+  const showList = true;
 
   const [statusData, setStatusData] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
@@ -2073,8 +2073,8 @@ const AdminReportPage: React.FC = () => {
         )}
       </Paper>
 
-      {/* 탭 섹션 (사내 관리자/스태프 로그인 시에만 탭바 활성화) */}
-      {userRole !== 'customer' && (
+      {/* 탭 섹션 감춤 처리 (통계 시각화 그래프 아코디언 상시 노출 통합으로 인한 감춤) */}
+      {false && (
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
           <Tabs value={tabValue} onChange={handleTabChange} textColor="primary" indicatorColor="primary">
             <Tab 
@@ -2258,8 +2258,8 @@ const AdminReportPage: React.FC = () => {
             </Box>
           )}
 
-          {/* 거래처 계정 전용 시각화 분석 헤더 및 접기/펼치기 컨트롤러 */}
-          {userRole === 'customer' && (
+          {/* 시각화 분석 헤더 및 접기/펼치기 컨트롤러 (상시 노출) */}
+          {true && (
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5, pb: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
               <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <BarChartIcon sx={{ fontSize: '1.1rem', color: 'primary.main' }} /> 시각화 분석 통계

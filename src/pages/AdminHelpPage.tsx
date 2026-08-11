@@ -162,9 +162,13 @@ const AdminHelpPage: React.FC<AdminHelpProps> = ({ isDialog = false, onClose }) 
     }
   ];
 
-  // Filter help menus for customers to show only their relevant pages
+  // Filter help menus for customers to show only their relevant pages in the same order as NavBar menu
   const sections = isCustomer
-    ? allSections.filter(sec => sec.id === 'dashboard' || sec.id === 'inventory' || sec.id === 'messenger')
+    ? [
+        allSections.find(sec => sec.id === 'dashboard'),
+        allSections.find(sec => sec.id === 'inventory'),
+        allSections.find(sec => sec.id === 'messenger')
+      ].filter(Boolean) as typeof allSections
     : allSections;
 
   const activeSection = sections.find(sec => sec.id === activeTab) || sections[0];
