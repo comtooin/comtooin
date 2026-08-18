@@ -37,21 +37,24 @@ const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [helpOpen, setHelpOpen] = useState(false);
+  const [customerId, setCustomerId] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     const token = sessionStorage.getItem('adminToken');
     const role = sessionStorage.getItem('adminRole');
     const name = sessionStorage.getItem('adminName');
+    const custId = sessionStorage.getItem('adminCustomerId');
     setIsAdminLoggedIn(!!token);
     setUserRole(role);
     setUserName(name);
+    setCustomerId(custId);
   }, [location]);
 
   const handleLogout = async () => {
@@ -176,11 +179,11 @@ const NavBar: React.FC = () => {
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500 }} />
                   </ListItem>
-                  {sessionStorage.getItem('adminCustomerId') && (
+                  {customerId && (
                     <ListItem 
                       button 
                       component={RouterLink} 
-                      to={`/admin/customers/${sessionStorage.getItem('adminCustomerId')}/inventory`}
+                      to={`/admin/customers/${customerId}/inventory`}
                       selected={location.pathname.includes('/inventory')}
                       sx={getMenuItemStyle(location.pathname.includes('/inventory'))}
                     >
@@ -232,8 +235,8 @@ const NavBar: React.FC = () => {
                     button 
                     component={RouterLink} 
                     to="/admin/customers"
-                    selected={location.pathname.startsWith('/admin/customers') && !location.pathname.includes('/inventory')}
-                    sx={getMenuItemStyle(location.pathname.startsWith('/admin/customers') && !location.pathname.includes('/inventory'))}
+                    selected={location.pathname.startsWith('/admin/customers')}
+                    sx={getMenuItemStyle(location.pathname.startsWith('/admin/customers'))}
                   >
                     <ListItemIcon><BusinessIcon /></ListItemIcon>
                     <ListItemText primary="거래처" primaryTypographyProps={{ fontWeight: 500 }} />
@@ -437,11 +440,11 @@ const NavBar: React.FC = () => {
                     <ListItemIcon><DashboardIcon /></ListItemIcon>
                     <ListItemText primary="대시보드" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                   </ListItem>
-                  {sessionStorage.getItem('adminCustomerId') && (
+                  {customerId && (
                     <ListItem 
                       button 
                       component={RouterLink} 
-                      to={`/admin/customers/${sessionStorage.getItem('adminCustomerId')}/inventory`}
+                      to={`/admin/customers/${customerId}/inventory`}
                       selected={location.pathname.includes('/inventory')}
                       sx={getMenuItemStyle(location.pathname.includes('/inventory'))}
                     >
@@ -493,8 +496,8 @@ const NavBar: React.FC = () => {
                     button 
                     component={RouterLink} 
                     to="/admin/customers"
-                    selected={location.pathname.startsWith('/admin/customers') && !location.pathname.includes('/inventory')}
-                    sx={getMenuItemStyle(location.pathname.startsWith('/admin/customers') && !location.pathname.includes('/inventory'))}
+                    selected={location.pathname.startsWith('/admin/customers')}
+                    sx={getMenuItemStyle(location.pathname.startsWith('/admin/customers'))}
                   >
                     <ListItemIcon><BusinessIcon /></ListItemIcon>
                     <ListItemText primary="거래처" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
