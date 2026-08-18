@@ -57,26 +57,64 @@ export const getCurrentStaffId = async () => {
  * @param message 알림 내용
  * @param targetStaffIds 특정 직원에게만 보낼 경우 ID 배열. 없거나 'all'이면 전체 발송. (관리자는 항상 제외됨)
  */
-export const sendPushNotification = async (title: string, message: string, targetStaffIds?: string[] | 'all' | 'member_only', url?: string) => {
+export const sendPushNotification = async (
+  title: string, 
+  message: string, 
+  targetOrOptions?: string[] | 'all' | 'member_only' | {
+    targetStaffIds?: string[] | 'all' | 'member_only';
+    targetCustomerId?: string;
+  }, 
+  url?: string
+) => {
   try {
-    let query = supabase.from('staff').select('onesignal_id, role').not('onesignal_id', 'is', null);
+    let targetStaffIds: string[] | 'all' | 'member_only' | undefined = undefined;
+    let targetCustomerId: string | undefined = undefined;
+
+    if (targetOrOptions) {
+      if (typeof targetOrOptions === 'string' || Array.isArray(targetOrOptions)) {
+        targetStaffIds = targetOrOptions;
+      } else {
+        targetStaffIds = targetOrOptions.targetStaffIds;
+        targetCustomerId = targetOrOptions.targetCustomerId;
+      }
+    }
+
+    const validPlayerIds: string[] = [];
+
+    // 1. 내부직원은 모든 알림 수신 대상 (targetStaffIds 필터링 적용)
+    let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
     
     if (targetStaffIds === 'member_only') {
-      query = query.eq('role', 'member');
+      staffQuery = staffQuery.eq('role', 'member');
     } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
-      query = query.in('id', targetStaffIds);
+      staffQuery = staffQuery.in('id', targetStaffIds);
     }
-    
-    const { data } = await query;
-    if (!data || data.length === 0) return;
 
-    const validPlayerIds = data.map(s => s.onesignal_id).filter(Boolean);
+    const { data: staffData } = await staffQuery;
+    if (staffData) {
+      validPlayerIds.push(...staffData.map(s => s.onesignal_id).filter(Boolean));
+    }
+
+    // 2. 거래처는 본인 해당 업무만 알림 수신 (targetCustomerId가 매치될 때만 타겟팅 발송)
+    if (targetCustomerId) {
+      const { data: custData } = await supabase
+        .from('customers')
+        .select('onesignal_id')
+        .eq('id', targetCustomerId)
+        .not('onesignal_id', 'is', null);
+      
+      if (custData) {
+        validPlayerIds.push(...custData.map(c => c.onesignal_id).filter(Boolean));
+      }
+    }
+
     if (validPlayerIds.length === 0) return;
+    const uniquePlayerIds = Array.from(new Set(validPlayerIds));
 
     const res = await fetch('/api/sendPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, message, include_player_ids: validPlayerIds, url })
+      body: JSON.stringify({ title, message, include_player_ids: uniquePlayerIds, url })
     });
     if (!res.ok) {
       const errorText = await res.text();

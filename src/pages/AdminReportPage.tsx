@@ -460,12 +460,16 @@ const AdminReportPage: React.FC = () => {
 
       if (insertError) throw insertError;
 
-      // 실서버 모든 직원/관리자에게 푸시 알림 전송
+      // 실서버 모든 직원/관리자 및 요청 거래처에게 격리 푸시 알림 전송
       const newRequestId = requestData?.[0]?.id || '';
+      const sessionCustomerId = sessionStorage.getItem('adminCustomerId');
       sendPushNotification(
         '새로운 기술지원 요청 접수',
         `[${customerName}] ${customerRequesterName}님의 요청: ${customerRequestContent.trim()}`,
-        'all',
+        {
+          targetStaffIds: 'all',
+          targetCustomerId: sessionCustomerId || undefined
+        },
         newRequestId ? (window.location.origin + `/admin/request/detail/${newRequestId}`) : (window.location.origin + '/admin/dashboard')
       );
 

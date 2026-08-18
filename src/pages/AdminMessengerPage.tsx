@@ -339,11 +339,41 @@ const AdminMessengerPage: React.FC = () => {
 
       if (error) throw error;
 
-      // 원격 알림 발송 (전체 푸시)
+      // 원격 알림 발송 (직원은 전원 수신, 거래처는 해당방 거래처만 수신되게 정밀 타겟 격리)
       const activeRoom = rooms.find(r => r.id === activeRoomId);
       const roomPrefix = activeRoom ? `[${activeRoom.name}] ` : '';
       const preview = content.trim().substring(0, 40) + (content.trim().length > 40 ? '...' : '');
-      await sendPushNotification('새로운 메시지', `${roomPrefix}${myName}: ${preview}`, 'member_only', window.location.origin + '/admin/messenger');
+
+      let targetCustomerId: string | undefined = undefined;
+      if (activeRoom) {
+        const { data: customers } = await supabase
+          .from('customers')
+          .select('id, name, manager_name, manager_name_2');
+        
+        if (customers) {
+          const matched = customers.find(c => 
+            (c.name && activeRoom.name.includes(c.name)) ||
+            (c.manager_name && activeRoom.name.includes(c.manager_name)) ||
+            (c.manager_name_2 && activeRoom.name.includes(c.manager_name_2))
+          );
+          if (matched) {
+            targetCustomerId = matched.id;
+          }
+        }
+      }
+
+      const currentRole = sessionStorage.getItem('adminRole') || userRole;
+      const isSendToCustomer = currentRole !== 'customer' && targetCustomerId;
+
+      await sendPushNotification(
+        '새로운 메시지', 
+        `${roomPrefix}${myName}: ${preview}`, 
+        {
+          targetStaffIds: 'member_only',
+          targetCustomerId: isSendToCustomer ? targetCustomerId : undefined
+        }, 
+        window.location.origin + '/admin/messenger'
+      );
 
       setContent('');
       await fetchMemos(activeRoomId);

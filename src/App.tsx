@@ -272,24 +272,40 @@ let isOneSignalInitialized = false;
 const OneSignalManager = () => {
   const location = useLocation();
 
-  // 로그인 상태 및 경로 이동 시 OneSignal ID와 스태프 매핑 갱신 감시
-  useEffect(() => {
-    const checkAndUpdateSubscription = async () => {
-      if (!isOneSignalInitialized) return;
+  const updatePlayerId = async () => {
+    if (!isOneSignalInitialized) return;
+    try {
+      const pushId = OneSignal.User.PushSubscription.id;
+      if (!pushId) return;
 
-      try {
+      const role = sessionStorage.getItem('adminRole');
+      if (role === 'customer') {
+        const customerId = sessionStorage.getItem('adminCustomerId');
+        if (customerId) {
+          await supabase
+            .from('customers')
+            .update({ onesignal_id: pushId })
+            .eq('id', customerId);
+          console.log('Successfully updated OneSignal push ID for customer:', customerId);
+        }
+      } else {
         const staffId = await getCurrentStaffId();
-        if (staffId && OneSignal.User.PushSubscription.id) {
+        if (staffId) {
           await supabase
             .from('staff')
-            .update({ onesignal_id: OneSignal.User.PushSubscription.id })
+            .update({ onesignal_id: pushId })
             .eq('id', staffId);
+          console.log('Successfully updated OneSignal push ID for staff:', staffId);
         }
-      } catch (err) {
-        console.error('Error updating OneSignal player ID on route change:', err);
       }
-    };
-    checkAndUpdateSubscription();
+    } catch (err) {
+      console.error('Error updating OneSignal player ID:', err);
+    }
+  };
+
+  // 로그인 상태 및 경로 이동 시 OneSignal ID와 계정 매핑 갱신 감시
+  useEffect(() => {
+    updatePlayerId();
   }, [location]);
 
   useEffect(() => {
@@ -314,13 +330,6 @@ const OneSignalManager = () => {
 
         console.log('OneSignal initialized. Prompting for push...');
         OneSignal.Slidedown.promptPush();
-
-        const updatePlayerId = async () => {
-          const staffId = await getCurrentStaffId();
-          if (staffId && OneSignal.User.PushSubscription.id) {
-            await supabase.from('staff').update({ onesignal_id: OneSignal.User.PushSubscription.id }).eq('id', staffId);
-          }
-        };
 
         if (OneSignal.User.PushSubscription.id) {
           updatePlayerId();

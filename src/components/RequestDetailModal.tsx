@@ -236,11 +236,26 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
           user_id: staffId,
         });
 
-        const { data: requestAuthor } = await supabase.from('requests').select('user_email, customer_name').eq('id', selectedRequest.id).single();
-        if (requestAuthor?.user_email) {
-          const { data: authorStaff } = await supabase.from('staff').select('id').eq('email', requestAuthor.user_email).single();
-          if (authorStaff && authorStaff.id !== staffId) {
-             sendPushNotification('새 코멘트 등록 알림', `[${requestAuthor.customer_name}] 업무기록에 코멘트가 달렸습니다.`, [authorStaff.id], window.location.origin + `/admin/request/detail/${selectedRequest.id}`);
+        const { data: requestAuthor } = await supabase.from('requests').select('user_email, customer_name, customer_id').eq('id', selectedRequest.id).single();
+        if (requestAuthor) {
+          // 1. 직원 접수 담당자에게 알림 전송 (작성자가 본인이 아닌 경우)
+          if (requestAuthor.user_email) {
+            const { data: authorStaff } = await supabase.from('staff').select('id').eq('email', requestAuthor.user_email).single();
+            if (authorStaff && authorStaff.id !== staffId) {
+               sendPushNotification('새 코멘트 등록 알림', `[${requestAuthor.customer_name}] 업무기록에 코멘트가 달렸습니다.`, [authorStaff.id], window.location.origin + `/admin/request/detail/${selectedRequest.id}`);
+            }
+          }
+          // 2. 직원이 코멘트를 달았고 해당 거래처 ID가 존재하는 경우 거래처 담당자에게 푸시 전송
+          const loginRole = sessionStorage.getItem('adminRole');
+          if (loginRole !== 'customer' && requestAuthor.customer_id) {
+            sendPushNotification(
+              '새 코멘트 등록 알림', 
+              `[${requestAuthor.customer_name}] 업무기록에 조치내용(코멘트)이 등록되었습니다.`, 
+              {
+                targetCustomerId: requestAuthor.customer_id
+              }, 
+              window.location.origin + `/admin/request/detail/${selectedRequest.id}`
+            );
           }
         }
       }
