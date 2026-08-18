@@ -1509,7 +1509,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <BarChart data={cpuStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={70} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} interval={0} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
@@ -1551,7 +1551,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <BarChart data={memoryStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={60} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} interval={0} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
@@ -1593,7 +1593,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <BarChart data={storageStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={80} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} interval={0} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
@@ -1635,7 +1635,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <BarChart data={osStats} layout="vertical" margin={{ top: 10, right: 30, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} axisLine={false} tickLine={false} interval={0} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
@@ -1779,7 +1779,7 @@ const AdminCustomerInventoryPage: React.FC = () => {
                   <BarChart data={topSoftware} layout="vertical" margin={{ top: 10, right: 15, left: 10, bottom: 5 }} style={{ outline: 'none' }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 9, fill: '#64748b'}} axisLine={false} tickLine={false} />
+                    <YAxis dataKey="name" type="category" width={80} tick={{fontSize: 9, fill: '#64748b'}} axisLine={false} tickLine={false} interval={0} />
                     <RechartsTooltip 
                       contentStyle={{ backgroundColor: '#1e293b', borderRadius: '8px', border: 'none', color: '#f8fafc', fontSize: '11px' }}
                       itemStyle={{ color: '#f8fafc' }}
