@@ -30,6 +30,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ForumIcon from '@mui/icons-material/Forum';
 import AdminProfilePage from '../pages/AdminProfilePage';
 import AdminHelpPage from '../pages/AdminHelpPage';
+import OneSignal from 'react-onesignal';
+import { supabase } from '../api';
 
 const NavBar: React.FC = () => {
   const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
@@ -52,11 +54,42 @@ const NavBar: React.FC = () => {
     setUserName(name);
   }, [location]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const role = sessionStorage.getItem('adminRole') || userRole;
+      const pushId = OneSignal?.User?.PushSubscription?.id;
+      
+      if (pushId) {
+        if (role === 'customer') {
+          const customerId = sessionStorage.getItem('adminCustomerId');
+          if (customerId) {
+            await supabase
+              .from('customers')
+              .update({ onesignal_id: null })
+              .eq('id', customerId);
+            console.log('Successfully cleared OneSignal push ID for customer on logout');
+          }
+        } else {
+          const staffId = sessionStorage.getItem('adminStaffId');
+          if (staffId) {
+            await supabase
+              .from('staff')
+              .update({ onesignal_id: null })
+              .eq('id', staffId);
+            console.log('Successfully cleared OneSignal push ID for staff on logout');
+          }
+        }
+      }
+    } catch (pushClearErr) {
+      console.error('Error clearing OneSignal push ID on logout:', pushClearErr);
+    }
+
     sessionStorage.removeItem('adminToken');
     sessionStorage.removeItem('adminSessionExpiresAt');
     sessionStorage.removeItem('adminRole');
     sessionStorage.removeItem('adminName');
+    sessionStorage.removeItem('adminCustomerId');
+    sessionStorage.removeItem('adminStaffId');
     setIsAdminLoggedIn(false);
     setUserRole(null);
     setUserName(null);
