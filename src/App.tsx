@@ -278,6 +278,18 @@ const OneSignalManager = () => {
       const pushId = OneSignal.User.PushSubscription.id;
       if (!pushId) return;
 
+      // 중복 방지 선제 소거 처리 (Deduplication)
+      // 본인 기기 ID(pushId)와 동일한 값을 갖고 있는 다른 모든 staff 및 customers의 컬럼을 null로 깨끗이 밀어냄
+      await supabase
+        .from('staff')
+        .update({ onesignal_id: null })
+        .eq('onesignal_id', pushId);
+
+      await supabase
+        .from('customers')
+        .update({ onesignal_id: null })
+        .eq('onesignal_id', pushId);
+
       const role = sessionStorage.getItem('adminRole');
       if (role === 'customer') {
         const customerId = sessionStorage.getItem('adminCustomerId');
