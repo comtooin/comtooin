@@ -29,7 +29,7 @@ import MicIcon from '@mui/icons-material/Mic';
 import PhotoCamera from '@mui/icons-material/PhotoCamera';
 import DeleteIcon from '@mui/icons-material/Delete';
 import LogoutIcon from '@mui/icons-material/Logout';
-import { supabase } from '../api';
+import { supabase, sendPushNotification } from '../api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useVoiceTyping } from '../hooks/useVoiceTyping';
@@ -172,9 +172,31 @@ const GuestMessengerPage: React.FC = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'memos', filter: `room_id=eq.${activeRoomId}` },
-        () => {
-          console.log('Realtime guest chat message changed');
-          fetchMemos(activeRoomId);
+        (payload: any) => {
+          console.log('Realtime guest chat message changed', payload);
+          if (payload.eventType === 'INSERT') {
+            const newMemo: Memo = {
+              id: payload.new.id,
+              created_at: payload.new.created_at,
+              content: payload.new.content,
+              color: payload.new.color || '#ffffff',
+              author_id: payload.new.author_id,
+              room_id: payload.new.room_id,
+              author: { name: payload.new.author_name || '알 수 없음' }
+            };
+            setMemos(prev => {
+              if (prev.some(m => m.id === newMemo.id)) return prev;
+              return [newMemo, ...prev];
+            });
+          } else if (payload.eventType === 'DELETE') {
+            setMemos(prev => prev.filter(m => m.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            setMemos(prev => prev.map(m => m.id === payload.new.id ? {
+              ...m,
+              content: payload.new.content,
+              color: payload.new.color || '#ffffff',
+            } : m));
+          }
         }
       )
       .subscribe();
@@ -340,6 +362,17 @@ const GuestMessengerPage: React.FC = () => {
       });
 
       if (error) throw error;
+
+      const preview = content.trim().substring(0, 40) + (content.trim().length > 40 ? '...' : '');
+      
+      // 비회원 메시지 등록 -> 우리멤버(스태프) 전원 수신 발송
+      await sendPushNotification(
+        '새로운 메시지',
+        `[비회원/1:1상담] ${guestName || '고객'}: ${preview}`,
+        'member_only',
+        window.location.origin + '/admin/messenger'
+      ).catch(e => console.error('Push notification failed:', e));
+
       setContent('');
       await fetchMemos(activeRoomId);
     } catch (err: any) {
@@ -461,6 +494,14 @@ const GuestMessengerPage: React.FC = () => {
         room_id: activeRoomId,
         author_name: '컴투인 (시스템)'
       });
+
+      // 새 기술지원 접수 알림 -> 스태프 전체 발송
+      await sendPushNotification(
+        '새 기술지원 요청 접수',
+        `[${customer.name}] ${guestName} 님이 새로운 기술지원을 접수했습니다.`,
+        'member_only',
+        window.location.origin + '/admin/messenger'
+      ).catch(e => console.error('Push notification failed:', e));
 
       // 폼 초기화 및 닫기
       setReqContent('');

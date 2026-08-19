@@ -195,10 +195,36 @@ const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'memos' },
-        () => {
-          console.log('Realtime chat message changed');
-          if (activeRoomId) {
-            fetchMemos(activeRoomId);
+        (payload: any) => {
+          console.log('Realtime chat message changed', payload);
+          if (!activeRoomId) return;
+
+          if (payload.eventType === 'INSERT') {
+            if (payload.new.room_id === activeRoomId) {
+              const newMemo: Memo = {
+                id: payload.new.id,
+                created_at: payload.new.created_at,
+                content: payload.new.content,
+                color: payload.new.color || '#f8fafc',
+                author_id: payload.new.author_id,
+                room_id: payload.new.room_id,
+                author: { name: payload.new.author_name || '알 수 없음' }
+              };
+              setMemos(prev => {
+                if (prev.some(m => m.id === newMemo.id)) return prev;
+                return [newMemo, ...prev]; // 최신 메시지가 앞에 배치되는 order
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setMemos(prev => prev.filter(m => m.id !== payload.old.id));
+          } else if (payload.eventType === 'UPDATE') {
+            if (payload.new.room_id === activeRoomId) {
+              setMemos(prev => prev.map(m => m.id === payload.new.id ? {
+                ...m,
+                content: payload.new.content,
+                color: payload.new.color || '#f8fafc',
+              } : m));
+            }
           }
         }
       )
@@ -422,13 +448,21 @@ const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }
         targetCustomerId?: string;
       } = {};
 
-      if (currentRole === 'customer') {
-        targetOptions = { targetStaffIds: 'member_only' };
+      const isCustomerRoom = activeRoom && (activeRoom.is_private || activeRoom.customer);
+
+      if (isCustomerRoom) {
+        // 1. 거래처/비회원 1:1 상담방인 경우 발신자 역할에 따라 알림 격리
+        if (currentRole === 'customer') {
+          targetOptions = { targetStaffIds: 'member_only' };
+        } else {
+          targetOptions = { 
+            targetStaffIds: [],
+            targetCustomerId: targetCustomerId || undefined 
+          };
+        }
       } else {
-        targetOptions = { 
-          targetStaffIds: [],
-          targetCustomerId: targetCustomerId || undefined 
-        };
+        // 2. 멤버(스태프)끼리의 전용 대화방인 경우 스태프 전체에게 발송
+        targetOptions = { targetStaffIds: 'member_only' };
       }
 
       await sendPushNotification(
