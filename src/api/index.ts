@@ -98,7 +98,14 @@ export const sendPushNotification = async (
     });
 
     const resData = await res.json().catch(() => ({}));
-    console.log('sendPushNotification (Client) - Backend Server Response:', { status: res.status, data: resData });
+    console.log('sendPushNotification (Client) - Backend Server Response:', { 
+      status: res.status, 
+      success: resData.success,
+      targetIdsCount: resData.targetIdsCount,
+      oneSignalErrors: resData.data?.errors,
+      oneSignalRecipients: resData.data?.recipients,
+      rawOneSignalData: resData.data 
+    });
 
     if (!res.ok) {
       console.error('Push API Error Response status:', res.status, resData);

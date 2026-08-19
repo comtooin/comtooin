@@ -18,6 +18,7 @@ export default async function handler(req, res) {
     const apiKey = process.env.ONESIGNAL_API_KEY;
 
     if (!appId || !apiKey) {
+      console.error('Backend sendPush - ERROR: OneSignal App ID or API Key not configured');
       return res.status(500).json({ error: 'OneSignal App ID or API Key not configured' });
     }
 
@@ -69,8 +70,12 @@ export default async function handler(req, res) {
     }
 
     const uniquePlayerIds = Array.from(new Set(finalPlayerIds));
+    console.log('Backend sendPush - Target Staff Filter:', targetStaffIds);
+    console.log('Backend sendPush - Target Customer Filter:', targetCustomerId);
+    console.log('Backend sendPush - Final Target subscription/player IDs:', uniquePlayerIds);
 
     if (uniquePlayerIds.length === 0) {
+      console.warn('Backend sendPush - Cancelled. No valid recipient push IDs found in database.');
       return res.status(200).json({ success: true, message: 'No target users found in database', targetIdsCount: 0 });
     }
 
@@ -95,6 +100,7 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    console.log('Backend sendPush - OneSignal REST API response status:', response.status, 'data:', data);
     return res.status(200).json({ success: true, data, targetIdsCount: uniquePlayerIds.length });
   } catch (error) {
     console.error('Fatal Error sending push notification:', error);
