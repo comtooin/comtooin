@@ -1,9 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase admin client with service role key to bypass RLS policies securely on the server
+// Initialize Supabase admin client to bypass RLS policies securely
+// Supports various environment variable configurations to ensure master privileges
 const supabase = createClient(
   process.env.REACT_APP_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.REACT_APP_SUPABASE_ANON_KEY || ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 
+  process.env.SUPABASE_SERVICE_KEY || 
+  process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.REACT_APP_SUPABASE_ANON_KEY || ''
 );
 
 export default async function handler(req, res) {
@@ -29,7 +33,7 @@ export default async function handler(req, res) {
       finalPlayerIds.push(...include_player_ids);
     }
 
-    // 2. Query staff onesignal_ids on the server side (bypassing RLS with service_role key)
+    // 2. Query staff onesignal_ids via RLS-bypassing RPC function with table fallback
     let hasStaffTarget = true;
     
     // If only targetCustomerId is explicitly provided without staff targets, skip staff queries
@@ -42,27 +46,63 @@ export default async function handler(req, res) {
     }
 
     if (hasStaffTarget) {
-      let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
-      
+      let rpcRole = null;
       if (targetStaffIds === 'member_only') {
-        staffQuery = staffQuery.in('role', ['member', 'admin']);
-      } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
-        staffQuery = staffQuery.in('id', targetStaffIds);
+        rpcRole = 'member_only';
       }
 
-      const { data: staffData } = await staffQuery;
+      // Try secure Definier RPC first
+      let { data: staffData, error: staffError } = await supabase.rpc('get_staff_onesignal_ids', {
+        target_role: rpcRole
+      });
+
+      // If RPC is missing or fails (e.g. database migrations not applied yet), fallback to direct select
+      if (staffError || !staffData) {
+        console.warn('Backend sendPush - Staff RPC query failed or not deployed, falling back to direct table select. Error:', staffError);
+        
+        let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
+        if (targetStaffIds === 'member_only') {
+          staffQuery = staffQuery.in('role', ['member', 'admin']);
+        } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
+          staffQuery = staffQuery.in('id', targetStaffIds);
+        }
+
+        const { data: fallbackStaffData, error: fallbackStaffError } = await staffQuery;
+        if (fallbackStaffError) {
+          console.error('Backend sendPush - Staff fallback direct select also failed:', fallbackStaffError);
+        } else if (fallbackStaffData) {
+          staffData = fallbackStaffData;
+        }
+      }
+
       if (staffData) {
         finalPlayerIds.push(...staffData.map(s => s.onesignal_id).filter(Boolean));
       }
     }
 
-    // 3. Query customer onesignal_ids on the server side (bypassing RLS with service_role key)
+    // 3. Query customer onesignal_ids via RLS-bypassing RPC function with table fallback
     if (targetCustomerId) {
-      const { data: custData } = await supabase
-        .from('customers')
-        .select('onesignal_id')
-        .eq('id', targetCustomerId)
-        .not('onesignal_id', 'is', null);
+      // Try secure Definier RPC first
+      let { data: custData, error: custError } = await supabase.rpc('get_customer_onesignal_id', {
+        target_cust_id: targetCustomerId
+      });
+
+      // If RPC is missing or fails, fallback to direct select
+      if (custError || !custData) {
+        console.warn('Backend sendPush - Customer RPC query failed or not deployed, falling back to direct table select. Error:', custError);
+        
+        const { data: fallbackCustData, error: fallbackCustError } = await supabase
+          .from('customers')
+          .select('onesignal_id')
+          .eq('id', targetCustomerId)
+          .not('onesignal_id', 'is', null);
+
+        if (fallbackCustError) {
+          console.error('Backend sendPush - Customer fallback direct select also failed:', fallbackCustError);
+        } else if (fallbackCustData) {
+          custData = fallbackCustData;
+        }
+      }
 
       if (custData) {
         finalPlayerIds.push(...custData.map(c => c.onesignal_id).filter(Boolean));
@@ -80,7 +120,6 @@ export default async function handler(req, res) {
     }
 
     // OneSignal REST API Call
-    // support both legacy include_player_ids and modern include_subscription_ids for wide compatibility
     const response = await fetch('https://api.onesignal.com/notifications?c=push', {
       method: 'POST',
       headers: {
