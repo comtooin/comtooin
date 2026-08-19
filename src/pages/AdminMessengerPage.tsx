@@ -413,15 +413,25 @@ const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }
       }
 
       const currentRole = sessionStorage.getItem('adminRole') || userRole;
-      const isSendToCustomer = currentRole !== 'customer' && targetCustomerId;
+      
+      // 발신자 역할에 따른 원시그널 푸시 수신 타겟팅 분기
+      // 1. 거래처 사용자(customer)가 보낸 경우 -> 우리 멤버(스태프)들에게만 알림 발송
+      // 2. 스태프가 보낸 경우 -> 해당 거래처 담당자 본인에게만 알림 발송 (다른 직원들은 중복 알림 제외)
+      let targetOptions: {
+        targetStaffIds?: string[] | 'all' | 'member_only';
+        targetCustomerId?: string;
+      } = {};
+
+      if (currentRole === 'customer') {
+        targetOptions = { targetStaffIds: 'member_only' };
+      } else {
+        targetOptions = { targetCustomerId: targetCustomerId || undefined };
+      }
 
       await sendPushNotification(
         '새로운 메시지', 
         `${roomPrefix}${myName}: ${preview}`, 
-        {
-          targetStaffIds: 'member_only',
-          targetCustomerId: isSendToCustomer ? targetCustomerId : undefined
-        }, 
+        targetOptions, 
         window.location.origin + '/admin/messenger'
       );
 
