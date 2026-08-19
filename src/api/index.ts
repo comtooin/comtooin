@@ -79,90 +79,26 @@ export const sendPushNotification = async (
       }
     }
 
-    const validPlayerIds: string[] = [];
+    console.log('sendPushNotification (Client) - Forwarding targets to Server API:', {
+      targetStaffIds,
+      targetCustomerId
+    });
 
-    // 1. 내부직원 수신 대상 추출 (targetStaffIds 필터링 적용)
-    let hasStaffTarget = true;
-
-    // 옵션 객체에 targetCustomerId만 있고 targetStaffIds가 명시적으로 제공되지 않은 경우, 스태프 알림 제외
-    if (
-      targetOrOptions &&
-      typeof targetOrOptions === 'object' &&
-      !Array.isArray(targetOrOptions) &&
-      !('targetStaffIds' in targetOrOptions) &&
-      ('targetCustomerId' in targetOrOptions)
-    ) {
-      hasStaffTarget = false;
-    }
-
-    // targetStaffIds가 명시적으로 빈 배열([])인 경우, 스태프 알림 제외
-    if (Array.isArray(targetStaffIds) && targetStaffIds.length === 0) {
-      hasStaffTarget = false;
-    }
-
-    if (hasStaffTarget) {
-      let rpcRole: string | null = null;
-      let rpcIds: string[] | null = null;
-
-      if (targetStaffIds === 'member_only') {
-        rpcRole = 'member_only';
-      } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
-        rpcIds = targetStaffIds;
-      }
-
-      let staffQuery;
-      if (rpcRole || rpcIds) {
-        if (rpcRole) {
-          staffQuery = supabase.rpc('get_staff_onesignal_ids', { target_role: rpcRole });
-        } else if (rpcIds) {
-          // 특정 스태프 ID 배열이 주어진 경우, 이들을 쿼리하는 행위는 이미 스태프 세션이 존재하므로 RLS 통과 가능
-          staffQuery = supabase.from('staff').select('onesignal_id').in('id', rpcIds).not('onesignal_id', 'is', null);
-        } else {
-          staffQuery = supabase.rpc('get_staff_onesignal_ids');
-        }
-      } else {
-        // targetStaffIds가 없거나 'all'인 경우 (스태프 전체 조회)
-        staffQuery = supabase.rpc('get_staff_onesignal_ids');
-      }
-
-      const { data: staffData, error: rpcError } = await staffQuery;
-      if (!rpcError && staffData) {
-        validPlayerIds.push(...staffData.map((s: any) => s.onesignal_id).filter(Boolean));
-      }
-    }
-
-    // 2. 거래처는 본인 해당 업무만 알림 수신 (targetCustomerId가 매치될 때만 타겟팅 발송)
-    if (targetCustomerId) {
-      const { data: custData } = await supabase
-        .from('customers')
-        .select('onesignal_id')
-        .eq('id', targetCustomerId)
-        .not('onesignal_id', 'is', null);
-      
-      if (custData) {
-        validPlayerIds.push(...custData.map(c => c.onesignal_id).filter(Boolean));
-      }
-    }
-
-    console.log('sendPushNotification - Target Staff IDs config:', targetStaffIds);
-    console.log('sendPushNotification - Target Customer ID config:', targetCustomerId);
-    console.log('sendPushNotification - Gathered raw Player IDs:', validPlayerIds);
-
-    if (validPlayerIds.length === 0) {
-      console.warn('sendPushNotification - Discarded. No target subscription IDs found in database.');
-      return;
-    }
-    const uniquePlayerIds = Array.from(new Set(validPlayerIds));
-    console.log('sendPushNotification - Sending request for unique Player IDs:', uniquePlayerIds);
-
+    // 프론트엔드는 RLS 정책 제약이 있으므로, 모든 쿼리 처리를 service_role 권한을 가진 백엔드 API로 위임
     const res = await fetch('/api/sendPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, message, include_player_ids: uniquePlayerIds, url })
+      body: JSON.stringify({ 
+        title, 
+        message, 
+        targetStaffIds, 
+        targetCustomerId,
+        url 
+      })
     });
 
     const resData = await res.json().catch(() => ({}));
-    console.log('sendPushNotification - OneSignal Send API Response:', { status: res.status, data: resData });
+    console.log('sendPushNotification (Client) - Backend Server Response:', { status: res.status, data: resData });
 
     if (!res.ok) {
       console.error('Push API Error Response status:', res.status, resData);
