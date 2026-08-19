@@ -101,18 +101,33 @@ export const sendPushNotification = async (
     }
 
     if (hasStaffTarget) {
-      let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
-      
+      let rpcRole: string | null = null;
+      let rpcIds: string[] | null = null;
+
       if (targetStaffIds === 'member_only') {
-        // 'member' 뿐만 아니라 'admin' 권한의 직원(우리멤버 전체)도 수신되도록 수정
-        staffQuery = staffQuery.in('role', ['member', 'admin']);
+        rpcRole = 'member_only';
       } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
-        staffQuery = staffQuery.in('id', targetStaffIds);
+        rpcIds = targetStaffIds;
       }
 
-      const { data: staffData } = await staffQuery;
-      if (staffData) {
-        validPlayerIds.push(...staffData.map(s => s.onesignal_id).filter(Boolean));
+      let staffQuery;
+      if (rpcRole || rpcIds) {
+        if (rpcRole) {
+          staffQuery = supabase.rpc('get_staff_onesignal_ids', { target_role: rpcRole });
+        } else if (rpcIds) {
+          // 특정 스태프 ID 배열이 주어진 경우, 이들을 쿼리하는 행위는 이미 스태프 세션이 존재하므로 RLS 통과 가능
+          staffQuery = supabase.from('staff').select('onesignal_id').in('id', rpcIds).not('onesignal_id', 'is', null);
+        } else {
+          staffQuery = supabase.rpc('get_staff_onesignal_ids');
+        }
+      } else {
+        // targetStaffIds가 없거나 'all'인 경우 (스태프 전체 조회)
+        staffQuery = supabase.rpc('get_staff_onesignal_ids');
+      }
+
+      const { data: staffData, error: rpcError } = await staffQuery;
+      if (!rpcError && staffData) {
+        validPlayerIds.push(...staffData.map((s: any) => s.onesignal_id).filter(Boolean));
       }
     }
 
