@@ -13,6 +13,7 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
+  Dialog,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
@@ -30,6 +31,8 @@ import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import ForumIcon from '@mui/icons-material/Forum';
 import AdminProfilePage from '../pages/AdminProfilePage';
 import AdminHelpPage from '../pages/AdminHelpPage';
+import AdminMessengerPage from '../pages/AdminMessengerPage';
+import Tooltip from '@mui/material/Tooltip';
 import OneSignal from 'react-onesignal';
 import { supabase } from '../api';
 
@@ -45,6 +48,7 @@ const NavBar: React.FC = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [adminMessengerOpen, setAdminMessengerOpen] = useState(false);
 
   useEffect(() => {
     const token = sessionStorage.getItem('adminToken');
@@ -56,6 +60,17 @@ const NavBar: React.FC = () => {
     setUserName(name);
     setCustomerId(custId);
   }, [location]);
+
+  // 메신저를 호출하는 헬퍼 함수
+  const openMessengerPopup = () => {
+    // 컴투인 직원 및 거래처 고객 모두 별도 팝업이 아닌 대시보드 오버레이 다이얼로그 팝업모달 오픈
+    setAdminMessengerOpen(true);
+  };
+
+  // 비회원 메신저 접속 시 NavBar 자체를 완전히 보이지 않게 처리
+  if (location.pathname.startsWith('/messenger/')) {
+    return null;
+  }
 
   const handleLogout = async () => {
     try {
@@ -151,7 +166,30 @@ const NavBar: React.FC = () => {
         <List>
           {isAdminLoggedIn ? (
             <>
-              <ListItem button onClick={() => { setProfileOpen(true); setDrawerOpen(false); }} sx={{ borderRadius: 2, mb: 1, bgcolor: 'rgba(255,255,255,0.03)' }}>
+              <ListItem 
+                button 
+                onClick={() => { setProfileOpen(true); setDrawerOpen(false); }} 
+                sx={{ borderRadius: 2, mb: 1, bgcolor: 'rgba(255,255,255,0.03)' }}
+                secondaryAction={
+                  <Tooltip title="실시간 메신저" arrow>
+                    <IconButton
+                      edge="end"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDrawerOpen(false);
+                        openMessengerPopup();
+                      }}
+                      sx={{ 
+                        color: '#4db6ac', 
+                        bgcolor: 'rgba(77, 182, 172, 0.1)',
+                        '&:hover': { bgcolor: 'rgba(77, 182, 172, 0.2)' }
+                      }}
+                    >
+                      <ForumIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Tooltip>
+                }
+              >
                 <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.7)' }}><AccountCircleIcon /></ListItemIcon>
                 <ListItemText
                   primary={`${userName}님`}
@@ -191,16 +229,6 @@ const NavBar: React.FC = () => {
                       <ListItemText primary="자산관리" primaryTypographyProps={{ fontWeight: 500 }} />
                     </ListItem>
                   )}
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/admin/messenger"
-                    selected={location.pathname === '/admin/messenger'}
-                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
-                  >
-                    <ListItemIcon><ForumIcon /></ListItemIcon>
-                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500 }} />
-                  </ListItem>
                 </>
               ) : (
                 <>
@@ -260,16 +288,6 @@ const NavBar: React.FC = () => {
                   >
                     <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
                     <ListItemText primary="자료실" primaryTypographyProps={{ fontWeight: 500 }} />
-                  </ListItem>
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/admin/messenger"
-                    selected={location.pathname === '/admin/messenger'}
-                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
-                  >
-                    <ListItemIcon><ForumIcon /></ListItemIcon>
-                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500 }} />
                   </ListItem>
                   {userRole === 'admin' && (
                     <ListItem 
@@ -343,10 +361,8 @@ const NavBar: React.FC = () => {
             {isAdminLoggedIn && (
               <IconButton
                 color="inherit"
-                component={RouterLink}
-                to="/admin/messenger"
+                onClick={openMessengerPopup}
                 sx={{
-                  color: location.pathname === '/admin/messenger' ? '#4db6ac' : 'inherit',
                   transition: 'color 0.2s ease',
                   '&:hover': {
                     color: '#4db6ac',
@@ -368,6 +384,29 @@ const NavBar: React.FC = () => {
         </Drawer>
         {profileOpen && <AdminProfilePage isDialog onClose={() => setProfileOpen(false)} />}
         {helpOpen && <AdminHelpPage isDialog onClose={() => setHelpOpen(false)} />}
+
+        {/* 모바일 뷰포트에서도 메신저 다이얼로그 팝업 오버레이 지원 */}
+        <Dialog
+          open={adminMessengerOpen}
+          onClose={(event, reason) => {
+            if (reason !== 'backdropClick') {
+              setAdminMessengerOpen(false);
+            }
+          }}
+          disableEscapeKeyDown
+          maxWidth="lg"
+          fullWidth
+          PaperProps={{
+            sx: {
+              height: '85vh',
+              maxHeight: '900px',
+              borderRadius: 2,
+              overflow: 'hidden'
+            }
+          }}
+        >
+          <AdminMessengerPage isDialog onClose={() => setAdminMessengerOpen(false)} />
+        </Dialog>
       </>
     );
   }
@@ -452,16 +491,6 @@ const NavBar: React.FC = () => {
                       <ListItemText primary="자산관리" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                     </ListItem>
                   )}
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/admin/messenger"
-                    selected={location.pathname === '/admin/messenger'}
-                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
-                  >
-                    <ListItemIcon><ForumIcon /></ListItemIcon>
-                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
-                  </ListItem>
                 </>
               ) : (
                 <>
@@ -522,16 +551,6 @@ const NavBar: React.FC = () => {
                     <ListItemIcon><CloudDownloadIcon /></ListItemIcon>
                     <ListItemText primary="자료실" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
                   </ListItem>
-                  <ListItem 
-                    button 
-                    component={RouterLink} 
-                    to="/admin/messenger"
-                    selected={location.pathname === '/admin/messenger'}
-                    sx={getMenuItemStyle(location.pathname === '/admin/messenger')}
-                  >
-                    <ListItemIcon><ForumIcon /></ListItemIcon>
-                    <ListItemText primary="메신저" primaryTypographyProps={{ fontWeight: 500, fontSize: '0.9rem' }} />
-                  </ListItem>
                   {userRole === 'admin' && (
                     <ListItem 
                       button 
@@ -575,6 +594,25 @@ const NavBar: React.FC = () => {
                 color: 'rgba(255, 255, 255, 0.85)',
                 '&:hover': { bgcolor: 'rgba(255, 255, 255, 0.05)', color: '#ffffff' }
               }}
+              secondaryAction={
+                <Tooltip title="실시간 메신저" arrow>
+                  <IconButton 
+                    edge="end" 
+                    onClick={(e) => {
+                      e.stopPropagation(); // 내 정보 다이얼로그 방지
+                      openMessengerPopup();
+                    }}
+                    sx={{ 
+                      color: '#4db6ac', 
+                      bgcolor: 'rgba(77, 182, 172, 0.1)',
+                      mr: 0.1,
+                      '&:hover': { bgcolor: 'rgba(77, 182, 172, 0.2)' }
+                    }}
+                  >
+                    <ForumIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
+              }
             >
               <ListItemIcon sx={{ color: 'rgba(255, 255, 255, 0.6)', minWidth: 32 }}><AccountCircleIcon /></ListItemIcon>
               <ListItemText 
@@ -626,6 +664,29 @@ const NavBar: React.FC = () => {
 
       {profileOpen && <AdminProfilePage isDialog onClose={() => setProfileOpen(false)} />}
       {helpOpen && <AdminHelpPage isDialog onClose={() => setHelpOpen(false)} />}
+
+      {/* 직원(멤버) 실시간 메신저 다이얼로그 오버레이 모달 */}
+      <Dialog
+        open={adminMessengerOpen}
+        onClose={(event, reason) => {
+          if (reason !== 'backdropClick') {
+            setAdminMessengerOpen(false);
+          }
+        }}
+        disableEscapeKeyDown
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            height: '85vh',
+            maxHeight: '900px',
+            borderRadius: 2,
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <AdminMessengerPage isDialog onClose={() => setAdminMessengerOpen(false)} />
+      </Dialog>
     </>
   );
 };

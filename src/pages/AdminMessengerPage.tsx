@@ -19,6 +19,9 @@ import {
   Container,
   Stack,
   Divider,
+  Chip,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { Helmet } from 'react-helmet-async';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -29,6 +32,8 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
 import MicIcon from '@mui/icons-material/Mic';
+import CloseIcon from '@mui/icons-material/Close';
+import LinkIcon from '@mui/icons-material/Link';
 import { supabase, sendPushNotification } from '../api';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -39,6 +44,15 @@ interface ChatRoom {
   created_at: string;
   name: string;
   created_by: string | null;
+  is_private?: boolean;
+  customer?: {
+    name: string;
+    login_id?: string;
+  } | null;
+  requests?: {
+    id: number;
+    status: string;
+  }[];
 }
 
 interface Memo {
@@ -62,13 +76,19 @@ const AVATAR_COLORS = [
   '#64748b', // slate
 ];
 
-const AdminMessengerPage: React.FC = () => {
+interface AdminMessengerProps {
+  isDialog?: boolean;
+  onClose?: () => void;
+}
+
+const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }) => {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [memos, setMemos] = useState<Memo[]>([]);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [loadingMemos, setLoadingMemos] = useState(false);
   const [content, setContent] = useState('');
+  const [customerFilter, setCustomerFilter] = useState('all');
   
   // 방 개설 관련 상태
   const [createRoomOpen, setCreateRoomOpen] = useState(false);
@@ -77,6 +97,36 @@ const AdminMessengerPage: React.FC = () => {
   const [currentStaffId, setCurrentStaffId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [myLoginId, setMyLoginId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchMyLoginId = async () => {
+      const custId = sessionStorage.getItem('adminCustomerId');
+      if (custId) {
+        const { data } = await supabase
+          .from('customers')
+          .select('login_id')
+          .eq('id', custId)
+          .single();
+        if (data?.login_id) {
+          setMyLoginId(data.login_id);
+        }
+      }
+    };
+    const role = sessionStorage.getItem('adminRole') || userRole;
+    if (role === 'customer') {
+      fetchMyLoginId();
+    }
+  }, [userRole]);
+
+  const handleCopyLink = (loginId: string, name: string) => {
+    const link = `https://comtooin.vercel.app/messenger/${loginId}`;
+    navigator.clipboard.writeText(link)
+      .then(() => alert(`'${name}' 비회원 1:1 메신저 접속 링크가 클립보드에 복사되었습니다!\n\n` + link))
+      .catch(() => alert('링크 복사에 실패했습니다. 수동으로 복사해 주세요:\n' + link));
+  };
+
   const voiceRecorder = useVoiceTyping({
     onTranscriptionComplete: (text) => {
       setContent(prev => prev + (prev ? ' ' : '') + text);
@@ -189,7 +239,7 @@ const AdminMessengerPage: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('chat_rooms')
-        .select('*')
+        .select('*, customer:customers(name, login_id), requests(id, status)')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -295,8 +345,8 @@ const AdminMessengerPage: React.FC = () => {
   };
 
   // 대화방 삭제 (방장 또는 어드민만 가능)
-  const handleDeleteRoom = async (roomId: string, roomName: string, event: React.MouseEvent) => {
-    event.stopPropagation(); // 클릭 이벤트 전파 차단 (방 선택되지 않도록)
+  const handleDeleteRoom = async (roomId: string, roomName: string, event?: React.MouseEvent) => {
+    if (event) event.stopPropagation(); // 클릭 이벤트 전파 차단 (방 선택되지 않도록)
     
     if (roomId === '00000000-0000-0000-0000-000000000000') {
       alert('기본 대화방은 삭제할 수 없습니다.');
@@ -564,9 +614,8 @@ const AdminMessengerPage: React.FC = () => {
                       fontWeight: 500,
                       whiteSpace: 'pre-wrap',
                     }}
-                  >
-                    {memo.content}
-                  </Typography>
+                    dangerouslySetInnerHTML={{ __html: memo.content }}
+                  />
                 </Paper>
 
                 <Box
@@ -610,117 +659,314 @@ const AdminMessengerPage: React.FC = () => {
   };
 
   // 좌측 채팅방 목록 영역 마크업
-  const renderRoomList = () => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper' }}>
-      {/* 헤더 및 개설 단추 */}
-      <Box
-        sx={{
-          p: 2,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-        }}
-      >
-        <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <ForumIcon sx={{ color: 'primary.main', fontSize: 18 }} />
-          채팅방 목록
-        </Typography>
-        <Tooltip title="새 채팅방 개설" arrow>
-          <IconButton
-            size="small"
-            color="primary"
-            onClick={() => setCreateRoomOpen(true)}
-            sx={{
-              bgcolor: 'rgba(77, 182, 172, 0.1)',
-              color: 'primary.main',
-              '&:hover': { bgcolor: 'rgba(77, 182, 172, 0.2)' },
-            }}
-          >
-            <AddIcon sx={{ fontSize: 18 }} />
-          </IconButton>
-        </Tooltip>
-      </Box>
+  const renderRoomList = () => {
+    // 현재 열려 있는 대화방들로부터 중복 없는 거래처명 리스트 파싱
+    const customerNames = Array.from(new Set(
+      rooms
+        .map(r => {
+          if (r.customer?.name) return r.customer.name;
+          const match = r.name.match(/^\[(.*?)\]/);
+          return match ? match[1] : null;
+        })
+        .filter(Boolean)
+    )) as string[];
 
-      {/* 목록 리스트 */}
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-        {loadingRooms ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
-        ) : rooms.length === 0 ? (
-          <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
-            개설된 대화방이 없습니다.
+    // 선택된 거래처 필터에 따라 대화방 필터링
+    const filteredRooms = rooms.filter(room => {
+      if (customerFilter === 'all') return true;
+      const roomCustName = room.customer?.name || '';
+      const match = room.name.match(/^\[(.*?)\]/);
+      const extractedName = match ? match[1] : '';
+      return roomCustName === customerFilter || extractedName === customerFilter;
+    });
+
+    // 1:1 비공개 방의 접수 건 진행 상태 배지(Chip) 생성
+    const renderRequestBadge = (room: ChatRoom) => {
+      if (!room.is_private) return null;
+      const reqs = room.requests || [];
+      if (reqs.length === 0) {
+        return (
+          <Chip 
+            label="접수대기" 
+            size="small" 
+            sx={{ 
+              height: 18, 
+              fontSize: '0.65rem', 
+              fontWeight: 'bold', 
+              px: 0.5,
+              bgcolor: '#e2e8f0',
+              color: '#64748b',
+              borderRadius: 1
+            }} 
+          />
+        );
+      }
+      // 가장 최근 기술지원 요청 건 (배열의 마지막)
+      const latestReq = reqs[reqs.length - 1];
+      const status = latestReq.status;
+      const isCompleted = status === 'completed' || status === '처리완료';
+      
+      return (
+        <Chip 
+          label={isCompleted ? '처리완료' : '처리중'} 
+          size="small" 
+          sx={{ 
+            height: 18, 
+            fontSize: '0.65rem', 
+            fontWeight: 'bold', 
+            px: 0.5,
+            bgcolor: isCompleted ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+            color: isCompleted ? '#d97706' : '#059669',
+            borderRadius: 1
+          }} 
+        />
+      );
+    };
+
+    return (
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', bgcolor: 'background.paper' }}>
+        {/* 헤더 및 개설 단추 */}
+        <Box
+          sx={{
+            p: 2,
+            pb: 1, // 헤더 패딩 축소
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Typography variant="body1" sx={{ fontWeight: 800, color: 'text.primary', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <ForumIcon sx={{ color: 'primary.main', fontSize: 18 }} />
+            채팅방 목록
           </Typography>
-        ) : (
-          rooms.map((room) => {
-            const isActive = activeRoomId === room.id;
-            const isDefaultRoom = room.id === '00000000-0000-0000-0000-000000000000';
-            const canDeleteRoom = !isDefaultRoom && (room.created_by === currentStaffId || userRole === 'admin');
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {userRole !== 'customer' && (
+              <Tooltip title="새 채팅방 개설" arrow>
+                <IconButton
+                  size="small"
+                  color="primary"
+                  onClick={() => setCreateRoomOpen(true)}
+                  sx={{
+                    bgcolor: 'rgba(77, 182, 172, 0.1)',
+                    color: 'primary.main',
+                    '&:hover': { bgcolor: 'rgba(77, 182, 172, 0.2)' },
+                  }}
+                >
+                  <AddIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+            {isDialog && onClose && (
+              <Tooltip title="메신저 닫기" arrow>
+                <IconButton
+                  color="default"
+                  size="small"
+                  onClick={onClose}
+                  sx={{ 
+                    bgcolor: 'rgba(0, 0, 0, 0.04)',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.08)' }
+                  }}
+                >
+                  <CloseIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
 
-            return (
-              <Box
-                key={room.id}
-                onClick={() => {
-                  setActiveRoomId(room.id);
-                  if (isMobile) {
-                    setMobileShowList(false); // 모바일일 경우 상세 대화창으로 뷰 전환
-                  }
-                }}
-                sx={{
-                  p: 1.5,
-                  borderRadius: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  bgcolor: isActive ? 'rgba(77, 182, 172, 0.12)' : 'transparent',
-                  color: isActive ? 'primary.main' : 'text.primary',
-                  borderLeft: isActive ? '4px solid #4db6ac' : '4px solid transparent',
-                  pl: isActive ? '12px' : '16px',
-                  transition: 'all 0.15s ease-in-out',
-                  '&:hover': {
-                    bgcolor: isActive ? 'rgba(77, 182, 172, 0.18)' : 'rgba(0, 0, 0, 0.03)',
-                    '& .del-room-btn': { opacity: 1 }
-                  },
+        {/* 거래처 로그인 시 본인 기술지원 메신저 복사 배너 노출 */}
+        {userRole === 'customer' && (
+          <Box sx={{ px: 2, pb: 2, pt: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Paper 
+              variant="outlined" 
+              sx={{ 
+                p: 1.5, 
+                bgcolor: 'background.paper', 
+                borderColor: 'divider',
+                borderRadius: 1
+              }}
+            >
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  fontWeight: 'bold', 
+                  color: 'text.primary', 
+                  display: 'block', 
+                  mb: 0.75,
+                  fontSize: '0.75rem',
+                  lineHeight: 1.3
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flexGrow: 1 }}>
-                  <ChatBubbleIcon sx={{ fontSize: 16, color: isActive ? 'primary.main' : 'text.secondary', opacity: 0.8 }} />
-                  <Typography
-                    variant="body2"
-                    noWrap
-                    sx={{
-                      fontWeight: isActive ? 700 : 500,
-                      fontSize: '0.85rem',
-                    }}
-                  >
-                    {room.name}
-                  </Typography>
-                </Box>
-
-                {canDeleteRoom && (
-                  <IconButton
-                    className="del-room-btn"
-                    size="small"
-                    onClick={(e) => handleDeleteRoom(room.id, room.name, e)}
-                    sx={{
-                      opacity: 0,
-                      p: 0.25,
-                      color: 'text.secondary',
-                      transition: 'opacity 0.15s ease',
-                      '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.05)' }
-                    }}
-                  >
-                    <DeleteIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
-                )}
+                기술지원요청 전용 1:1 메신저 주소
+              </Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'primary.main', 
+                    fontFamily: 'monospace', 
+                    fontSize: '0.725rem',
+                    wordBreak: 'break-all',
+                    whiteSpace: 'normal',
+                    bgcolor: '#f1f5f9',
+                    p: 0.75,
+                    borderRadius: 0.5,
+                    border: '1px solid #e2e8f0'
+                  }}
+                >
+                  comtooin.vercel.app/messenger/{myLoginId || '불러오는 중...'}
+                </Typography>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  onClick={() => {
+                    const link = `https://comtooin.vercel.app/messenger/${myLoginId || ''}`;
+                    if (!myLoginId) {
+                      alert('거래처 정보를 불러오고 있습니다. 잠시 후 다시 시도해 주세요.');
+                      return;
+                    }
+                    navigator.clipboard.writeText(link)
+                      .then(() => alert('비회원 전용 메신저 링크가 복사되었습니다!\n\n' + link))
+                      .catch(() => alert('복사 실패: ' + link));
+                  }}
+                  sx={{ 
+                    fontSize: '0.7rem', 
+                    fontWeight: 'bold',
+                    py: 0.5,
+                    boxShadow: 0,
+                    borderRadius: 1
+                  }}
+                >
+                  접속 링크 복사
+                </Button>
               </Box>
-            );
-          })
+            </Paper>
+          </Box>
         )}
+
+        {/* 거래처별 대화방 조회 필터 드롭다운 (컴투인 직원 전용) */}
+        {userRole !== 'customer' && rooms.length > 0 && (
+          <Box sx={{ px: 2, pb: 2, pt: 0.5, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Select
+              value={customerFilter}
+              onChange={(e) => setCustomerFilter(e.target.value)}
+              size="small"
+              fullWidth
+              sx={{ 
+                fontSize: '0.8rem', 
+                height: 32,
+                borderRadius: 1, // 표준 테두리로 축소 정돈
+                '& .MuiSelect-select': { py: '6px' }
+              }}
+            >
+              <MenuItem value="all" sx={{ fontSize: '0.8rem' }}>전체 거래처</MenuItem>
+              {customerNames.map((name) => (
+                <MenuItem key={name} value={name} sx={{ fontSize: '0.8rem' }}>
+                  {name}
+                </MenuItem>
+              ))}
+            </Select>
+          </Box>
+        )}
+
+        {/* 목록 리스트 */}
+        <Box sx={{ flexGrow: 1, overflowY: 'auto', p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+          {loadingRooms ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}><CircularProgress size={24} /></Box>
+          ) : filteredRooms.length === 0 ? (
+            <Typography variant="caption" sx={{ textAlign: 'center', color: 'text.secondary', py: 3 }}>
+              {customerFilter !== 'all' ? '해당 거래처 관련 대화방이 없습니다.' : '개설된 대화방이 없습니다.'}
+            </Typography>
+          ) : (
+            filteredRooms.map((room) => {
+              const isActive = activeRoomId === room.id;
+              const isDefaultRoom = room.id === '00000000-0000-0000-0000-000000000000';
+              const canDeleteRoom = !isDefaultRoom && (room.created_by === currentStaffId || userRole === 'admin');
+
+              return (
+                <Box
+                  key={room.id}
+                  onClick={() => {
+                    setActiveRoomId(room.id);
+                    if (isMobile) {
+                      setMobileShowList(false); // 모바일일 경우 상세 대화창으로 뷰 전환
+                    }
+                  }}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    bgcolor: isActive ? 'rgba(77, 182, 172, 0.12)' : 'transparent',
+                    color: isActive ? 'primary.main' : 'text.primary',
+                    borderLeft: isActive ? '4px solid #4db6ac' : '4px solid transparent',
+                    pl: isActive ? '12px' : '16px',
+                    transition: 'all 0.15s ease-in-out',
+                    '&:hover': {
+                      bgcolor: isActive ? 'rgba(77, 182, 172, 0.18)' : 'rgba(0, 0, 0, 0.03)',
+                      '& .del-room-btn': { opacity: 1 }
+                    },
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0, flexGrow: 1 }}>
+                    <ChatBubbleIcon sx={{ fontSize: 16, color: isActive ? 'primary.main' : 'text.secondary', opacity: 0.8 }} />
+                    <Typography
+                      variant="body2"
+                      noWrap
+                      sx={{
+                        fontWeight: isActive ? 700 : 500,
+                        fontSize: '0.85rem',
+                        mr: 0.5
+                      }}
+                    >
+                      {room.name}
+                    </Typography>
+                    {room.is_private && (
+                      <Chip 
+                        label="1:1 접수" 
+                        size="small" 
+                        variant="outlined" 
+                        sx={{ 
+                          height: 18, 
+                          fontSize: '0.65rem', 
+                          fontWeight: 'bold', 
+                          px: 0.5,
+                          borderColor: '#4db6ac',
+                          color: '#4db6ac',
+                          borderRadius: 1
+                        }} 
+                      />
+                    )}
+                    {renderRequestBadge(room)}
+                  </Box>
+
+                  {canDeleteRoom && (
+                    <IconButton
+                      className="del-room-btn"
+                      size="small"
+                      onClick={(e) => handleDeleteRoom(room.id, room.name, e)}
+                      sx={{
+                        opacity: 0,
+                        p: 0.25,
+                        color: 'text.secondary',
+                        transition: 'opacity 0.15s ease',
+                        '&:hover': { color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.05)' }
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  )}
+                </Box>
+              );
+            })
+          )}
+        </Box>
       </Box>
-    </Box>
-  );
+    );
+  };
 
   // 우측 대화방 상세 내용 영역 마크업 (데스크톱 및 모바일 팝업 겸용)
   const renderChatDetail = (isMobileMode: boolean) => (
@@ -747,7 +993,7 @@ const AdminMessengerPage: React.FC = () => {
         <Avatar sx={{ bgcolor: 'primary.main', width: 34, height: 34 }}>
           <ForumIcon sx={{ fontSize: 18 }} />
         </Avatar>
-        <Box sx={{ minWidth: 0 }}>
+        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
           <Typography variant="body2" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}>
             {activeRoom ? activeRoom.name : '대화방 선택 안 됨'}
           </Typography>
@@ -755,6 +1001,53 @@ const AdminMessengerPage: React.FC = () => {
             {activeRoom ? '실시간 메시지를 자유롭게 공유합니다.' : '메시지를 나눌 방을 선택하세요.'}
           </Typography>
         </Box>
+        {activeRoom && activeRoom.is_private && activeRoom.customer?.login_id && (
+          <Tooltip title="비회원 1:1 메신저 접속 링크 복사" arrow>
+            <IconButton
+              color="primary"
+              size="small"
+              onClick={() => handleCopyLink(activeRoom.customer!.login_id!, activeRoom.name)}
+              sx={{ 
+                bgcolor: 'rgba(25, 118, 210, 0.05)',
+                mr: 1,
+                '&:hover': { bgcolor: 'rgba(25, 118, 210, 0.15)' }
+              }}
+            >
+              <LinkIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        )}
+        {activeRoom && activeRoom.is_private && (
+          <Tooltip title="이 1:1 대화방 강제 삭제 (리포트는 보존)" arrow>
+            <IconButton
+              color="error"
+              size="small"
+              onClick={() => handleDeleteRoom(activeRoom.id, activeRoom.name)}
+              sx={{ 
+                bgcolor: 'rgba(239, 68, 68, 0.05)',
+                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.15)' },
+                mr: isDialog ? 1 : 0
+              }}
+            >
+              <DeleteIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        )}
+        {isDialog && onClose && (
+          <Tooltip title="메신저 닫기" arrow>
+            <IconButton
+              color="default"
+              size="small"
+              onClick={onClose}
+              sx={{ 
+                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.08)' }
+              }}
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+          </Tooltip>
+        )}
       </Box>
 
       {/* 메시지 피드 영역 */}
@@ -891,11 +1184,88 @@ const AdminMessengerPage: React.FC = () => {
   );
 
   return (
-    <Container maxWidth="lg">
-      <Helmet><title>메신저 | COMTOOIN</title></Helmet>
+    isDialog ? (
+      <Box sx={{ display: 'flex', height: '100%', width: '100%', overflow: 'hidden', bgcolor: '#f8fafc' }}>
+        {isMobile ? (
+          <Box sx={{ width: '100%', height: '100%' }}>
+            {renderRoomList()}
+          </Box>
+        ) : (
+          <>
+            <Box sx={{ width: 260, borderRight: '1px solid', borderColor: 'divider', height: '100%', flexShrink: 0 }}>
+              {renderRoomList()}
+            </Box>
+            {renderChatDetail(false)}
+          </>
+        )}
 
-      {/* 표준 헤더 섹션 */}
-      <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
+        {/* 모바일 전체화면 대화방 팝업 */}
+        <Dialog
+          fullScreen
+          open={isMobile && !mobileShowList && !!activeRoomId}
+          onClose={() => setMobileShowList(true)}
+          PaperProps={{
+            sx: {
+              bgcolor: '#f8fafc',
+              height: '100%',
+              overflow: 'hidden',
+            }
+          }}
+        >
+          {renderChatDetail(true)}
+        </Dialog>
+
+        {/* 새 채팅방 개설 모달 다이얼로그 */}
+        <Dialog 
+          open={createRoomOpen} 
+          onClose={(event, reason) => {
+            if (reason !== 'backdropClick') {
+              setCreateRoomOpen(false);
+            }
+          }} 
+          disableEscapeKeyDown
+          maxWidth="xs" 
+          fullWidth
+        >
+          <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 1 }}>새 채팅방 개설</DialogTitle>
+          <DialogContent sx={{ pt: 1 }}>
+            <TextField
+              autoFocus
+              margin="dense"
+              label="채팅방 이름"
+              type="text"
+              fullWidth
+              variant="outlined"
+              value={newRoomName}
+              onChange={(e) => setNewRoomName(e.target.value)}
+              placeholder="예: 개발본부 공지방, 점심 수다방"
+              size="small"
+              InputLabelProps={{ style: { fontSize: '0.85rem' } }}
+              InputProps={{ style: { borderRadius: 6, fontSize: '0.9rem' } }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button size="small" onClick={() => setCreateRoomOpen(false)} sx={{ color: 'text.secondary' }}>
+              취소
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleCreateRoom}
+              disabled={!newRoomName.trim() || submitting}
+              sx={{ bgcolor: 'primary.main', borderRadius: 1, '&:hover': { bgcolor: 'primary.dark' } }}
+            >
+              개설
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
+    ) : (
+      <Container maxWidth="lg">
+        <Helmet><title>메신저 | COMTOOIN</title></Helmet>
+
+        {/* 표준 헤더 섹션 */}
+        <Box sx={{ mb: { xs: 1.5, sm: 2, md: 2.5 } }}>
         <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 1.25, md: 1.5 }} mb={{ xs: 0.25, sm: 0.5, md: 1 }}>
           <ForumIcon sx={{ fontSize: { xs: '1.6rem', sm: '1.9rem', md: '2.2rem' }, color: 'primary.main' }} />
           <Typography component="h1" sx={{ fontWeight: 'bold', fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.5rem' } }}>
@@ -1067,6 +1437,7 @@ const AdminMessengerPage: React.FC = () => {
 
       {/* VoiceRecorderDialog Removed - inline transcription used */}
     </Container>
+    )
   );
 };
 

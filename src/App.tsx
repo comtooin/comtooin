@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
 import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
 import AdminLoginPage from './pages/AdminLoginPage'; 
+import GuestMessengerPage from './pages/GuestMessengerPage'; 
 
 import AdminReportPage from './pages/AdminReportPage'; 
 import AdminCustomerPage from './pages/AdminCustomerPage';
@@ -416,6 +417,7 @@ function App() {
                 path="/admin/messenger"
                 element={<AdminRoute><AdminMessengerPage /></AdminRoute>}
               />
+              <Route path="/messenger/:client_code" element={<GuestMessengerPage />} />
               <Route
                 path="/admin/request/detail/:id"
                 element={<AdminRoute><SubmissionDetailPage /></AdminRoute>}

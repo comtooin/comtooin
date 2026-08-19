@@ -30,8 +30,7 @@ import {
   Today as TodayIcon,
   Info as InfoIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
-  KeyboardArrowUp as KeyboardArrowUpIcon,
-  Add as AddIcon
+  KeyboardArrowUp as KeyboardArrowUpIcon
 } from '@mui/icons-material';
 import { supabase, getCurrentStaffId, sendPushNotification } from '../api'; 
 import { Helmet } from 'react-helmet-async';
@@ -197,6 +196,8 @@ const AdminReportPage: React.FC = () => {
   const [customerRequestImages, setCustomerRequestImages] = useState<File[]>([]);
   const [customerRequestError, setCustomerRequestError] = useState('');
   const [customerSubmitting, setCustomerSubmitting] = useState(false);
+
+
 
   const voiceContent = useVoiceRecorder((text) => {
     setContent(prev => prev ? `${prev} ${text}` : text);
@@ -1820,33 +1821,7 @@ const AdminReportPage: React.FC = () => {
 
           {/* 우측: 버튼 영역 */}
           <Grid container spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
-            {userRole === 'customer' ? (
-              <Grid item xs={12} sm="auto">
-                <Button 
-                  fullWidth
-                  variant="contained" 
-                  color="success"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    setCustomerRequestOpen(true);
-                    setCustomerRequesterName('');
-                    setCustomerRequesterEmail('');
-                    setCustomerRequestContent('');
-                    setCustomerRequestImages([]);
-                    setCustomerRequestError('');
-                  }}
-                  sx={{ 
-                    fontWeight: 'bold', 
-                    height: '38px', 
-                    fontSize: '0.75rem', 
-                    borderRadius: 1,
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  기술지원 요청
-                </Button>
-              </Grid>
-            ) : (
+            {userRole === 'customer' ? null : (
               <Grid item xs={12} sm="auto">
                 <Button 
                   fullWidth

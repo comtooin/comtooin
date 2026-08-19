@@ -16,7 +16,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
   const userRole = sessionStorage.getItem('adminRole');
   const [selectedRequest, setSelectedRequest] = useState<any>(request);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ content: '', requester_name: '', comments: [] as any[] });
+  const [editForm, setEditForm] = useState({ content: '', requester_name: '', user_name: '', comments: [] as any[] });
   const [newComment, setNewComment] = useState('');
   const [newStatus, setNewStatus] = useState(request?.status || 'processing');
   const [saving, setSaving] = useState(false);
@@ -88,6 +88,7 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       setEditForm({
         content: request.content || '',
         requester_name: request.requester_name || '',
+        user_name: request.user_name || '',
         comments: Array.isArray(request.comments) ? request.comments : []
       });
     }
@@ -224,9 +225,30 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
       if (isEditing) {
         updatePayload.content = editForm.content;
         updatePayload.requester_name = editForm.requester_name;
+        updatePayload.user_name = editForm.user_name;
       }
       const { error: updateError } = await supabase.from('requests').update(updatePayload).eq('id', selectedRequest.id);
       if (updateError) throw updateError;
+
+      // 상태가 'completed'(처리완료)로 변경되었고 연결된 대화방이 있다면 상세 피드백 정보와 조치 내용을 대화방 메시지로 자동 발송
+      if (newStatus === 'completed' && selectedRequest.chat_room_id) {
+        const cleanContent = (selectedRequest.content || '').replace(/<br\s*\/?>/gi, ' ');
+        const contentSummary = cleanContent.length > 50 ? cleanContent.substring(0, 50) + '...' : cleanContent;
+        
+        const finalMsg = `🛠️ <b>기술지원이 완료되었습니다.</b><br/>` +
+                         `• 접수번호: #${selectedRequest.id}<br/>` +
+                         `• 요청자: ${selectedRequest.requester_name || '-'}<br/>` +
+                         `• 증상 내용: ${contentSummary}<br/>` +
+                         `• <b>조치 내용: ${newComment.trim() || '담당 엔지니어가 조치를 완료했습니다.'}</b><br/><br/>` +
+                         `요청하신 건에 대한 기술지원 처리가 정상 마무리되었습니다. 추가적인 문의 사항이 있으시면 언제든지 대화를 남겨주세요.`;
+
+        await supabase.from('memos').insert({
+          content: finalMsg,
+          color: '#f0fdf4', // Light green background
+          room_id: selectedRequest.chat_room_id,
+          author_name: '컴투인 (시스템)'
+        });
+      }
 
       if (newComment.trim()) {
         const staffId = await getCurrentStaffId();
@@ -276,9 +298,11 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
 
   const handleToggleEdit = () => {
     if (!isEditing) {
+      const currentAdminName = sessionStorage.getItem('adminName') || '';
       setEditForm({
         content: selectedRequest.content || '',
         requester_name: selectedRequest.requester_name || '',
+        user_name: selectedRequest.user_name || currentAdminName, // 작성자가 비어 있으면 로그인 유저명 자동 세팅
         comments: selectedRequest.comments || []
       });
       setNewStatus(selectedRequest.status);
@@ -322,7 +346,11 @@ export const RequestDetailModal = ({ open, request, onClose, onRefresh }: any) =
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">작성자</Typography>
-              <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.user_name}</Typography>
+              {isEditing ? (
+                <TextField size="small" variant="outlined" value={editForm.user_name} onChange={(e) => setEditForm({ ...editForm, user_name: e.target.value })} sx={{ minWidth: 120 }} />
+              ) : (
+                <Typography variant="subtitle1" fontWeight="bold" color="text.primary">{selectedRequest.user_name || '-'}</Typography>
+              )}
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="subtitle1" color="text.secondary" fontWeight="bold">상태</Typography>

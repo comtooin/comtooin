@@ -25,6 +25,7 @@ import { Helmet } from 'react-helmet-async';
 interface Customer {
   id: string;
   name: string;
+  client_code?: string;
   address?: string;
   manager_name?: string;
   manager_phone?: string;
@@ -630,6 +631,28 @@ const AdminCustomerPage: React.FC = () => {
                                 </Typography>
                               )}
                             </Stack>
+                          )}
+                          
+                          {customer.login_id && (
+                            <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                              <strong>메신저 링크:</strong> 
+                              <span style={{ fontFamily: 'monospace', backgroundColor: '#f1f5f9', padding: '1px 5px', borderRadius: 4, border: '1px solid #e2e8f0', color: '#1976d2', fontSize: '0.725rem' }}>
+                                comtooin.vercel.app/messenger/{customer.login_id}
+                              </span>
+                              <Button 
+                                size="small" 
+                                variant="text" 
+                                onClick={() => {
+                                  const link = `https://comtooin.vercel.app/messenger/${customer.login_id}`;
+                                  navigator.clipboard.writeText(link)
+                                    .then(() => alert(`'${customer.name}' 메신저 접속 링크가 복사되었습니다!\n\n` + link))
+                                    .catch(() => alert('복사 실패: ' + link));
+                                }}
+                                sx={{ minWidth: 0, p: '0 4px', fontSize: '0.65rem', fontWeight: 'bold', color: 'primary.main', height: 'auto', textTransform: 'none' }}
+                              >
+                                [복사]
+                              </Button>
+                            </Typography>
                           )}
                           
                           {isAdmin && (customer.contract_date || customer.contract_terms || customer.contract_amount) && (
