@@ -144,17 +144,28 @@ export const sendPushNotification = async (
       }
     }
 
-    if (validPlayerIds.length === 0) return;
+    console.log('sendPushNotification - Target Staff IDs config:', targetStaffIds);
+    console.log('sendPushNotification - Target Customer ID config:', targetCustomerId);
+    console.log('sendPushNotification - Gathered raw Player IDs:', validPlayerIds);
+
+    if (validPlayerIds.length === 0) {
+      console.warn('sendPushNotification - Discarded. No target subscription IDs found in database.');
+      return;
+    }
     const uniquePlayerIds = Array.from(new Set(validPlayerIds));
+    console.log('sendPushNotification - Sending request for unique Player IDs:', uniquePlayerIds);
 
     const res = await fetch('/api/sendPush', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, message, include_player_ids: uniquePlayerIds, url })
     });
+
+    const resData = await res.json().catch(() => ({}));
+    console.log('sendPushNotification - OneSignal Send API Response:', { status: res.status, data: resData });
+
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error('Push API Error Response:', errorText);
+      console.error('Push API Error Response status:', res.status, resData);
     }
   } catch (error) {
     console.error('Error sending push notification', error);
