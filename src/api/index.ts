@@ -81,18 +81,39 @@ export const sendPushNotification = async (
 
     const validPlayerIds: string[] = [];
 
-    // 1. 내부직원은 모든 알림 수신 대상 (targetStaffIds 필터링 적용)
-    let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
-    
-    if (targetStaffIds === 'member_only') {
-      staffQuery = staffQuery.eq('role', 'member');
-    } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
-      staffQuery = staffQuery.in('id', targetStaffIds);
+    // 1. 내부직원 수신 대상 추출 (targetStaffIds 필터링 적용)
+    let hasStaffTarget = true;
+
+    // 옵션 객체에 targetCustomerId만 있고 targetStaffIds가 명시적으로 제공되지 않은 경우, 스태프 알림 제외
+    if (
+      targetOrOptions &&
+      typeof targetOrOptions === 'object' &&
+      !Array.isArray(targetOrOptions) &&
+      !('targetStaffIds' in targetOrOptions) &&
+      ('targetCustomerId' in targetOrOptions)
+    ) {
+      hasStaffTarget = false;
     }
 
-    const { data: staffData } = await staffQuery;
-    if (staffData) {
-      validPlayerIds.push(...staffData.map(s => s.onesignal_id).filter(Boolean));
+    // targetStaffIds가 명시적으로 빈 배열([])인 경우, 스태프 알림 제외
+    if (Array.isArray(targetStaffIds) && targetStaffIds.length === 0) {
+      hasStaffTarget = false;
+    }
+
+    if (hasStaffTarget) {
+      let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
+      
+      if (targetStaffIds === 'member_only') {
+        // 'member' 뿐만 아니라 'admin' 권한의 직원(우리멤버 전체)도 수신되도록 수정
+        staffQuery = staffQuery.in('role', ['member', 'admin']);
+      } else if (Array.isArray(targetStaffIds) && targetStaffIds.length > 0) {
+        staffQuery = staffQuery.in('id', targetStaffIds);
+      }
+
+      const { data: staffData } = await staffQuery;
+      if (staffData) {
+        validPlayerIds.push(...staffData.map(s => s.onesignal_id).filter(Boolean));
+      }
     }
 
     // 2. 거래처는 본인 해당 업무만 알림 수신 (targetCustomerId가 매치될 때만 타겟팅 발송)

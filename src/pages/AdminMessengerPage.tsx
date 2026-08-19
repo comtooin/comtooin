@@ -425,7 +425,10 @@ const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }
       if (currentRole === 'customer') {
         targetOptions = { targetStaffIds: 'member_only' };
       } else {
-        targetOptions = { targetCustomerId: targetCustomerId || undefined };
+        targetOptions = { 
+          targetStaffIds: [],
+          targetCustomerId: targetCustomerId || undefined 
+        };
       }
 
       await sendPushNotification(
