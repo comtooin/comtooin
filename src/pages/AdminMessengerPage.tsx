@@ -451,12 +451,12 @@ const AdminMessengerPage: React.FC<AdminMessengerProps> = ({ isDialog, onClose }
       const isCustomerRoom = activeRoom && (activeRoom.is_private || activeRoom.customer);
 
       if (isCustomerRoom) {
-        // 1. 거래처/비회원 1:1 상담방인 경우 발신자 역할에 따라 알림 격리
+        // 1. 거래처/비회원 1:1 상담방인 경우 직원 전체(member_only)와 해당 거래처에 푸시 알림 전송
         if (currentRole === 'customer') {
           targetOptions = { targetStaffIds: 'member_only' };
         } else {
           targetOptions = { 
-            targetStaffIds: [],
+            targetStaffIds: 'member_only',
             targetCustomerId: targetCustomerId || undefined 
           };
         }

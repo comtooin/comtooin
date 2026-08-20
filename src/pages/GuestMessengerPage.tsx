@@ -67,6 +67,7 @@ const GuestMessengerPage: React.FC = () => {
   const [guestPhone, setGuestPhone] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [joining, setJoining] = useState(false);
+  const [joinPrivacyAgreed, setJoinPrivacyAgreed] = useState(false);
 
   // 채팅방 상태
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
@@ -126,6 +127,8 @@ const GuestMessengerPage: React.FC = () => {
         }
 
         setCustomer(customerData);
+        sessionStorage.setItem('adminRole', 'customer');
+        sessionStorage.setItem('adminCustomerId', customerData.id);
 
         // 로컬스토리지에 저장된 대화방 ID 확인
         const savedRoomId = localStorage.getItem('comtooin_guest_room_id');
@@ -292,6 +295,21 @@ const GuestMessengerPage: React.FC = () => {
         .single();
 
       if (roomError) throw roomError;
+
+      // 신규 대화방 개설 시 이메일 알림 비동기 발송 (사내 직원 전원 및 관리자 메일함)
+      supabase.functions.invoke('send-notification-email', {
+        body: {
+          table: "chat_rooms",
+          type: "INSERT",
+          record: {
+            customer_name: customer.name,
+            name: newRoom.name,
+            guest_name: guestName.trim(),
+            guest_phone: guestPhone.trim(),
+            guest_email: guestEmail.trim()
+          }
+        }
+      }).catch(err => console.error('Error invoking email notification function:', err));
 
       // 웰컴 메시지 작성
       const welcomeContent = `안녕하세요! <b>컴투인 ITSM</b> 실시간 대화창입니다. 😊<br/>기술지원 요청을 등록하시려면 하단의 <b>[기술지원 요청]</b> 버튼을 눌러주세요.<br/>접수하신 건의 처리 상태는 이 대화창을 통해 실시간으로 안내되며, 상세 문의사항은 여기에 바로 타이핑하여 엔지니어와 실시간 소통이 가능합니다.`;
@@ -713,10 +731,36 @@ const GuestMessengerPage: React.FC = () => {
                 placeholder="example@comtooin.com"
                 size="small"
               />
+
+              {/* 개인정보 수집 및 이용 동의 안내 Box */}
+              <Box sx={{ border: '1px solid #e2e8f0', borderRadius: 1.5, p: 1.5, bgcolor: '#f8fafc', fontSize: '0.75rem', color: '#475569' }}>
+                <Typography variant="caption" fontWeight="bold" display="block" sx={{ color: '#1e293b', mb: 0.5 }}>
+                  [개인정보 수집 및 이용 동의 안내]
+                </Typography>
+                • 수집항목: 성함, 휴대폰 연락처, 이메일 주소<br/>
+                • 수집목적: 1:1 실시간 기술지원 상담 및 유지보수 이력 관리<br/>
+                • 보유기간: 상담 완료 및 이력 관리 목적 달성 후 지체 없이 파기
+              </Box>
+
+              <FormControlLabel
+                control={
+                  <Checkbox 
+                    size="small"
+                    checked={joinPrivacyAgreed}
+                    onChange={(e) => setJoinPrivacyAgreed(e.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 'medium' }}>
+                    개인정보 수집 및 이용에 동의합니다. (필수)
+                  </Typography>
+                }
+                sx={{ ml: -0.5, mt: -0.5 }}
+              />
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 2 }}>
-            <Button type="submit" variant="contained" fullWidth disabled={joining || !guestName.trim() || !guestPhone.trim()}>
+            <Button type="submit" variant="contained" fullWidth disabled={joining || !guestName.trim() || !guestPhone.trim() || !joinPrivacyAgreed}>
               {joining ? '대화방 생성 중...' : '메신저 입장하기'}
             </Button>
           </DialogActions>

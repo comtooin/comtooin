@@ -119,8 +119,9 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'No target users found in database', targetIdsCount: 0 });
     }
 
-    // OneSignal REST API Call
-    const response = await fetch('https://api.onesignal.com/notifications?c=push', {
+    // OneSignal REST API Call (v1 endpoint)
+    // include_player_ids accepts array of Subscription IDs / Player IDs
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
@@ -129,17 +130,21 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         app_id: appId,
-        include_subscription_ids: uniquePlayerIds,
         include_player_ids: uniquePlayerIds,
         headings: { en: title, ko: title },
         contents: { en: message, ko: message },
-        target_channel: "push",
         ...(url && { url })
       })
     });
 
     const data = await response.json();
     console.log('Backend sendPush - OneSignal REST API response status:', response.status, 'data:', data);
+
+    if (data?.errors && data.errors.length > 0) {
+      console.error('Backend sendPush - OneSignal API returned errors:', data.errors);
+      return res.status(400).json({ success: false, errors: data.errors, data, targetIdsCount: uniquePlayerIds.length });
+    }
+
     return res.status(200).json({ success: true, data, targetIdsCount: uniquePlayerIds.length });
   } catch (error) {
     console.error('Fatal Error sending push notification:', error);
