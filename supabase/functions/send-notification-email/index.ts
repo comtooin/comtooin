@@ -232,7 +232,10 @@ serve(async (req) => {
         </div>
       `;
     } else {
-      return new Response(JSON.stringify({ message: "Unsupported table webhook, skipping" }), { status: 200 });
+      return new Response(JSON.stringify({ message: "Unsupported table webhook, skipping" }), { 
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" }
+      });
     }
 
     // 메일 발송 수신처 리스트 구성
@@ -252,11 +255,14 @@ serve(async (req) => {
     const info = await transporter.sendMail(mailOptions);
 
     return new Response(JSON.stringify({ success: true, messageId: info.messageId }), {
-      headers: { "Content-Type": "application/json" },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (err: any) {
     console.error("Function error:", err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: err.message }), { 
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }
+    });
   }
 });
