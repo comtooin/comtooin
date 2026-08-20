@@ -312,8 +312,15 @@ const GuestMessengerPage: React.FC = () => {
           }
         })
       })
-      .then(res => res.json())
-      .then(data => console.log('sendEmail API Server Response:', data))
+      .then(async (res) => {
+        const text = await res.text();
+        try {
+          const data = JSON.parse(text);
+          console.log('sendEmail API Server Response:', data);
+        } catch (e) {
+          console.warn('sendEmail API Server Raw Response:', text);
+        }
+      })
       .catch(err => console.error('Error sending email notification:', err));
 
       // 웰컴 메시지 작성

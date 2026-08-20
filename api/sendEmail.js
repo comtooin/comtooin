@@ -1,5 +1,5 @@
-const { createClient } = require('@supabase/supabase-js');
-const nodemailer = require('nodemailer');
+import { createClient } from '@supabase/supabase-js';
+import nodemailer from 'nodemailer';
 
 // Initialize Supabase admin client safely with fallback URL to prevent Invalid URL initialization errors
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://szwiejswmfivultxxywb.supabase.co';
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
 
     if (!gmailPass) {
       console.warn('Backend sendEmail - GMAIL_PASS environment variable not configured in Vercel.');
-      return res.status(200).json({ success: false, message: 'GMAIL_PASS not configured in Vercel environment variables' });
+      return res.status(200).json({ success: false, message: 'GMAIL_PASS environment variable not configured in Vercel' });
     }
 
     // Fetch staff emails
