@@ -35,19 +35,16 @@ export default async function handler(req, res) {
 
     // 2. Query staff onesignal_ids via RLS-bypassing RPC function with table fallback
     let hasStaffTarget = true;
-    
-    // If only targetCustomerId is explicitly provided without staff targets, skip staff queries
-    if (targetCustomerId && targetStaffIds === undefined) {
+    if (targetStaffIds === undefined) {
       hasStaffTarget = false;
     }
-    // If targetStaffIds is explicitly set to empty array, skip staff queries
     if (Array.isArray(targetStaffIds) && targetStaffIds.length === 0) {
       hasStaffTarget = false;
     }
 
     if (hasStaffTarget) {
       let rpcRole = null;
-      if (targetStaffIds === 'member_only') {
+      if (targetStaffIds === 'member_only' || targetStaffIds === 'all') {
         rpcRole = 'member_only';
       }
 
@@ -56,10 +53,8 @@ export default async function handler(req, res) {
         target_role: rpcRole
       });
 
-      // If RPC is missing or fails (e.g. database migrations not applied yet), fallback to direct select
+      // Fallback to direct table select
       if (staffError || !staffData) {
-        console.warn('Backend sendPush - Staff RPC query failed or not deployed, falling back to direct table select. Error:', staffError);
-        
         let staffQuery = supabase.from('staff').select('onesignal_id').not('onesignal_id', 'is', null);
         if (targetStaffIds === 'member_only') {
           staffQuery = staffQuery.in('role', ['member', 'admin']);
@@ -67,10 +62,8 @@ export default async function handler(req, res) {
           staffQuery = staffQuery.in('id', targetStaffIds);
         }
 
-        const { data: fallbackStaffData, error: fallbackStaffError } = await staffQuery;
-        if (fallbackStaffError) {
-          console.error('Backend sendPush - Staff fallback direct select also failed:', fallbackStaffError);
-        } else if (fallbackStaffData) {
+        const { data: fallbackStaffData } = await staffQuery;
+        if (fallbackStaffData) {
           staffData = fallbackStaffData;
         }
       }
@@ -82,24 +75,18 @@ export default async function handler(req, res) {
 
     // 3. Query customer onesignal_ids via RLS-bypassing RPC function with table fallback
     if (targetCustomerId) {
-      // Try secure Definier RPC first
       let { data: custData, error: custError } = await supabase.rpc('get_customer_onesignal_id', {
         target_cust_id: targetCustomerId
       });
 
-      // If RPC is missing or fails, fallback to direct select
       if (custError || !custData) {
-        console.warn('Backend sendPush - Customer RPC query failed or not deployed, falling back to direct table select. Error:', custError);
-        
-        const { data: fallbackCustData, error: fallbackCustError } = await supabase
+        const { data: fallbackCustData } = await supabase
           .from('customers')
           .select('onesignal_id')
           .eq('id', targetCustomerId)
           .not('onesignal_id', 'is', null);
 
-        if (fallbackCustError) {
-          console.error('Backend sendPush - Customer fallback direct select also failed:', fallbackCustError);
-        } else if (fallbackCustData) {
+        if (fallbackCustData) {
           custData = fallbackCustData;
         }
       }
