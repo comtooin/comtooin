@@ -238,16 +238,16 @@ serve(async (req) => {
       });
     }
 
-    // 메일 발송 수신처 리스트 구성
-    const toRecipients = [gmailUser];
-    if (targetRecipientEmail && targetRecipientEmail.trim() !== "") {
-      toRecipients.push(targetRecipientEmail.trim());
-    }
+    // 메일 발송 수신처 리스트 구성 (BCC 대신 TO 직접 수신자로 통합하여 네이버/구글 스팸 차단 완치)
+    const allRecipients = Array.from(new Set([
+      gmailUser,
+      targetRecipientEmail,
+      ...emailAddresses
+    ].map(e => (e || '').trim()).filter(Boolean)));
 
     const mailOptions = {
       from: `"COMTOOIN 알림" <${gmailUser}>`,
-      to: toRecipients.join(', '),
-      bcc: emailAddresses.join(', '), // 사내 직원 전체 숨은참조
+      to: allRecipients.join(', '),
       subject: mailSubject,
       html: htmlContent,
     };
