@@ -297,8 +297,10 @@ const GuestMessengerPage: React.FC = () => {
       if (roomError) throw roomError;
 
       // 신규 대화방 개설 시 이메일 알림 비동기 발송 (사내 직원 전원 및 관리자 메일함)
-      supabase.functions.invoke('send-notification-email', {
-        body: {
+      fetch('/api/sendEmail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           table: "chat_rooms",
           type: "INSERT",
           record: {
@@ -308,8 +310,8 @@ const GuestMessengerPage: React.FC = () => {
             guest_phone: guestPhone.trim(),
             guest_email: guestEmail.trim()
           }
-        }
-      }).catch(err => console.error('Error invoking email notification function:', err));
+        })
+      }).catch(err => console.error('Error sending email notification:', err));
 
       // 웰컴 메시지 작성
       const welcomeContent = `안녕하세요! <b>컴투인 ITSM</b> 실시간 대화창입니다. 😊<br/>기술지원 요청을 등록하시려면 하단의 <b>[기술지원 요청]</b> 버튼을 눌러주세요.<br/>접수하신 건의 처리 상태는 이 대화창을 통해 실시간으로 안내되며, 상세 문의사항은 여기에 바로 타이핑하여 엔지니어와 실시간 소통이 가능합니다.`;
