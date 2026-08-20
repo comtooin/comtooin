@@ -296,6 +296,14 @@ const GuestMessengerPage: React.FC = () => {
 
       if (roomError) throw roomError;
 
+      // 신규 대화방 개설 시 원시그널 푸시 알림 발송 (사내 직원 전체 member_only)
+      sendPushNotification(
+        '신규 1:1 대화방 개설',
+        `[${customer.name}] ${guestName.trim()} 님이 1:1 기술지원 대화방을 개설하였습니다.`,
+        'member_only',
+        window.location.origin + '/admin/messenger'
+      ).catch(err => console.error('Error sending push notification:', err));
+
       // 신규 대화방 개설 시 이메일 알림 비동기 발송 (사내 직원 전원 및 관리자 메일함)
       fetch('/api/sendEmail', {
         method: 'POST',
