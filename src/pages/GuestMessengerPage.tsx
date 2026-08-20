@@ -305,9 +305,14 @@ const GuestMessengerPage: React.FC = () => {
       ).catch(err => console.error('Error sending push notification:', err));
 
       // 신규 대화방 개설 시 이메일 알림 비동기 발송 (사내 직원 전원 및 관리자 메일함)
-      fetch('/api/sendEmail', {
+      const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_q2imOp6aORMPdq0tdGLhsw_e8aAXuTS';
+      fetch('https://szwiejswmfivultxxywb.supabase.co/functions/v1/send-notification-email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${anonKey}`,
+          'apikey': anonKey
+        },
         body: JSON.stringify({
           table: "chat_rooms",
           type: "INSERT",
@@ -320,15 +325,8 @@ const GuestMessengerPage: React.FC = () => {
           }
         })
       })
-      .then(async (res) => {
-        const text = await res.text();
-        try {
-          const data = JSON.parse(text);
-          console.log('sendEmail API Server Response:', data);
-        } catch (e) {
-          console.warn('sendEmail API Server Raw Response:', text);
-        }
-      })
+      .then(res => res.json())
+      .then(data => console.log('send-notification-email Direct Response:', data))
       .catch(err => console.error('Error sending email notification:', err));
 
       // 웰컴 메시지 작성
