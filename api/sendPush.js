@@ -120,7 +120,7 @@ export default async function handler(req, res) {
     }
 
     // OneSignal REST API Call (v1 endpoint)
-    // include_player_ids accepts array of Subscription IDs / Player IDs
+    // include_subscription_ids accepts array of Web Push Subscription IDs
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
@@ -130,7 +130,7 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         app_id: appId,
-        include_player_ids: uniquePlayerIds,
+        include_subscription_ids: uniquePlayerIds,
         headings: { en: title, ko: title },
         contents: { en: message, ko: message },
         ...(url && { url })
@@ -145,7 +145,14 @@ export default async function handler(req, res) {
       return res.status(400).json({ success: false, errors: data.errors, data, targetIdsCount: uniquePlayerIds.length });
     }
 
-    return res.status(200).json({ success: true, data, targetIdsCount: uniquePlayerIds.length });
+    return res.status(200).json({ 
+      success: true, 
+      data: {
+        ...data,
+        recipients: data?.recipients ?? data?.external_id_recipients ?? uniquePlayerIds.length
+      }, 
+      targetIdsCount: uniquePlayerIds.length 
+    });
   } catch (error) {
     console.error('Fatal Error sending push notification:', error);
     return res.status(500).json({ error: 'Failed to send notification', details: error.message || String(error) });
