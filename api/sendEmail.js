@@ -1,14 +1,15 @@
-import { createClient } from '@supabase/supabase-js';
-import nodemailer from 'nodemailer';
+const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
 
-// Initialize Supabase admin client to bypass RLS policies securely
-const supabase = createClient(
-  process.env.REACT_APP_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 
+// Initialize Supabase admin client safely with fallback URL to prevent Invalid URL initialization errors
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://szwiejswmfivultxxywb.supabase.co';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
   process.env.SUPABASE_SERVICE_KEY || 
   process.env.REACT_APP_SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.REACT_APP_SUPABASE_ANON_KEY || ''
-);
+  process.env.REACT_APP_SUPABASE_ANON_KEY || 
+  'sb_publishable_q2imOp6aORMPdq0tdGLhsw_e8aAXuTS';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
   // CORS Headers
@@ -37,14 +38,18 @@ export default async function handler(req, res) {
 
     if (!gmailPass) {
       console.warn('Backend sendEmail - GMAIL_PASS environment variable not configured in Vercel.');
-      return res.status(200).json({ success: false, message: 'GMAIL_PASS not configured' });
+      return res.status(200).json({ success: false, message: 'GMAIL_PASS not configured in Vercel environment variables' });
     }
 
     // Fetch staff emails
-    const { data: staffList } = await supabase
+    const { data: staffList, error: staffError } = await supabase
       .from('staff')
       .select('email')
       .not('email', 'is', null);
+
+    if (staffError) {
+      console.warn('Backend sendEmail - Staff list query warning:', staffError);
+    }
 
     const emailAddresses = (staffList || []).map(s => s.email).filter(Boolean);
 
@@ -100,7 +105,7 @@ export default async function handler(req, res) {
     const mailOptions = {
       from: `"COMTOOIN 알림" <${gmailUser}>`,
       to: gmailUser,
-      bcc: emailAddresses.join(', '),
+      ...(emailAddresses.length > 0 && { bcc: emailAddresses.join(', ') }),
       subject: mailSubject,
       html: htmlContent,
     };

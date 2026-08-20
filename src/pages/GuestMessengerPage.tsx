@@ -311,7 +311,10 @@ const GuestMessengerPage: React.FC = () => {
             guest_email: guestEmail.trim()
           }
         })
-      }).catch(err => console.error('Error sending email notification:', err));
+      })
+      .then(res => res.json())
+      .then(data => console.log('sendEmail API Server Response:', data))
+      .catch(err => console.error('Error sending email notification:', err));
 
       // 웰컴 메시지 작성
       const welcomeContent = `안녕하세요! <b>컴투인 ITSM</b> 실시간 대화창입니다. 😊<br/>기술지원 요청을 등록하시려면 하단의 <b>[기술지원 요청]</b> 버튼을 눌러주세요.<br/>접수하신 건의 처리 상태는 이 대화창을 통해 실시간으로 안내되며, 상세 문의사항은 여기에 바로 타이핑하여 엔지니어와 실시간 소통이 가능합니다.`;
