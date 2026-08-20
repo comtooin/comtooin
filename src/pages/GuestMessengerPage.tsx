@@ -308,6 +308,7 @@ const GuestMessengerPage: React.FC = () => {
       const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_q2imOp6aORMPdq0tdGLhsw_e8aAXuTS';
       fetch('https://szwiejswmfivultxxywb.supabase.co/functions/v1/send-notification-email', {
         method: 'POST',
+        mode: 'no-cors',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${anonKey}`,
@@ -325,8 +326,6 @@ const GuestMessengerPage: React.FC = () => {
           }
         })
       })
-      .then(res => res.json())
-      .then(data => console.log('send-notification-email Direct Response:', data))
       .catch(err => console.error('Error sending email notification:', err));
 
       // 웰컴 메시지 작성
