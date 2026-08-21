@@ -828,7 +828,14 @@ const AdminSchedulePage: React.FC = () => {
                 </FormControl>
               </Grid>
               <Grid item xs={12} md={8}>
-                <TextField fullWidth label="일정 제목" size="small" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} />
+                <TextField 
+                  fullWidth 
+                  label="일정 제목" 
+                  size="small" 
+                  value={formData.title} 
+                  onChange={(e) => setFormData({...formData, title: e.target.value})} 
+                  placeholder="예: (주)컴투인 정기 점검 및 소프트웨어 패치"
+                />
               </Grid>
               <Grid item xs={12}>
                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -846,7 +853,7 @@ const AdminSchedulePage: React.FC = () => {
                     placeholder={
                       voiceRecorder.isListening 
                         ? "말씀이 끝나면 자동으로 음성이 텍스트로 채워집니다..." 
-                        : ""
+                        : "예: 서버실 UPS 점검 및 PC 10대 백신 업데이트"
                     }
                     value={formData.content} 
                     onChange={(e) => setFormData({...formData, content: e.target.value})} 

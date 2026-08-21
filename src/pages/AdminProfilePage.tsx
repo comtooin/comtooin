@@ -3,7 +3,15 @@ import {
   Container, Typography, Box, Paper, TextField, Button, Stack, Alert, CircularProgress, Divider,
   Dialog, DialogTitle, DialogContent, DialogActions, IconButton
 } from '@mui/material';
-import { AccountCircle as AccountCircleIcon, Lock as LockIcon, Close as CloseIcon, Person as PersonIcon } from '@mui/icons-material';
+import { 
+  AccountCircle as AccountCircleIcon, 
+  Lock as LockIcon, 
+  Close as CloseIcon, 
+  Person as PersonIcon,
+  Notifications as NotificationsIcon,
+  NotificationsOff as NotificationsOffIcon
+} from '@mui/icons-material';
+import OneSignal from 'react-onesignal';
 import { supabase } from '../api';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +26,8 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+  const [pushMessage, setPushMessage] = useState<{ type: 'success' | 'info' | 'error', text: string } | null>(null);
   const navigate = useNavigate();
   
   const [userInfo, setUserInfo] = useState({
@@ -174,6 +184,68 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
     }
   };
 
+  const handleDisablePush = async () => {
+    setPushLoading(true);
+    setPushMessage(null);
+    try {
+      if (OneSignal?.User?.PushSubscription) {
+        await OneSignal.User.PushSubscription.optOut();
+      }
+      
+      const role = sessionStorage.getItem('adminRole');
+      if (role === 'customer') {
+        const customerId = sessionStorage.getItem('adminCustomerId');
+        if (customerId) {
+          await supabase.from('customers').update({ onesignal_id: null }).eq('id', customerId);
+        }
+      } else {
+        const staffId = sessionStorage.getItem('adminStaffId');
+        if (staffId) {
+          await supabase.from('staff').update({ onesignal_id: null }).eq('id', staffId);
+        }
+      }
+
+      setPushMessage({ type: 'success', text: '이 기기의 푸시 알림이 성공적으로 초기화(해제)되었습니다.' });
+    } catch (err: any) {
+      console.error('Error disabling push:', err);
+      setPushMessage({ type: 'error', text: '푸시 알림 초기화 중 오류가 발생했습니다: ' + (err.message || String(err)) });
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleEnablePush = async () => {
+    setPushLoading(true);
+    setPushMessage(null);
+    try {
+      if (OneSignal?.User?.PushSubscription) {
+        await OneSignal.User.PushSubscription.optIn();
+        OneSignal.Slidedown.promptPush();
+      }
+      
+      const pushId = OneSignal?.User?.PushSubscription?.id;
+      const role = sessionStorage.getItem('adminRole');
+      if (role === 'customer') {
+        const customerId = sessionStorage.getItem('adminCustomerId');
+        if (customerId && pushId) {
+          await supabase.from('customers').update({ onesignal_id: pushId }).eq('id', customerId);
+        }
+      } else {
+        const staffId = sessionStorage.getItem('adminStaffId');
+        if (staffId && pushId) {
+          await supabase.from('staff').update({ onesignal_id: pushId }).eq('id', staffId);
+        }
+      }
+
+      setPushMessage({ type: 'success', text: '이 기기에서 푸시 알림이 정상적으로 활성화되었습니다.' });
+    } catch (err: any) {
+      console.error('Error enabling push:', err);
+      setPushMessage({ type: 'error', text: '푸시 알림 활성화 중 오류가 발생했습니다: ' + (err.message || String(err)) });
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
   const handleFinalLogout = () => {
     sessionStorage.removeItem('adminToken');
     sessionStorage.removeItem('adminSessionExpiresAt');
@@ -241,10 +313,10 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
             label="연락처" 
             value={userInfo.phone} 
             onChange={(e) => setUserInfo({ ...userInfo, phone: e.target.value })}
+            placeholder="예: 010-1234-5678"
             fullWidth 
             variant="outlined" 
             size="small" 
-            placeholder="예: 010-1234-5678"
             InputProps={{
               endAdornment: (
                 <Button 
@@ -262,6 +334,45 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
         </Stack>
       </Paper>
 
+      {/* 기기 푸시 알림 간편 초기화 및 설정 섹션 */}
+      <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
+        <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
+          <NotificationsIcon color="action" sx={{ fontSize: '1.15rem' }} /> 기기 푸시 알림 설정
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, fontSize: '0.85rem' }}>
+          현재 사용 중인 스마트폰이나 PC의 실시간 알림 수신 상태를 간편하게 끄거나 초기화할 수 있습니다.
+        </Typography>
+
+        {pushMessage && (
+          <Alert severity={pushMessage.type} sx={{ mb: 2, py: 0.5, fontSize: '0.85rem' }} onClose={() => setPushMessage(null)}>
+            {pushMessage.text}
+          </Alert>
+        )}
+
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Button
+            variant="outlined"
+            color="error"
+            onClick={handleDisablePush}
+            disabled={pushLoading}
+            startIcon={<NotificationsOffIcon />}
+            sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderRadius: 1, py: 1 }}
+          >
+            {pushLoading ? <CircularProgress size={20} color="inherit" /> : '이 기기 푸시 알림 초기화 / 끄기'}
+          </Button>
+          <Button
+            variant="outlined"
+            color="primary"
+            onClick={handleEnablePush}
+            disabled={pushLoading}
+            startIcon={<NotificationsIcon />}
+            sx={{ fontWeight: 'bold', fontSize: '0.8rem', borderRadius: 1, py: 1 }}
+          >
+            푸시 알림 다시 켜기 / 등록
+          </Button>
+        </Stack>
+      </Paper>
+
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper' }}>
         <Typography variant="subtitle1" gutterBottom fontWeight="bold" sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1, color: 'primary.main' }}>
           <LockIcon color="action" sx={{ fontSize: '1.15rem' }} /> 비밀번호 변경
@@ -275,14 +386,14 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
           <Box component="form" onSubmit={handlePasswordChange}>
             <Stack spacing={2}>
               <TextField
-                label="새 비밀번호"
+                label="새 비밀번호 (6자 이상)"
                 type="password"
                 fullWidth
                 size="small"
                 required
                 value={passwordData.newPassword}
                 onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
-                placeholder="최소 6자 이상"
+                placeholder="영문, 숫자 포함 6자 이상"
               />
               <TextField
                 label="새 비밀번호 확인"
@@ -292,7 +403,7 @@ const AdminProfilePage: React.FC<AdminProfileProps> = ({ isDialog = false, onClo
                 required
                 value={passwordData.confirmPassword}
                 onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
-                placeholder="비밀번호 재입력"
+                placeholder="새 비밀번호 재입력"
               />
               <Button
                 type="submit"

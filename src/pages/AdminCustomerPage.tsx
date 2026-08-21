@@ -911,7 +911,7 @@ const AdminCustomerPage: React.FC = () => {
                       size="small"
                       value={editContractTerms}
                       onChange={(e) => setEditContractTerms(e.target.value)}
-                      placeholder="예: 월 1회 정기점검"
+                      placeholder="예: 월 1회 정기점검 및 기술지원"
                     />
                   </Grid>
                 </>
@@ -1105,7 +1105,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   value={newManagerName1}
                   onChange={(e) => setNewManagerName1(e.target.value)}
-                  placeholder="홍길동"
+                  placeholder="예: 홍길동 대리"
                 />
               </Grid>
               <Grid item xs={12} sm={8}>
@@ -1115,7 +1115,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   value={newManagerPhone1}
                   onChange={(e) => setNewManagerPhone1(e.target.value)}
-                  placeholder="010-0000-0000"
+                  placeholder="예: 010-1234-5678"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -1125,7 +1125,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   value={newManagerEmail1}
                   onChange={(e) => setNewManagerEmail1(e.target.value)}
-                  placeholder="user@example.com"
+                  placeholder="예: user@company.com"
                 />
               </Grid>
               
@@ -1145,7 +1145,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   value={newManagerName2}
                   onChange={(e) => setNewManagerName2(e.target.value)}
-                  placeholder="이몽룡"
+                  placeholder="예: 이몽룡 과장"
                 />
               </Grid>
               <Grid item xs={12} sm={8}>
@@ -1155,7 +1155,7 @@ const AdminCustomerPage: React.FC = () => {
                   size="small"
                   value={newManagerPhone2}
                   onChange={(e) => setNewManagerPhone2(e.target.value)}
-                  placeholder="010-1111-1111"
+                  placeholder="예: 010-9876-5432"
                 />
               </Grid>
                 <Grid item xs={12}>
@@ -1165,7 +1165,7 @@ const AdminCustomerPage: React.FC = () => {
                     size="small"
                     value={newManagerEmail2}
                     onChange={(e) => setNewManagerEmail2(e.target.value)}
-                    placeholder="user2@example.com"
+                    placeholder="예: user2@company.com"
                   />
                 </Grid>
 
@@ -1208,7 +1208,7 @@ const AdminCustomerPage: React.FC = () => {
                         size="small"
                         value={newContractTerms}
                         onChange={(e) => setNewContractTerms(e.target.value)}
-                        placeholder="예: 월 1회 정기점검"
+                        placeholder="예: 월 1회 정기점검 및 기술지원"
                       />
                     </Grid>
                   </>

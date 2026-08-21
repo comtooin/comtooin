@@ -7,7 +7,7 @@ import { RequestDetailModal } from '../components/RequestDetailModal';
 import {
   Typography, Box, Paper, CircularProgress, Alert, Button,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Chip, Divider, TextField, MenuItem, Grid, Tabs, Tab, Stack, Container, Pagination, useMediaQuery, useTheme, TableSortLabel,
-  Autocomplete, InputAdornment, IconButton, Menu, ListItemIcon, ListItemText, Collapse
+  Autocomplete, InputAdornment, IconButton, Menu, ListItemIcon, ListItemText, Collapse, Checkbox, FormControlLabel
 } from '@mui/material';
 import { 
   BarChart as BarChartIcon, 
@@ -191,9 +191,11 @@ const AdminReportPage: React.FC = () => {
   // 거래처 기술지원 요청 모달 관련 상태
   const [customerRequestOpen, setCustomerRequestOpen] = useState(false);
   const [customerRequesterName, setCustomerRequesterName] = useState('');
+  const [customerRequesterPhone, setCustomerRequesterPhone] = useState('');
   const [customerRequesterEmail, setCustomerRequesterEmail] = useState('');
   const [customerRequestContent, setCustomerRequestContent] = useState('');
   const [customerRequestImages, setCustomerRequestImages] = useState<File[]>([]);
+  const [customerPrivacyAgreed, setCustomerPrivacyAgreed] = useState(false);
   const [customerRequestError, setCustomerRequestError] = useState('');
   const [customerSubmitting, setCustomerSubmitting] = useState(false);
 
@@ -421,8 +423,11 @@ const AdminReportPage: React.FC = () => {
   const handleSubmitCustomerRequest = async (e: React.FormEvent) => {
     if (e) e.preventDefault();
     setCustomerRequestError('');
-    if (!customerRequesterName.trim() || !customerRequestContent.trim()) {
-      return setCustomerRequestError('요청자 성함과 요청 내용은 필수 항목입니다.');
+    if (!customerRequesterName.trim() || !customerRequesterPhone.trim() || !customerRequestContent.trim()) {
+      return setCustomerRequestError('요청자 성함, 연락처, 요청 내용은 필수 항목입니다.');
+    }
+    if (!customerPrivacyAgreed) {
+      return setCustomerRequestError('개인정보 수집 및 이용에 동의해 주세요.');
     }
     setCustomerSubmitting(true);
     try {
@@ -446,9 +451,10 @@ const AdminReportPage: React.FC = () => {
         customer_name: customerName,
         user_name: '거래처 접수',
         requester_name: customerRequesterName.trim(),
+        user_phone: customerRequesterPhone.trim(),
         user_email: customerRequesterEmail.trim() || null,
         password: '', // 개별 비밀번호 불필요
-        content: customerRequestContent.trim(),
+        content: `[연락처: ${customerRequesterPhone.trim()}]\n` + customerRequestContent.trim(),
         status: 'processing', // 기본 '처리중' 접수
         created_at: new Date().toISOString(),
         images: uploadedImageUrls
@@ -466,7 +472,7 @@ const AdminReportPage: React.FC = () => {
       const sessionCustomerId = sessionStorage.getItem('adminCustomerId');
       sendPushNotification(
         '새로운 기술지원 요청 접수',
-        `[${customerName}] ${customerRequesterName}님의 요청: ${customerRequestContent.trim()}`,
+        `[${customerName}] ${customerRequesterName}님(${customerRequesterPhone.trim()})의 요청: ${customerRequestContent.trim()}`,
         {
           targetStaffIds: 'all',
           targetCustomerId: sessionCustomerId || undefined
@@ -502,9 +508,11 @@ const AdminReportPage: React.FC = () => {
       alert('기술지원 요청이 정상적으로 접수되었습니다. 담당자가 확인 후 신속하게 처리해 드리겠습니다.');
       setCustomerRequestOpen(false);
       setCustomerRequesterName('');
+      setCustomerRequesterPhone('');
       setCustomerRequesterEmail('');
       setCustomerRequestContent('');
       setCustomerRequestImages([]);
+      setCustomerPrivacyAgreed(false);
       
       applyFilters(true);
       fetchInitialData();
@@ -1821,7 +1829,39 @@ const AdminReportPage: React.FC = () => {
 
           {/* 우측: 버튼 영역 */}
           <Grid container spacing={1} sx={{ width: { xs: '100%', md: 'auto' }, justifyContent: 'flex-end' }}>
-            {userRole === 'customer' ? null : (
+            {userRole === 'customer' ? (
+              <Grid item xs={12} sm="auto">
+                <Button 
+                  fullWidth
+                  variant="contained" 
+                  color="success"
+                  startIcon={<AssignmentIcon />}
+                  onClick={() => {
+                    setCustomerRequesterName('');
+                    setCustomerRequesterPhone('');
+                    setCustomerRequesterEmail('');
+                    setCustomerRequestContent('');
+                    setCustomerRequestImages([]);
+                    setCustomerPrivacyAgreed(false);
+                    setCustomerRequestError('');
+                    setCustomerRequestOpen(true);
+                  }}
+                  sx={{ 
+                    fontWeight: 'bold', 
+                    height: '36px', 
+                    fontSize: { xs: '0.75rem', sm: '0.8rem' }, 
+                    borderRadius: 1,
+                    whiteSpace: 'nowrap',
+                    boxShadow: '0 2px 8px rgba(46, 125, 50, 0.25)',
+                    '&:hover': {
+                      boxShadow: '0 4px 12px rgba(46, 125, 50, 0.35)'
+                    }
+                  }}
+                >
+                  기술지원 요청
+                </Button>
+              </Grid>
+            ) : (
               <Grid item xs={12} sm="auto">
                 <Button 
                   fullWidth
@@ -2815,7 +2855,17 @@ const AdminReportPage: React.FC = () => {
                   <AssignmentIcon color="primary" sx={{ fontSize: '1.1rem' }} /> 접수 및 처리 내용
                 </Typography>
                 <Stack spacing={2.5}>
-                  <TextField label="요청자 (고객 담당자)" required fullWidth variant="outlined" size="small" value={requesterName} onChange={(e) => setRequesterName(e.target.value)} disabled={submitting} />
+                  <TextField 
+                    label="요청자 (고객 담당자)" 
+                    required 
+                    fullWidth 
+                    variant="outlined" 
+                    size="small" 
+                    value={requesterName} 
+                    onChange={(e) => setRequesterName(e.target.value)} 
+                    placeholder="예: 홍길동 대리"
+                    disabled={submitting} 
+                  />
                   
                   <Box>
                     <Box sx={{ 
@@ -2887,7 +2937,7 @@ const AdminReportPage: React.FC = () => {
                       onChange={(e) => setContent(e.target.value)} 
                       required 
                       disabled={submitting}
-                      placeholder="업무 요청 내용을 상세히 입력해주세요."
+                      placeholder="예: 3층 사무실 네트워크 프린터 연결 끊김 및 출력 불가 조치 요청"
                     />
                   </Box>
 
@@ -3053,46 +3103,58 @@ const AdminReportPage: React.FC = () => {
           }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
+        <DialogTitle sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1, py: 1.5, px: 2.5 }}>
           <AssignmentIcon color="success" sx={{ fontSize: '1.25rem' }} /> 기술지원 요청 접수
         </DialogTitle>
-        <DialogContent dividers>
-          <Box component="form" onSubmit={handleSubmitCustomerRequest} sx={{ mt: 1 }}>
-            <Stack spacing={2.5}>
-              <Alert severity="info" variant="outlined" sx={{ borderRadius: 1.5 }}>
-                유지보수 및 기술 지원이 필요한 장애나 요청 사항을 적어주시면 담당 직원이 즉시 접수하여 처리 현황을 공유해 드립니다.
-              </Alert>
+        <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+          <Box component="form" onSubmit={handleSubmitCustomerRequest}>
+            <Stack spacing={1.5}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField
+                  label="거래처명"
+                  fullWidth
+                  size="small"
+                  value={sessionStorage.getItem('adminName') || ''}
+                  disabled
+                  InputLabelProps={{ shrink: true }}
+                  sx={{ bgcolor: '#f8fafc', flex: 1 }}
+                />
+                <TextField
+                  label="요청자 성함"
+                  fullWidth
+                  required
+                  size="small"
+                  value={customerRequesterName}
+                  onChange={(e) => setCustomerRequesterName(e.target.value)}
+                  placeholder="예: 홍길동 대리"
+                  disabled={customerSubmitting}
+                  sx={{ flex: 1 }}
+                />
+              </Stack>
 
-              <TextField
-                label="거래처명"
-                fullWidth
-                size="small"
-                value={sessionStorage.getItem('adminName') || ''}
-                disabled
-                helperText="보안을 위해 로그인된 거래처로 고정됩니다."
-              />
-
-              <TextField
-                label="요청자 성함"
-                fullWidth
-                required
-                size="small"
-                value={customerRequesterName}
-                onChange={(e) => setCustomerRequesterName(e.target.value)}
-                placeholder="예: 홍길동 대리"
-                disabled={customerSubmitting}
-              />
-
-              <TextField
-                label="연락용 이메일"
-                fullWidth
-                size="small"
-                value={customerRequesterEmail}
-                onChange={(e) => setCustomerRequesterEmail(e.target.value)}
-                placeholder="예: email@example.com"
-                disabled={customerSubmitting}
-                helperText="선택 사항 (진행 상황 피드백용)"
-              />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                <TextField
+                  label="휴대폰 연락처"
+                  fullWidth
+                  required
+                  size="small"
+                  value={customerRequesterPhone}
+                  onChange={(e) => setCustomerRequesterPhone(e.target.value)}
+                  placeholder="예: 010-1234-5678"
+                  disabled={customerSubmitting}
+                  sx={{ flex: 1 }}
+                />
+                <TextField
+                  label="연락용 이메일 (선택)"
+                  fullWidth
+                  size="small"
+                  value={customerRequesterEmail}
+                  onChange={(e) => setCustomerRequesterEmail(e.target.value)}
+                  placeholder="예: user@company.com"
+                  disabled={customerSubmitting}
+                  sx={{ flex: 1 }}
+                />
+              </Stack>
 
               <TextField
                 label="요청 상세 내용"
@@ -3103,55 +3165,82 @@ const AdminReportPage: React.FC = () => {
                 variant="outlined"
                 value={customerRequestContent}
                 onChange={(e) => setCustomerRequestContent(e.target.value)}
-                placeholder="장애 증상이나 지원 요청 내용을 상세히 적어주세요. 예: 사내 프린터 연결 끊김, PC 부팅 불가 등"
+                placeholder="예: 3층 사무실 복합기 출력 오류 및 PC 전원 부팅 불가"
                 disabled={customerSubmitting}
               />
 
               {/* 이미지 첨부 */}
-              <Box sx={{ mt: 1, pt: 2, borderTop: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
-                  <Button 
-                    variant="outlined" 
-                    component="label" 
-                    startIcon={<PhotoCameraIcon />} 
-                    size="small"
-                    disabled={customerSubmitting}
-                    sx={{ fontWeight: 'bold', height: '36px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
-                  >
-                    이미지 첨부 (최대 5개)
-                    <input type="file" hidden multiple accept="image/*" onChange={handleCustomerRequestImageChange} />
-                  </Button>
-                  
-                  {customerRequestImages.length > 0 && (
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-                      {customerRequestImages.map((img, i) => (
-                        <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
-                          <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0' }} />
-                          <IconButton 
-                            size="small" 
-                            disabled={customerSubmitting}
-                            onClick={() => setCustomerRequestImages(prev => prev.filter((_, idx) => idx !== i))} 
-                            sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.2, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
-                          >
-                            <DeleteIcon sx={{ fontSize: '0.9rem' }} />
-                          </IconButton>
-                        </Box>
-                      ))}
-                    </Stack>
-                  )}
-                </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                <Button 
+                  variant="outlined" 
+                  component="label" 
+                  startIcon={<PhotoCameraIcon sx={{ fontSize: '1rem' }} />} 
+                  size="small"
+                  disabled={customerSubmitting}
+                  sx={{ fontWeight: 'bold', height: '32px', fontSize: '0.75rem', borderRadius: 1, color: 'text.secondary', borderColor: 'divider' }}
+                >
+                  사진 첨부 (최대 5개)
+                  <input type="file" hidden multiple accept="image/*" onChange={handleCustomerRequestImageChange} />
+                </Button>
+                
+                {customerRequestImages.length > 0 && (
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
+                    {customerRequestImages.map((img, i) => (
+                      <Box key={i} sx={{ position: 'relative', display: 'inline-block' }}>
+                        <img src={URL.createObjectURL(img)} alt="preview" style={{ width: 32, height: 32, objectFit: 'cover', borderRadius: 4, border: '1px solid #e2e8f0' }} />
+                        <IconButton 
+                          size="small" 
+                          disabled={customerSubmitting}
+                          onClick={() => setCustomerRequestImages(prev => prev.filter((_, idx) => idx !== i))} 
+                          sx={{ position: 'absolute', top: -6, right: -6, bgcolor: 'background.paper', border: '1px solid #e2e8f0', p: 0.1, '&:hover': { bgcolor: 'error.lighter', color: 'error.main' } }}
+                        >
+                          <DeleteIcon sx={{ fontSize: '0.8rem' }} />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Stack>
+                )}
               </Box>
 
-              {customerRequestError && <Alert severity="error" sx={{ borderRadius: 1.5 }}>{customerRequestError}</Alert>}
+              {/* 개인정보 수집 및 이용 동의 안내 및 체크 Box */}
+              <Box sx={{ border: '1px solid #e2e8f0', borderRadius: 1.5, p: 1.5, bgcolor: '#f8fafc', fontSize: '0.75rem', color: '#475569', lineHeight: 1.5 }}>
+                <Typography variant="caption" fontWeight="bold" display="block" sx={{ color: '#1e293b', mb: 0.5, fontSize: '0.78rem' }}>
+                  [개인정보 수집 및 이용 동의 안내]
+                </Typography>
+                • 수집항목: 성함, 휴대폰 연락처, 이메일 주소<br/>
+                • 수집목적: 1:1 실시간 기술지원 상담 및 유지보수 이력 관리<br/>
+                • 보유기간: 상담 완료 및 이력 관리 목적 달성 후 지체 없이 파기
+                <Divider sx={{ my: 1, borderColor: '#e2e8f0' }} />
+                <FormControlLabel
+                  control={
+                    <Checkbox 
+                      size="small"
+                      checked={customerPrivacyAgreed}
+                      onChange={(e) => setCustomerPrivacyAgreed(e.target.checked)}
+                      disabled={customerSubmitting}
+                      sx={{ p: 0.5, color: '#64748b' }}
+                    />
+                  }
+                  label={
+                    <Typography variant="caption" sx={{ color: '#1e293b', fontWeight: 'bold', fontSize: '0.78rem' }}>
+                      개인정보 수집 및 이용에 동의합니다. (필수)
+                    </Typography>
+                  }
+                  sx={{ ml: -0.5, my: 0 }}
+                />
+              </Box>
+
+              {customerRequestError && <Alert severity="error" sx={{ borderRadius: 1.5, py: 0.3, fontSize: '0.75rem' }}>{customerRequestError}</Alert>}
             </Stack>
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5, gap: 1 }}>
+        <DialogActions sx={{ py: 1.5, px: 2.5, gap: 1 }}>
           <Button 
             variant="outlined" 
             onClick={() => setCustomerRequestOpen(false)} 
             disabled={customerSubmitting}
-            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+            size="small"
+            sx={{ fontWeight: 'bold', borderRadius: 1, px: 2 }}
           >
             취소
           </Button>
@@ -3159,10 +3248,11 @@ const AdminReportPage: React.FC = () => {
             variant="contained" 
             color="success"
             onClick={handleSubmitCustomerRequest} 
-            disabled={customerSubmitting}
-            sx={{ fontWeight: 'bold', borderRadius: 1.5 }}
+            disabled={customerSubmitting || !customerPrivacyAgreed}
+            size="small"
+            sx={{ fontWeight: 'bold', borderRadius: 1, px: 2.5 }}
           >
-            {customerSubmitting ? <CircularProgress size={20} color="inherit" /> : "접수하기"}
+            {customerSubmitting ? <CircularProgress size={18} color="inherit" /> : "접수하기"}
           </Button>
         </DialogActions>
       </Dialog>
