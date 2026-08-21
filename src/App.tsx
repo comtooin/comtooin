@@ -1,25 +1,32 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline, Box } from '@mui/material';
-import SubmissionDetailPage from './pages/SubmissionDetailPage'; 
-import AdminLoginPage from './pages/AdminLoginPage'; 
-import GuestMessengerPage from './pages/GuestMessengerPage'; 
-
-import AdminReportPage from './pages/AdminReportPage'; 
-import AdminCustomerPage from './pages/AdminCustomerPage';
-import AdminQuotePage from './pages/AdminQuotePage';
-import AdminCustomerInventoryPage from './pages/AdminCustomerInventoryPage';
-import AdminStaffPage from './pages/AdminStaffPage';
-import AdminSchedulePage from './pages/AdminSchedulePage';
-import AdminProfilePage from './pages/AdminProfilePage';
-import ArchivePage from './pages/ArchivePage';
-import EditRequestPage from './pages/EditRequestPage';
-import AdminHelpPage from './pages/AdminHelpPage';
-import AdminMessengerPage from './pages/AdminMessengerPage';
+import { ThemeProvider, createTheme, CssBaseline, Box, CircularProgress } from '@mui/material';
 import NavBar from './components/NavBar';
 import AdminRoute from './components/AdminRoute';
 import OneSignal from 'react-onesignal';
 import { supabase, getCurrentStaffId } from './api';
+
+// 코드 분할(Code Splitting)을 통한 초기 번들 크기 대폭 감량 및 페이지 로딩 초고속화
+const SubmissionDetailPage = lazy(() => import('./pages/SubmissionDetailPage'));
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const GuestMessengerPage = lazy(() => import('./pages/GuestMessengerPage'));
+const AdminReportPage = lazy(() => import('./pages/AdminReportPage'));
+const AdminCustomerPage = lazy(() => import('./pages/AdminCustomerPage'));
+const AdminQuotePage = lazy(() => import('./pages/AdminQuotePage'));
+const AdminCustomerInventoryPage = lazy(() => import('./pages/AdminCustomerInventoryPage'));
+const AdminStaffPage = lazy(() => import('./pages/AdminStaffPage'));
+const AdminSchedulePage = lazy(() => import('./pages/AdminSchedulePage'));
+const AdminProfilePage = lazy(() => import('./pages/AdminProfilePage'));
+const ArchivePage = lazy(() => import('./pages/ArchivePage'));
+const EditRequestPage = lazy(() => import('./pages/EditRequestPage'));
+const AdminHelpPage = lazy(() => import('./pages/AdminHelpPage'));
+const AdminMessengerPage = lazy(() => import('./pages/AdminMessengerPage'));
+
+const PageLoadingFallback = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+    <CircularProgress size={36} thickness={4} sx={{ color: 'primary.main' }} />
+  </Box>
+);
 
 const theme = createTheme({
   palette: {
@@ -276,41 +283,52 @@ const OneSignalManager = () => {
   const updatePlayerId = async () => {
     if (!isOneSignalInitialized) return;
     try {
-      const pushId = OneSignal.User.PushSubscription.id;
+      const pushId = OneSignal.User?.PushSubscription?.id;
       if (!pushId) return;
 
-      // 중복 방지 선제 소거 처리 (Deduplication)
-      // 본인 기기 ID(pushId)와 동일한 값을 갖고 있는 다른 모든 staff 및 customers의 컬럼을 null로 깨끗이 밀어냄
-      await supabase
-        .from('staff')
-        .update({ onesignal_id: null })
-        .eq('onesignal_id', pushId);
-
-      await supabase
-        .from('customers')
-        .update({ onesignal_id: null })
-        .eq('onesignal_id', pushId);
-
       const role = sessionStorage.getItem('adminRole');
-      if (role === 'customer') {
-        const customerId = sessionStorage.getItem('adminCustomerId');
-        if (customerId) {
-          await supabase
-            .from('customers')
-            .update({ onesignal_id: pushId })
-            .eq('id', customerId);
-          console.log('Successfully updated OneSignal push ID for customer:', customerId);
-        }
-      } else {
-        const staffId = await getCurrentStaffId();
-        if (staffId) {
-          await supabase
-            .from('staff')
-            .update({ onesignal_id: pushId })
-            .eq('id', staffId);
-          console.log('Successfully updated OneSignal push ID for staff:', staffId);
-        }
+      const customerId = sessionStorage.getItem('adminCustomerId');
+      const staffId = await getCurrentStaffId();
+
+      // 로그인된 세션이 명확히 존재할 때만 해당 계정으로 기기 ID 매핑 및 중복 제거 처리
+      if (role === 'customer' && customerId) {
+        // 기존 다른 계정에 매핑되어 있던 동일 기기 ID 해제
+        await supabase
+          .from('staff')
+          .update({ onesignal_id: null })
+          .eq('onesignal_id', pushId);
+
+        await supabase
+          .from('customers')
+          .update({ onesignal_id: null })
+          .eq('onesignal_id', pushId)
+          .neq('id', customerId);
+
+        await supabase
+          .from('customers')
+          .update({ onesignal_id: pushId })
+          .eq('id', customerId);
+        console.log('Successfully updated OneSignal push ID for customer:', customerId);
+      } else if (staffId) {
+        // 기존 다른 계정에 매핑되어 있던 동일 기기 ID 해제
+        await supabase
+          .from('customers')
+          .update({ onesignal_id: null })
+          .eq('onesignal_id', pushId);
+
+        await supabase
+          .from('staff')
+          .update({ onesignal_id: null })
+          .eq('onesignal_id', pushId)
+          .neq('id', staffId);
+
+        await supabase
+          .from('staff')
+          .update({ onesignal_id: pushId })
+          .eq('id', staffId);
+        console.log('Successfully updated OneSignal push ID for staff:', staffId);
       }
+      // 세션이 없는 비로그인/로그아웃 상태에서는 기존 모바일 기기에 등록된 푸시 구독을 절대 임의로 삭제(null)하지 않음!
     } catch (err) {
       console.error('Error updating OneSignal player ID:', err);
     }
@@ -374,60 +392,62 @@ function App() {
         <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
           <NavBar />
           <Box component="main" sx={{ flexGrow: 1, p: { xs: 2, sm: 3, md: 4 }, overflow: 'hidden' }}>
-            <Routes>
-              <Route path="/" element={<RootRoute />} />
-              <Route path="/admin/login" element={<AdminLoginPage />} />
-              <Route
-                path="/admin/dashboard"
-                element={<AdminRoute><AdminReportPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/archive"
-                element={<AdminRoute><ArchivePage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/customers"
-                element={<AdminRoute><AdminCustomerPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/quote"
-                element={<AdminRoute><AdminQuotePage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/customers/:id/inventory"
-                element={<AdminRoute><AdminCustomerInventoryPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/staff"
-                element={<AdminRoute requiredRole="admin"><AdminStaffPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/profile"
-                element={<AdminRoute><AdminProfilePage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/help"
-                element={<AdminRoute><AdminHelpPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/schedule"
-                element={<AdminRoute><AdminSchedulePage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/messenger"
-                element={<AdminRoute><AdminMessengerPage /></AdminRoute>}
-              />
-              <Route path="/messenger/:client_code" element={<GuestMessengerPage />} />
-              <Route
-                path="/admin/request/detail/:id"
-                element={<AdminRoute><SubmissionDetailPage /></AdminRoute>}
-              />
-              <Route
-                path="/admin/request/edit/:id"
-                element={<AdminRoute><EditRequestPage /></AdminRoute>}
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
+            <Suspense fallback={<PageLoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<RootRoute />} />
+                <Route path="/admin/login" element={<AdminLoginPage />} />
+                <Route
+                  path="/admin/dashboard"
+                  element={<AdminRoute><AdminReportPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/archive"
+                  element={<AdminRoute><ArchivePage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/customers"
+                  element={<AdminRoute><AdminCustomerPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/quote"
+                  element={<AdminRoute><AdminQuotePage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/customers/:id/inventory"
+                  element={<AdminRoute><AdminCustomerInventoryPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/staff"
+                  element={<AdminRoute requiredRole="admin"><AdminStaffPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/profile"
+                  element={<AdminRoute><AdminProfilePage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/help"
+                  element={<AdminRoute><AdminHelpPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/schedule"
+                  element={<AdminRoute><AdminSchedulePage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/messenger"
+                  element={<AdminRoute><AdminMessengerPage /></AdminRoute>}
+                />
+                <Route path="/messenger/:client_code" element={<GuestMessengerPage />} />
+                <Route
+                  path="/admin/request/detail/:id"
+                  element={<AdminRoute><SubmissionDetailPage /></AdminRoute>}
+                />
+                <Route
+                  path="/admin/request/edit/:id"
+                  element={<AdminRoute><EditRequestPage /></AdminRoute>}
+                />
+                <Route path="*" element={<Navigate to="/" replace />} />
+              </Routes>
+            </Suspense>
           </Box>
         </Box>
       </Router>

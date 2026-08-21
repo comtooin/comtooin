@@ -74,32 +74,40 @@ const NavBar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent) || 
+        ('ontouchstart' in window && window.innerWidth <= 768);
       const role = sessionStorage.getItem('adminRole') || userRole;
       const pushId = OneSignal?.User?.PushSubscription?.id;
-      
-      if (pushId) {
-        if (role === 'customer') {
-          const customerId = sessionStorage.getItem('adminCustomerId');
-          if (customerId) {
-            await supabase
-              .from('customers')
-              .update({ onesignal_id: null })
-              .eq('id', customerId);
-            console.log('Successfully cleared OneSignal push ID for customer on logout');
-          }
-        } else {
+
+      // 1. 거래처(customer) 고객: PC/모바일 관계없이 로그아웃 시 onesignal_id를 깔끔하게 null로 정리
+      if (role === 'customer') {
+        const customerId = sessionStorage.getItem('adminCustomerId');
+        if (customerId && pushId) {
+          await supabase
+            .from('customers')
+            .update({ onesignal_id: null })
+            .eq('id', customerId);
+          console.log('Successfully cleared OneSignal push ID for customer on logout');
+        }
+      } else {
+        // 2. 사내 멤버(staff):
+        // PC(공용 기기)에서는 보안을 위해 null로 정리하지만,
+        // 모바일(개인 스마트폰)에서는 백그라운드/잠금화면 알림을 계속 수신할 수 있도록 OneSignal ID를 DB에 영구 보존!
+        if (!isMobile) {
           const staffId = sessionStorage.getItem('adminStaffId');
-          if (staffId) {
+          if (staffId && pushId) {
             await supabase
               .from('staff')
               .update({ onesignal_id: null })
               .eq('id', staffId);
-            console.log('Successfully cleared OneSignal push ID for staff on logout');
+            console.log('Successfully cleared OneSignal push ID for staff on PC logout');
           }
+        } else {
+          console.log('Staff mobile device detected: keeping OneSignal push subscription for background lock-screen notifications.');
         }
       }
     } catch (pushClearErr) {
-      console.error('Error clearing OneSignal push ID on logout:', pushClearErr);
+      console.error('Error handling OneSignal push ID on logout:', pushClearErr);
     }
 
     sessionStorage.removeItem('adminToken');
